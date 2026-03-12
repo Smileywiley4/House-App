@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Property Pulse — Pitch</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .slide {
+      min-height: 100vh;
+      padding: 3rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    h1 { font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .accent { color: #10b981; }
+    .sub { font-size: 1.25rem; color: #94a3b8; margin-bottom: 3rem; }
+    .grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      border-radius: 1rem;
+      padding: 1.5rem;
+    }
+    .card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: #10b981; }
+    .card p { font-size: 0.95rem; color: #cbd5e1; }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      margin-bottom: 1.5rem;
+    }
+    .mockup {
+      background: #1e293b;
+      border-radius: 1rem;
+      padding: 1rem;
+      border: 1px solid #334155;
+      margin: 2rem 0;
+    }
+    .mockup-bar {
+      height: 8px;
+      background: #334155;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      width: 40%;
+    }
+    .mockup-row { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .mockup-block {
+      background: #334155;
+      border-radius: 6px;
+      height: 48px;
+    }
+    .mockup-block.wide { flex: 1; }
+    .mockup-block.narrow { width: 80px; }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .flow-node {
+      background: #1e293b;
+      border: 2px solid #10b981;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .flow-arrow { color: #64748b; font-size: 1.5rem; }
+    .plan-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .plan-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .plan-dot.free { background: #64748b; }
+    .plan-dot.premium { background: #10b981; }
+    .plan-dot.realtor { background: #c9a84c; }
+    .stats { display: flex; gap: 2rem; margin: 2rem 0; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 2.5rem; font-weight: 800; color: #10b981; }
+    .stat-label { font-size: 0.85rem; color: #94a3b8; }
+    .cta {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      font-weight: 700;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      margin-top: 1rem;
+    }
+    .cta:hover { background: #059669; }
+  </style>
+</head>
+<body>
+
+  <!-- Slide 1: Hero -->
+  <section class="slide">
+    <span class="hero-badge">PROPERTY COMPARISON PLATFORM</span>
+    <h1>Property Pulse</h1>
+    <p class="sub">Score properties. Compare mathematically. Decide with confidence.</p>
+    <p style="max-width: 36rem; color: #94a3b8; margin-bottom: 2rem;">
+      Search any address, weight what matters to you across 30+ categories, and compare saved homes with a weighted score — not just gut feeling.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="stat-num">30+</div><div class="stat-label">Scoring categories</div></div>
+      <div class="stat"><div class="stat-num">3</div><div class="stat-label">Plans (Free → Realtor)</div></div>
+      <div class="stat"><div class="stat-num">AI</div><div class="stat-label">Insights & auto-score</div></div>
+    </div>
+    <img src="pitch-mockup.png" alt="Property Pulse app" style="max-height: 220px; border-radius: 12px; margin-top: 1rem; border: 1px solid #334155; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+  </section>
+
+  <!-- Slide 2: Core Features -->
+  <section class="slide">
+    <h1>Core <span class="accent">Features</span></h1>
+    <p class="sub">Built for buyers, upgradable for professionals.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>🔍 Property search</h3>
+        <p>Enter any address. Get property details, proximity to amenities, walk scores, school ratings — cached for consistency.</p>
+      </div>
+      <div class="card">
+        <h3>⚖️ Weighted scoring</h3>
+        <p>30+ categories: roof quality, school district, commute. Set importance (0–10) and score each property. Get a weighted total out of 100.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Side-by-side comparison</h3>
+        <p>Compare 2+ properties. Free plan: up to 2; Premium: 3+. View as columns, cards, or table.</p>
+      </div>
+      <div class="card">
+        <h3>✨ AI features</h3>
+        <p>AI property insights, auto-score suggestions, and For You recommendations. Premium & Realtor only.</p>
+      </div>
+      <div class="card">
+        <h3>🏷️ For Sale badge</h3>
+        <p>Properties publicly listed for sale show a badge. Data aligned with major listing sites.</p>
+      </div>
+      <div class="card">
+        <h3>👔 Realtor portal</h3>
+        <p>Client management, private listings, share scorecards. Realtor plan only.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 3: How it works -->
+  <section class="slide">
+    <h1>How It <span class="accent">Works</span></h1>
+    <p class="sub">Simple flow from search to decision.</p>
+    <div class="flow-row">
+      <span class="flow-node">Search address</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">View details</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">Score categories</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">Save & compare</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">Decide</span>
+    </div>
+    <div class="mockup" style="max-width: 400px;">
+      <img src="pitch-mockup.png" alt="Property Pulse app screen" style="width: 100%; border-radius: 8px; display: block;">
+      <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">App UI</p>
+    </div>
+  </section>
+
+  <!-- Slide 4: Plans & monetization -->
+  <section class="slide">
+    <h1>Plans & <span class="accent">Monetization</span></h1>
+    <p class="sub">Free tier drives adoption. Premium & Realtor drive revenue.</p>
+    <div class="plan-row">
+      <span class="plan-dot free"></span>
+      <div>
+        <strong>Free</strong> — Compare 2 properties, 30+ categories, save scores. <em>Ad-supported.</em>
+      </div>
+    </div>
+    <div class="plan-row">
+      <span class="plan-dot premium"></span>
+      <div>
+        <strong>Premium</strong> — 3+ compare, AI features, ad-free. <em>~$7/mo</em>
+      </div>
+    </div>
+    <div class="plan-row">
+      <span class="plan-dot realtor"></span>
+      <div>
+        <strong>Realtor</strong> — Client management, private listings, sharing. <em>~$20/mo</em>
+      </div>
+    </div>
+    <p style="margin-top: 2rem; color: #94a3b8; font-size: 0.95rem;">
+      Free users see ads (Google AdSense/Ads). Premium & Realtor: ad-free. Stripe for subscriptions.
+    </p>
+  </section>
+
+  <!-- Slide 5: Tech & platforms -->
+  <section class="slide">
+    <h1>Tech & <span class="accent">Platforms</span></h1>
+    <p class="sub">Built to scale and extend.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Web</h3>
+        <p>React + Vite. Deploy to Vercel. SPA with Supabase Auth.</p>
+      </div>
+      <div class="card">
+        <h3>Backend</h3>
+        <p>Python FastAPI. Supabase (PostgreSQL). Stripe. OpenAI.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile-ready</h3>
+        <p>Same API + core. Add React Native views for iOS/Android.</p>
+      </div>
+    </div>
+    <p style="margin-top: 2rem; color: #94a3b8;">
+      Docker, CI/CD (GitHub Actions), migrations, OpenAPI spec included.
+    </p>
+  </section>
+
+  <!-- Slide 6: CTA -->
+  <section class="slide">
+    <h1>Property <span class="accent">Pulse</span></h1>
+    <p class="sub">Score smarter. Compare with confidence.</p>
+    <p style="margin: 1rem 0; color: #94a3b8;">Ready to demo or deploy.</p>
+    <a href="#" class="cta">Open app →</a>
+  </section>
+
+</body>
+</html>

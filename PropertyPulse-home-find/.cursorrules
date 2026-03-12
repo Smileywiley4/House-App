@@ -1,0 +1,21 @@
+# PropertyPulse — Cursor rules
+
+## Stack
+- **Frontend:** React (Vite), React Router, Tailwind, shadcn-style UI. Path alias `@/` → `src/`.
+- **Backend (optional):** Python 3.11+ FastAPI in `backend/`. Uses Supabase (DB + Auth), Stripe (subscriptions), OpenAI (LLM). Run with `uvicorn app.main:app --reload` from `backend/`.
+- **Data:** Supabase (PostgreSQL). Schema in `supabase/migrations/`. When using Python backend, frontend talks to Python API with Supabase JWT; when not, frontend can use Supabase client or Base44.
+
+## Backend selection (frontend)
+- `VITE_USE_PYTHON_BACKEND=true` → API calls go to `VITE_API_BASE_URL` (Python); auth via Supabase.
+- `VITE_USE_SUPABASE=true` (and not Python) → Direct Supabase client from frontend.
+- Otherwise → Base44 adapter.
+
+## Conventions
+- Use `import { api } from '@/api'` for all backend operations; do not import Supabase or Base44 directly in app code.
+- Shared logic for web + React Native lives in `src/core/` (hooks, routes, constants, propertyService).
+- Python: Pydantic for request/response; `get_current_user_id` dependency for protected routes; settings from `app/config.py` (env).
+
+## Key paths
+- Frontend API adapters: `src/api/adapters/`.
+- Python routers: `backend/app/routers/`.
+- Supabase migrations: `supabase/migrations/`.

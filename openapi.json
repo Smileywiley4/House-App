@@ -1,0 +1,23 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "PropertyPulse API", "version": "1.0" },
+  "paths": {
+    "/health": { "get": { "summary": "Health check", "responses": { "200": { "description": "OK" } } } },
+    "/api/auth/me": {
+      "get": { "summary": "Current user", "security": [{"HTTPBearer": []}], "responses": { "200": { "description": "Profile" } } },
+      "patch": { "summary": "Update profile", "security": [{"HTTPBearer": []}], "responses": { "200": { "description": "Updated profile" } } }
+    },
+    "/api/entities/property_scores": { "get": { "summary": "List scores" }, "post": { "summary": "Create score" } },
+    "/api/entities/property_scores/{score_id}": { "delete": { "summary": "Delete score" } },
+    "/api/entities/clients": { "get": { "summary": "List clients" }, "post": { "summary": "Create client" } },
+    "/api/entities/clients/{client_id}": { "delete": { "summary": "Delete client" } },
+    "/api/entities/private_listings": { "get": { "summary": "List listings" }, "post": { "summary": "Create listing" } },
+    "/api/entities/private_listings/{listing_id}": { "delete": { "summary": "Delete listing" } },
+    "/api/property/search": { "post": { "summary": "Search property by address" } },
+    "/api/integrations/llm/invoke": { "post": { "summary": "Invoke LLM" } },
+    "/api/subscription/create-checkout-session": { "post": { "summary": "Stripe checkout" } },
+    "/api/subscription/portal": { "get": { "summary": "Stripe portal" } },
+    "/api/webhooks/stripe": { "post": { "summary": "Stripe webhook" } }
+  },
+  "components": { "securitySchemes": { "HTTPBearer": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" } } }
+}
