@@ -5,6 +5,7 @@
  */
 export const ROUTE_KEYS = {
   HOME: 'Home',
+  QUICK_COMPARE: 'QuickCompare',
   SEARCH_BY_PRESET: 'SearchByPreset',
   COMPARE: 'Compare',
   SIDE_BY_SIDE: 'SideBySide',

@@ -52,6 +52,7 @@ import Evaluate from './pages/Evaluate';
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
 import Profile from './pages/Profile';
+import QuickCompare from './pages/QuickCompare';
 import RealtorPortal from './pages/RealtorPortal';
 import SearchByPreset from './pages/SearchByPreset';
 import SharedComparison from './pages/SharedComparison';
@@ -65,6 +66,7 @@ export const PAGES = {
     "Home": Home,
     "Pricing": Pricing,
     "Profile": Profile,
+    "QuickCompare": QuickCompare,
     "RealtorPortal": RealtorPortal,
     "SearchByPreset": SearchByPreset,
     "SharedComparison": SharedComparison,
