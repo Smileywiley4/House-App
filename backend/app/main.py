@@ -3,9 +3,11 @@ PropertyPulse Python backend — FastAPI.
 Runs with: uvicorn app.main:app --reload
 Compatible with Cursor, Supabase, Stripe, and standard Python tooling.
 """
+import traceback
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import stripe
 
 from app.config import get_settings
@@ -16,7 +18,6 @@ from app.routers import auth, property_scores, clients, private_listings, preset
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-    # shutdown if needed
 
 
 app = FastAPI(title="PropertyPulse API", version="1.0", lifespan=lifespan)
@@ -29,6 +30,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    traceback.print_exc()
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(property_scores.router, prefix="/api/entities")

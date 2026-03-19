@@ -1,7 +1,7 @@
 """Property search by address. Uses DB cache for consistency (same address → same result)."""
 import hashlib
 import json
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.dependencies import get_supabase_admin, get_current_user_id
 from app.llm import get_property_by_address_llm, search_properties_by_criteria_llm
@@ -30,22 +30,29 @@ async def search(body: SearchBody):
     address = (body.address or "").strip()
     if not address:
         return {"error": "Address is required"}
-    supabase = get_supabase_admin()
     key = _cache_key(address)
-    r = supabase.table("property_cache").select("data").eq("address_hash", key).execute()
-    if r.data and len(r.data) > 0:
-        row = r.data[0]
-        return row.get("data") or {}
+
+    try:
+        supabase = get_supabase_admin()
+        r = supabase.table("property_cache").select("data").eq("address_hash", key).execute()
+        if r.data and len(r.data) > 0:
+            row = r.data[0]
+            return row.get("data") or {}
+    except Exception:
+        pass
+
     data = await get_property_by_address_llm(address)
-    if data:
-        try:
-            supabase.table("property_cache").upsert(
-                [{"address_hash": key, "data": data}],
-                on_conflict="address_hash",
-            ).execute()
-        except Exception:
-            pass
-    return data or {}
+    if not data:
+        raise HTTPException(status_code=502, detail="Property lookup failed. Check that OPENAI_API_KEY is set.")
+    try:
+        supabase = get_supabase_admin()
+        supabase.table("property_cache").upsert(
+            [{"address_hash": key, "data": data}],
+            on_conflict="address_hash",
+        ).execute()
+    except Exception:
+        pass
+    return data
 
 
 class SearchByCriteriaBody(BaseModel):
