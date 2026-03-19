@@ -41,9 +41,12 @@ async def search(body: SearchBody):
     except Exception:
         pass
 
+    from app.config import get_settings
+    if not get_settings().openai_api_key:
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured on the server.")
     data = await get_property_by_address_llm(address)
     if not data:
-        raise HTTPException(status_code=502, detail="Property lookup failed. Check that OPENAI_API_KEY is set.")
+        raise HTTPException(status_code=502, detail="OpenAI returned no data. Check Railway logs for details.")
     try:
         supabase = get_supabase_admin()
         supabase.table("property_cache").upsert(

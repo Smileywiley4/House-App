@@ -1,12 +1,16 @@
 """LLM helpers: property search and generic invoke. Uses OpenAI; can be swapped for Anthropic."""
 import json
+import logging
 from openai import OpenAI
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 def _openai_client() -> OpenAI | None:
     key = get_settings().openai_api_key
     if not key:
+        logger.error("OPENAI_API_KEY is empty or not set")
         return None
     return OpenAI(api_key=key)
 
@@ -33,7 +37,8 @@ async def get_property_by_address_llm(address: str) -> dict | None:
         )
         text = resp.choices[0].message.content
         return json.loads(text) if text else None
-    except Exception:
+    except Exception as e:
+        logger.error("OpenAI property search failed: %s", e)
         return None
 
 

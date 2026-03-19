@@ -89,4 +89,11 @@ async def stripe_webhook(request: Request):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    s = get_settings()
+    return {
+        "status": "ok",
+        "openai_key_set": bool(s.openai_api_key),
+        "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
+        "supabase_url_set": bool(s.supabase_url),
+        "supabase_service_key_set": bool(s.supabase_service_role_key),
+    }
