@@ -2,24 +2,10 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from supabase import create_client, Client
 from app.config import get_settings
+from app.supabase_client import get_supabase_admin
 
 security = HTTPBearer(auto_error=False)
-
-
-def get_supabase() -> Client:
-    s = get_settings()
-    if not s.supabase_service_role_key or not s.supabase_url:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
-    return create_client(s.supabase_url, s.supabase_service_role_key)
-
-
-def get_supabase_anon() -> Client:
-    s = get_settings()
-    if not s.supabase_anon_key or not s.supabase_url:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
-    return create_client(s.supabase_url, s.supabase_anon_key)
 
 
 async def get_current_user_id(
