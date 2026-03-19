@@ -1,25 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ChevronLeft, Plus, X, Save, BarChart3 } from "lucide-react";
+import { ChevronLeft, Plus, X, Save, BarChart3, LogIn } from "lucide-react";
 import { api } from "@/api";
 import CategorySlider from "@/components/evaluate/CategorySlider.jsx";
 import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker.jsx";
 import AIAutoScore from "@/components/ai/AIAutoScore.jsx";
 import { PremiumGate } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
-import RequireAuth from "@/components/RequireAuth";
 import PresetPicker from "@/components/presets/PresetPicker";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Evaluate() {
-  return (
-    <RequireAuth message="Sign in to score and save properties">
-      <EvaluateInner />
-    </RequireAuth>
-  );
-}
-
-function EvaluateInner() {
+  const { isAuthenticated } = useAuth();
   const params = new URLSearchParams(window.location.search);
   const property = {
     address: params.get("address") || "Unknown Address",
@@ -41,8 +34,8 @@ function EvaluateInner() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Load user's saved weight preferences
   useEffect(() => {
+    if (!isAuthenticated) return;
     api.auth.me().then(u => {
       const saved = u?.default_weights || {};
       if (Object.keys(saved).length > 0) {
@@ -52,7 +45,7 @@ function EvaluateInner() {
         })));
       }
     }).catch(() => {});
-  }, []);
+  }, [isAuthenticated]);
 
   const addCategory = (cat) => {
     if (activeCategories.find(c => c.id === cat.id)) return;
@@ -145,32 +138,43 @@ function EvaluateInner() {
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <PresetPicker
-              activeCategories={activeCategories}
-              onLoadPreset={(next) => setActiveCategories(next)}
-            />
+            {isAuthenticated && (
+              <PresetPicker
+                activeCategories={activeCategories}
+                onLoadPreset={(next) => setActiveCategories(next)}
+              />
+            )}
             <button
               onClick={() => setShowPicker(true)}
               className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-[#1a2234] font-semibold rounded-xl hover:bg-slate-50 transition-colors text-sm border-[#10b981]/30"
             >
               <Plus size={15} /> Add Category
             </button>
-            {saved ? (
-              <Link
-                to={createPageUrl("Compare")}
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-xl text-sm"
-              >
-                <BarChart3 size={15} /> View Comparison
-              </Link>
+            {isAuthenticated ? (
+              saved ? (
+                <Link
+                  to={createPageUrl("Compare")}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-xl text-sm"
+                >
+                  <BarChart3 size={15} /> View Comparison
+                </Link>
+              ) : (
+                <button
+                  onClick={saveScore}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60"
+                >
+                  {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={15} />}
+                  {saving ? "Saving..." : "Save Score"}
+                </button>
+              )
             ) : (
-              <button
-                onClick={saveScore}
-                disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60"
+              <Link
+                to="/login"
+                className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm"
               >
-                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={15} />}
-                {saving ? "Saving..." : "Save Score"}
-              </button>
+                <LogIn size={15} /> Sign In to Save
+              </Link>
             )}
           </div>
         </div>

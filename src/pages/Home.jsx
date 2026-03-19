@@ -138,16 +138,15 @@ function AuthAwareLink() {
   return (
     <Link
       to="/login"
-      className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] text-white font-semibold rounded-xl hover:bg-[#059669] transition-colors"
+      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#10b981] text-white text-sm font-semibold rounded-lg hover:bg-[#059669] transition-colors"
     >
-      <LogIn size={16} />
+      <LogIn size={14} />
       Sign In to Save & Compare Properties
     </Link>
   );
 }
 
 function PropertyCard({ property }) {
-  const { isAuthenticated } = useAuth();
   const fmt = (n) => n?.toLocaleString() ?? "—";
 
   return (
@@ -213,23 +212,13 @@ function PropertyCard({ property }) {
           <AIPropertyInsights property={property} />
         </PremiumGate>
 
-        {isAuthenticated ? (
-          <Link
-            to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
-          >
-            <Star size={18} />
-            Score This Property
-          </Link>
-        ) : (
-          <Link
-            to="/login"
-            className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
-          >
-            <LogIn size={18} />
-            Sign In to Score & Save
-          </Link>
-        )}
+        <Link
+          to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
+          className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
+        >
+          <Star size={18} />
+          Score This Property
+        </Link>
       </div>
     </div>
   );
