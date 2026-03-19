@@ -3,15 +3,14 @@
  * Frontend uses Supabase for auth only; all other API calls go to the Python backend with Bearer token.
  * Set VITE_USE_PYTHON_BACKEND=true and VITE_API_BASE_URL=http://localhost:8000 (or your backend URL).
  */
-import { createClient } from '@supabase/supabase-js';
+import { getSharedSupabase } from '@/lib/supabase';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 function getSupabase() {
-  if (!supabaseUrl || !supabaseAnonKey) throw new Error('VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY required for Python backend');
-  return createClient(supabaseUrl, supabaseAnonKey);
+  const client = getSharedSupabase();
+  if (!client) throw new Error('VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY required for Python backend');
+  return client;
 }
 
 async function getToken() {

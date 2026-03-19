@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
 import { Home, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { getSharedSupabase } from "@/lib/supabase";
 
 function getSupabase() {
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return getSharedSupabase();
 }
 
 export default function Login() {

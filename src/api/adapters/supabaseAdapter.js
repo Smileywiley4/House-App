@@ -3,16 +3,12 @@
  * Implements the PropertyPulse API surface using @supabase/supabase-js.
  * Set VITE_USE_SUPABASE=true and provide VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY.
  */
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { getSharedSupabase } from '@/lib/supabase';
 
 const getSupabase = () => {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
-  }
-  return createClient(supabaseUrl, supabaseAnonKey);
+  const client = getSharedSupabase();
+  if (!client) throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+  return client;
 };
 
 /** Map Supabase profile row to User shape */
