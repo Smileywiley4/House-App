@@ -96,20 +96,20 @@ export default function Home() {
 
       {/* Feature Highlights */}
       {!result && (
-        <div className="max-w-5xl mx-auto px-6 py-16">
-          <h2 className="text-center text-2xl font-bold text-[#1a2234] mb-12">How It Works</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <h2 className="text-center text-3xl font-bold text-[#1a2234] mb-14">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-10">
             {[
               { icon: Search, title: "Search Any Property", desc: "Enter any address to instantly pull up property details, location data, and proximity to key amenities." },
               { icon: Star, title: "Score What Matters", desc: "Set importance weights for 30+ categories — from roof quality to school ratings — then score the property." },
               { icon: BarChart3, title: "Compare Mathematically", desc: "Get a weighted score for each property and compare them side-by-side to make confident decisions." }
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center mb-5">
-                  <Icon className="text-[#10b981]" size={22} />
+              <div key={title} className="bg-white rounded-2xl p-10 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 rounded-xl bg-[#10b981]/10 flex items-center justify-center mb-6">
+                  <Icon className="text-[#10b981]" size={26} />
                 </div>
-                <h3 className="font-bold text-[#1a2234] text-lg mb-2">{title}</h3>
-                <p className="text-slate-500 leading-relaxed text-sm">{desc}</p>
+                <h3 className="font-bold text-[#1a2234] text-xl mb-3">{title}</h3>
+                <p className="text-slate-500 leading-relaxed text-base">{desc}</p>
               </div>
             ))}
           </div>
