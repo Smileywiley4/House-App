@@ -1,14 +1,14 @@
-"""Property search by address. Uses DB cache for consistency (same address → same result)."""
+"""Property search by address. Google for verified location data, LLM for enrichment, DB cache for consistency."""
 import hashlib
-import json
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.dependencies import get_supabase_admin, get_current_user_id
 from app.llm import get_property_by_address_llm, search_properties_by_criteria_llm
+from app.google_places import get_property_via_google
 
 router = APIRouter(prefix="/property", tags=["property"])
-
-CACHE_TTL_SEC = 86400  # 24 hours
+logger = logging.getLogger(__name__)
 
 
 def _normalize_address(addr: str) -> str:
@@ -41,12 +41,41 @@ async def search(body: SearchBody):
     except Exception:
         pass
 
+    google_data = await get_property_via_google(address)
+    if google_data:
+        logger.info("Google data found for '%s': %s, %s %s", address, google_data.get("city"), google_data.get("state"), google_data.get("zip"))
+
     from app.config import get_settings
     if not get_settings().openai_api_key:
+        if google_data:
+            data = {
+                "address": google_data.get("address") or address,
+                "city": google_data.get("city", ""),
+                "state": google_data.get("state", ""),
+                "zip": google_data.get("zip", ""),
+                "lat": google_data.get("lat"),
+                "lng": google_data.get("lng"),
+                "nearby_hospitals": google_data.get("nearby_hospitals"),
+                "nearby_schools": google_data.get("nearby_schools"),
+                "nearby_highways": google_data.get("nearby_highways"),
+                "price": None, "bedrooms": None, "bathrooms": None, "sqft": None,
+                "year_built": None, "description": "Property details from Google Maps.",
+                "walk_score": None, "school_rating": None,
+                "on_market": False, "listing_source": None,
+            }
+            _save_cache(key, data)
+            return data
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured on the server.")
-    data = await get_property_by_address_llm(address)
+
+    data = await get_property_by_address_llm(address, google_data=google_data)
     if not data:
-        raise HTTPException(status_code=502, detail="OpenAI returned no data. Check Railway logs for details.")
+        raise HTTPException(status_code=502, detail="Property lookup failed. Check Railway logs for details.")
+
+    _save_cache(key, data)
+    return data
+
+
+def _save_cache(key: str, data: dict):
     try:
         supabase = get_supabase_admin()
         supabase.table("property_cache").upsert(
@@ -55,7 +84,6 @@ async def search(body: SearchBody):
         ).execute()
     except Exception:
         pass
-    return data
 
 
 class SearchByCriteriaBody(BaseModel):

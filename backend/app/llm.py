@@ -16,16 +16,34 @@ def _openai_client() -> OpenAI | None:
 
 
 PROPERTY_SYSTEM = """You are a real estate data assistant. Return accurate, consistent property data as JSON.
-Use the same structure every time for the same address. Align with public records and major listing sites when possible.
+Use the same structure every time for the same address. Align with public records and major listing sites (Zillow, Realtor.com, Redfin) when possible.
 Determine if the property is currently listed for sale; set on_market true only if actively for sale, else false.
-Set listing_source (e.g. MLS, Zillow) when on_market is true, else null."""
+Set listing_source (e.g. MLS, Zillow) when on_market is true, else null.
+When provided with verified Google data, USE those exact values for address, city, state, zip, lat, lng, nearby_hospitals, nearby_schools. Only fill in fields not already provided."""
 
 
-async def get_property_by_address_llm(address: str) -> dict | None:
+async def get_property_by_address_llm(address: str, google_data: dict | None = None) -> dict | None:
     client = _openai_client()
     if not client:
         return None
-    prompt = f'For the address "{address}", return JSON with: address, city, state, zip, price (number USD), bedrooms, bathrooms, sqft, year_built, description (2-3 sentences), lat, lng, walk_score (0-100), school_rating, nearby_hospitals, nearby_highways, nearby_schools, on_market (boolean), listing_source (string or null).'
+
+    if google_data:
+        known = json.dumps({k: v for k, v in google_data.items() if v is not None}, indent=2)
+        prompt = (
+            f'For the property at "{address}", I already have these VERIFIED details from Google:\n{known}\n\n'
+            f'Keep ALL of those values exactly as provided. Fill in the remaining fields: '
+            f'price (number USD), bedrooms, bathrooms, sqft, year_built, description (2-3 sentences about the property and neighborhood), '
+            f'walk_score (0-100), school_rating, on_market (boolean), listing_source (string or null). '
+            f'Also fill in nearby_highways if not provided. '
+            f'Return a single JSON object with ALL fields including the ones I provided.'
+        )
+    else:
+        prompt = (
+            f'For the address "{address}", return JSON with: address, city, state, zip, price (number USD), '
+            f'bedrooms, bathrooms, sqft, year_built, description (2-3 sentences), lat, lng, walk_score (0-100), '
+            f'school_rating, nearby_hospitals, nearby_highways, nearby_schools, on_market (boolean), listing_source (string or null).'
+        )
+
     try:
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -36,7 +54,12 @@ async def get_property_by_address_llm(address: str) -> dict | None:
             response_format={"type": "json_object"},
         )
         text = resp.choices[0].message.content
-        return json.loads(text) if text else None
+        result = json.loads(text) if text else None
+        if result and google_data:
+            for k, v in google_data.items():
+                if v is not None:
+                    result[k] = v
+        return result
     except Exception as e:
         logger.error("OpenAI property search failed: %s", e)
         return None

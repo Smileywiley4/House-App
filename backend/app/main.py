@@ -12,7 +12,7 @@ import stripe
 
 from app.config import get_settings
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.include_router(presets.router, prefix="/api/entities")
 app.include_router(property.router, prefix="/api")
 app.include_router(llm.router, prefix="/api/integrations")
 app.include_router(subscription.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 
 @app.post("/api/webhooks/stripe")
@@ -94,6 +95,7 @@ def health():
         "status": "ok",
         "openai_key_set": bool(s.openai_api_key),
         "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
+        "google_places_key_set": bool(s.google_places_api_key),
         "supabase_url_set": bool(s.supabase_url),
         "supabase_service_key_set": bool(s.supabase_service_role_key),
     }

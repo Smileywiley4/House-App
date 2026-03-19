@@ -14,6 +14,11 @@ export default function CategorySlider({ category, onImportanceChange, onScoreCh
               REQUIRED
             </span>
           )}
+          {category.custom && (
+            <span className="text-[10px] font-semibold text-[#8b5cf6] px-2 py-0.5 rounded-full mt-1 inline-block border border-[#8b5cf6]/30">
+              CUSTOM
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">

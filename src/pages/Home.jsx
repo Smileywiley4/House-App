@@ -35,8 +35,10 @@ export default function Home() {
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Hero */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-20 text-center">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 30% 50%, #10b981 0%, transparent 60%), radial-gradient(circle at 70% 20%, #10b981 0%, transparent 50%)" }} />
+        <div className="absolute inset-0">
+          <img src="/hero-banner.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/75" />
+        </div>
         <div className="relative max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-4">
             <HomeIcon className="text-[#10b981]" size={28} />
