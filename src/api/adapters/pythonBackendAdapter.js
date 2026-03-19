@@ -78,6 +78,7 @@ export function createPythonBackendAdapter() {
       search: (address) => request('POST', '/api/property/search', { address }),
       searchByCriteria: (filters, source = 'public') =>
         request('POST', '/api/property/search-by-criteria', { filters, source }),
+      autoscore: (address) => request('POST', '/api/property/autoscore', { address }),
     },
     integrations: {
       invokeLLM: (options) => request('POST', '/api/integrations/llm/invoke', {

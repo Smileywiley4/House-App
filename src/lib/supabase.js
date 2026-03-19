@@ -7,15 +7,23 @@ let _client = null;
 
 export function getSharedSupabase() {
   if (!supabaseUrl || !supabaseAnonKey) return null;
-  if (!_client) _client = createClient(supabaseUrl, supabaseAnonKey);
+  if (!_client) {
+    _client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
+  }
   return _client;
 }
 
 let _sessionReady = null;
 
 /**
- * Wait for Supabase to finish recovering the session from localStorage.
- * Call this before getSession() on page load.
+ * Wait for Supabase to finish recovering the session from localStorage
+ * or from OAuth redirect tokens in the URL hash.
  */
 export function waitForSession() {
   if (_sessionReady) return _sessionReady;
@@ -23,11 +31,19 @@ export function waitForSession() {
   if (!client) return Promise.resolve(null);
   _sessionReady = new Promise((resolve) => {
     let resolved = false;
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+    const done = (session) => {
       if (!resolved) { resolved = true; resolve(session); }
-      subscription.unsubscribe();
+    };
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+      done(session);
     });
-    setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 3000);
+    client.auth.getSession().then(({ data: { session } }) => {
+      if (session) done(session);
+    });
+    setTimeout(() => {
+      done(null);
+      subscription.unsubscribe();
+    }, 5000);
   });
   return _sessionReady;
 }

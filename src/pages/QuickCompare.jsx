@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Plus, X, Trophy, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
+import { Search, MapPin, Plus, X, Trophy, ChevronDown, ChevronUp, BarChart3, Loader2, Check } from "lucide-react";
 import { getPropertyByAddress } from "@/core/propertyService";
 import { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
+import { api } from "@/api";
 
 const DEFAULT_CATEGORIES = () => [
   ...MANDATORY_CATEGORIES.map(c => ({ ...c, importance: 5, score: 5 })),
@@ -17,11 +18,37 @@ function calcScore(cats) {
   return max > 0 ? Math.round((total / max) * 100) : 0;
 }
 
+function loadIncomingProperty() {
+  try {
+    const raw = sessionStorage.getItem("compareProperty");
+    if (!raw) return null;
+    sessionStorage.removeItem("compareProperty");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export default function QuickCompare() {
-  const [panels, setPanels] = useState([
-    { id: 1, address: "", property: null, loading: false, error: null, categories: DEFAULT_CATEGORIES(), expanded: true },
-    { id: 2, address: "", property: null, loading: false, error: null, categories: DEFAULT_CATEGORIES(), expanded: true },
-  ]);
+  const [panels, setPanels] = useState(() => {
+    const incoming = loadIncomingProperty();
+    const panel1 = incoming
+      ? {
+          id: 1,
+          address: incoming.property?.address || "",
+          property: incoming.property,
+          loading: false,
+          error: null,
+          categories: incoming.categories || DEFAULT_CATEGORIES(),
+          expanded: true,
+        }
+      : { id: 1, address: "", property: null, loading: false, error: null, categories: DEFAULT_CATEGORIES(), expanded: true };
+
+    return [
+      panel1,
+      { id: 2, address: "", property: null, loading: false, error: null, categories: DEFAULT_CATEGORIES(), expanded: true },
+    ];
+  });
 
   const updatePanel = (id, updates) => {
     setPanels(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
@@ -61,12 +88,18 @@ export default function QuickCompare() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <div className="bg-[#1a2234] px-6 py-8 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-          <BarChart3 className="inline mr-2 text-[#10b981]" size={28} />
-          Quick Compare
-        </h1>
-        <p className="text-slate-400 text-sm">Search two properties, score them, and see which one wins — no account needed.</p>
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-12 text-center">
+        <div className="absolute inset-0">
+          <img src="/banner-compare.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/70" />
+        </div>
+        <div className="relative">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            <BarChart3 className="inline mr-2 text-[#10b981]" size={28} />
+            Quick Compare
+          </h1>
+          <p className="text-slate-400 text-sm">Search two properties, score them, and see which one wins — no account needed.</p>
+        </div>
       </div>
 
       {bothScored && (
@@ -92,6 +125,16 @@ export default function QuickCompare() {
               onSearch={() => searchProperty(panel.id)}
               onScoreChange={(catId, val) => updateScore(panel.id, catId, val)}
               onImportanceChange={(catId, val) => updateImportance(panel.id, catId, val)}
+              onAutoScoreApply={(scoreUpdates) => {
+                setPanels(prev => prev.map(p =>
+                  p.id === panel.id
+                    ? { ...p, categories: p.categories.map(c => {
+                        const upd = scoreUpdates.find(u => u.id === c.id);
+                        return upd ? { ...c, score: Math.min(10, Math.max(1, upd.score)) } : c;
+                      })}
+                    : p
+                ));
+              }}
               onToggleExpand={() => updatePanel(panel.id, { expanded: !panel.expanded })}
               onClear={() => updatePanel(panel.id, { address: "", property: null, error: null, categories: DEFAULT_CATEGORIES(), expanded: true })}
             />
@@ -114,9 +157,28 @@ function ScoreBadge({ label, score, isWinner }) {
   );
 }
 
-function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearch, onScoreChange, onImportanceChange, onToggleExpand, onClear }) {
+function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearch, onScoreChange, onImportanceChange, onAutoScoreApply, onToggleExpand, onClear }) {
+  const [autoLoading, setAutoLoading] = useState(false);
+  const [autoApplied, setAutoApplied] = useState(false);
+
   const colorClass = score >= 70 ? "text-green-500" : score >= 40 ? "text-[#c9a84c]" : "text-red-500";
   const barColor = score >= 70 ? "#22c55e" : score >= 40 ? "#c9a84c" : "#ef4444";
+
+  const runAutoScore = async () => {
+    if (!panel.property) return;
+    setAutoLoading(true);
+    setAutoApplied(false);
+    try {
+      const addr = [panel.property.address, panel.property.city, panel.property.state].filter(Boolean).join(", ");
+      const data = await api.property.autoscore(addr);
+      if (data?.scores) {
+        const updates = Object.entries(data.scores).map(([id, s]) => ({ id, score: s }));
+        onAutoScoreApply(updates);
+        setAutoApplied(true);
+      }
+    } catch { /* ignore */ }
+    setAutoLoading(false);
+  };
 
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${isWinner ? "border-[#10b981] ring-2 ring-[#10b981]/20" : "border-slate-100"}`}>
@@ -188,6 +250,15 @@ function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearc
                 </div>
               </div>
             </div>
+
+            <button
+              onClick={runAutoScore}
+              disabled={autoLoading}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition disabled:opacity-60"
+            >
+              {autoLoading ? <Loader2 size={13} className="animate-spin" /> : <MapPin size={13} />}
+              {autoLoading ? "Scoring..." : autoApplied ? <><Check size={13} /> Scored — Run Again</> : "Auto-Score with Google"}
+            </button>
           </div>
 
           <div className="px-5 py-3 border-b border-slate-100">
@@ -223,14 +294,10 @@ function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearc
 }
 
 function CompactSlider({ category, onScoreChange, onImportanceChange }) {
-  const pts = category.importance * category.score;
-  const max = category.importance * 10;
-
   return (
     <div className="bg-slate-50 rounded-xl p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2">
         <span className="text-xs font-semibold text-[#1a2234]">{category.label}</span>
-        <span className="text-xs font-bold text-slate-500">{pts}/{max}</span>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

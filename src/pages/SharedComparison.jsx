@@ -117,7 +117,6 @@ function ColumnsView({ comparing, winner, allCategories, getScore }) {
               <div className="text-sm font-bold text-[#1a2234] leading-tight">{p.property_address?.split(",")[0]}</div>
               <div className="text-xs text-slate-400 mt-0.5">{p.property_address?.split(",").slice(1).join(",").trim()}</div>
               <div className="mt-3 text-3xl font-bold" style={{ color: scoreColor(p.percentage) }}>{p.percentage}%</div>
-              <div className="text-[10px] text-slate-400">{p.weighted_total} / {p.max_possible} pts</div>
               <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${p.percentage}%`, backgroundColor: scoreColor(p.percentage) }} />
               </div>
@@ -164,28 +163,23 @@ function CardsView({ comparing, winner }) {
               <p className="text-slate-400 text-xs">{p.property_address?.split(",").slice(1).join(",").trim()}</p>
               <div className="flex items-end gap-2 mt-3">
                 <span className="text-4xl font-bold" style={{ color: scoreColor(p.percentage) }}>{p.percentage}%</span>
-                <span className="text-xs text-slate-400 mb-1">{p.weighted_total}/{p.max_possible} pts</span>
               </div>
               <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${p.percentage}%`, backgroundColor: scoreColor(p.percentage) }} />
               </div>
             </div>
             <div className="px-6 pb-6 pt-2 space-y-2">
-              {(p.scores || []).map(cat => {
-                const pts = cat.importance * cat.score;
-                const max = cat.importance * 10;
-                return (
+              {(p.scores || []).map(cat => (
                   <div key={cat.category_id} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
                     <span className="text-xs text-slate-600">{cat.category_label}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-[#10b981]" style={{ width: `${(cat.score / 10) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-bold text-[#1a2234] w-8 text-right">{pts}/{max}</span>
+                      <span className="text-xs font-bold text-[#1a2234] w-8 text-right">{cat.score}/10</span>
                     </div>
                   </div>
-                );
-              })}
+              ))}
             </div>
           </div>
         );
@@ -225,7 +219,6 @@ function TableView({ comparing, winner, allCategories, getScore }) {
                 return (
                   <td key={p.id} className="px-5 py-3 text-center">
                     <span className={`text-sm font-bold ${best ? "text-[#10b981]" : "text-slate-600"}`}>{s.score}/10</span>
-                    <div className="text-[10px] text-slate-400">wt {s.importance}</div>
                   </td>
                 );
               })}
@@ -236,7 +229,6 @@ function TableView({ comparing, winner, allCategories, getScore }) {
             {comparing.map(p => (
               <td key={p.id} className="px-5 py-4 text-center">
                 <span className="text-lg font-bold" style={{ color: scoreColor(p.percentage) }}>{p.percentage}%</span>
-                <div className="text-[10px] text-slate-400">{p.weighted_total}/{p.max_possible} pts</div>
               </td>
             ))}
           </tr>

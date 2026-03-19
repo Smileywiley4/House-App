@@ -1,4 +1,5 @@
 """Google Maps/Places API integration for verified property data."""
+import math
 import logging
 import httpx
 from app.config import get_settings
@@ -30,6 +31,14 @@ def _parse_address_components(components: list[dict]) -> dict:
     if street:
         out["address"] = street
     return out
+
+
+def _haversine(lat1, lon1, lat2, lon2) -> float:
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 async def geocode_address(address: str) -> dict | None:
@@ -88,13 +97,52 @@ async def find_nearby(lat: float, lng: float, place_type: str, radius: int = 500
         return None
 
 
-def _haversine(lat1, lon1, lat2, lon2) -> float:
-    import math
-    R = 6371
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+async def find_nearest_distance_mi(lat: float, lng: float, place_type: str, radius: int = 16000) -> float | None:
+    """Return distance in miles to the nearest place of a given type, or None."""
+    key = _api_key()
+    if not key:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(NEARBY_URL, params={
+                "location": f"{lat},{lng}",
+                "radius": radius,
+                "type": place_type,
+                "key": key,
+            })
+            data = resp.json()
+        results = data.get("results", [])
+        if not results:
+            return None
+        nearest = results[0]
+        n_loc = nearest.get("geometry", {}).get("location", {})
+        if not n_loc:
+            return None
+        dist_km = _haversine(lat, lng, n_loc["lat"], n_loc["lng"])
+        return round(dist_km * 0.621371, 2)
+    except Exception as e:
+        logger.error("Nearest distance error (%s): %s", place_type, e)
+        return None
+
+
+async def count_nearby(lat: float, lng: float, place_type: str, radius: int = 3000) -> int:
+    """Count the number of places of a given type within radius."""
+    key = _api_key()
+    if not key:
+        return 0
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(NEARBY_URL, params={
+                "location": f"{lat},{lng}",
+                "radius": radius,
+                "type": place_type,
+                "key": key,
+            })
+            data = resp.json()
+        return len(data.get("results", []))
+    except Exception as e:
+        logger.error("Count nearby error (%s): %s", place_type, e)
+        return 0
 
 
 async def get_property_via_google(address: str) -> dict | None:
@@ -127,4 +175,43 @@ async def get_property_via_google(address: str) -> dict | None:
         "nearby_hospitals": nearby_hospitals,
         "nearby_schools": nearby_schools,
         "nearby_highways": nearby_highways,
+    }
+
+
+async def get_autoscore_data(address: str) -> dict | None:
+    """
+    Gather all distance/count data needed for deterministic auto-scoring.
+    Returns raw distances (miles) and counts so scores can be computed without any AI.
+    """
+    geo = await geocode_address(address)
+    if not geo:
+        return None
+    lat, lng = geo.get("lat"), geo.get("lng")
+    if not lat or not lng:
+        return None
+
+    hospital_mi = await find_nearest_distance_mi(lat, lng, "hospital", radius=16000)
+    school_mi = await find_nearest_distance_mi(lat, lng, "school", radius=8000)
+    transit_mi = await find_nearest_distance_mi(lat, lng, "transit_station", radius=8000)
+    grocery_mi = await find_nearest_distance_mi(lat, lng, "grocery_or_supermarket", radius=8000)
+    park_mi = await find_nearest_distance_mi(lat, lng, "park", radius=5000)
+    police_mi = await find_nearest_distance_mi(lat, lng, "police", radius=16000)
+    fire_mi = await find_nearest_distance_mi(lat, lng, "fire_station", radius=16000)
+
+    restaurants_count = await count_nearby(lat, lng, "restaurant", radius=1600)
+    stores_count = await count_nearby(lat, lng, "store", radius=1600)
+
+    return {
+        "formatted_address": geo.get("formatted_address"),
+        "lat": lat,
+        "lng": lng,
+        "hospital_mi": hospital_mi,
+        "school_mi": school_mi,
+        "transit_mi": transit_mi,
+        "grocery_mi": grocery_mi,
+        "park_mi": park_mi,
+        "police_mi": police_mi,
+        "fire_mi": fire_mi,
+        "restaurants_count": restaurants_count,
+        "stores_count": stores_count,
     }

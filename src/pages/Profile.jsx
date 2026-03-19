@@ -56,7 +56,7 @@ function ProfileInner() {
       const savedW = u.default_weights || {};
       const initial = {};
       ALL_CATEGORIES.forEach(c => {
-        initial[c.id] = savedW[c.id] !== undefined ? savedW[c.id] : (c.mandatory ? 7 : c.neighborhood ? 6 : 5);
+        initial[c.id] = savedW[c.id] !== undefined ? savedW[c.id] : 5;
       });
       setWeights(initial);
     });
@@ -109,7 +109,7 @@ function ProfileInner() {
     const w = p.weights || {};
     const next = {};
     ALL_CATEGORIES.forEach(c => {
-      next[c.id] = w[c.id] !== undefined ? w[c.id] : (c.mandatory ? 7 : c.neighborhood ? 6 : 5);
+      next[c.id] = w[c.id] !== undefined ? w[c.id] : 5;
     });
     setWeights(next);
     setPresetFilters(p.filters || {});
@@ -127,8 +127,12 @@ function ProfileInner() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="bg-[#1a2234] px-6 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
+        <div className="absolute inset-0">
+          <img src="/banner-evaluate.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/75" />
+        </div>
+        <div className="relative max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-[#10b981]/20 flex items-center justify-center">
               <User size={26} className="text-[#10b981]" />

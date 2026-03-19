@@ -1,39 +1,23 @@
 import { X } from "lucide-react";
 
 export default function CategorySlider({ category, onImportanceChange, onScoreChange, onRemove }) {
-  const pointsEarned = category.importance * category.score;
-  const pointsPossible = category.importance * 10;
-
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="font-semibold text-[#1a2234] text-sm">{category.label}</h3>
-          {category.mandatory && (
-            <span className="text-[10px] font-semibold text-[#c9a84c] px-2 py-0.5 rounded-full mt-1 inline-block border border-[#c9a84c]/30">
-              REQUIRED
-            </span>
-          )}
           {category.custom && (
             <span className="text-[10px] font-semibold text-[#8b5cf6] px-2 py-0.5 rounded-full mt-1 inline-block border border-[#8b5cf6]/30">
               CUSTOM
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xs text-slate-400">Points</div>
-            <div className="text-sm font-bold text-[#1a2234]">{pointsEarned} / {pointsPossible}</div>
-          </div>
-          {!category.mandatory && (
-            <button
-              onClick={() => onRemove(category.id)}
-              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-400 flex items-center justify-center transition-colors"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
+        <button
+          onClick={() => onRemove(category.id)}
+          className="w-7 h-7 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-400 flex items-center justify-center transition-colors"
+        >
+          <X size={14} />
+        </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

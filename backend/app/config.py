@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     stripe_premium_price_id: str = ""
     stripe_realtor_price_id: str = ""
     openai_api_key: str = ""
+    anthropic_api_key: str = ""
     google_places_api_key: str = ""
+    google_cse_id: str = ""
     cors_origins: str = "http://localhost:5173"
     port: int = 8000
 

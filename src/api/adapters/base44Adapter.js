@@ -37,6 +37,7 @@ export const base44Adapter = {
   property: {
     search: undefined,
     searchByCriteria: () => Promise.resolve({ source: 'public', properties: [] }),
+    autoscore: () => Promise.resolve({ scores: {} }),
   },
   integrations: {
     invokeLLM: (options) => base44.integrations.Core.InvokeLLM(options),

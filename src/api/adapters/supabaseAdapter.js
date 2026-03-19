@@ -265,6 +265,7 @@ export function createSupabaseAdapter() {
     },
     property: {
       search: undefined,
+      autoscore: () => Promise.resolve({ scores: {} }),
       searchByCriteria: async (filters, source = 'public') => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { source, properties: [] };

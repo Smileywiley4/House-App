@@ -75,8 +75,12 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="bg-[#1a2234] px-6 py-16 text-center">
-        <div className="max-w-2xl mx-auto">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-16 text-center">
+        <div className="absolute inset-0">
+          <img src="/banner-pricing.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/70" />
+        </div>
+        <div className="relative max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-[#10b981]/15 text-[#10b981] text-xs font-bold px-4 py-2 rounded-full mb-6 border border-[#10b981]/20">
             <Zap size={12} /> Simple, transparent pricing
           </div>

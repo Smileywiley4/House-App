@@ -1,8 +1,8 @@
 
 export const MANDATORY_CATEGORIES = [
-  { id: "hospital_distance", label: "Distance to Hospital", mandatory: true },
-  { id: "highway_access", label: "Highway Access", mandatory: true },
-  { id: "schools", label: "Schools", mandatory: true },
+  { id: "hospital_distance", label: "Distance to Hospital" },
+  { id: "highway_access", label: "Highway Access" },
+  { id: "schools", label: "Schools" },
 ];
 
 // Neighborhood categories — auto-added to score sheet

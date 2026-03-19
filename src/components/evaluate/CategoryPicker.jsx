@@ -3,9 +3,9 @@ import { X, Search, Plus, PenLine } from "lucide-react";
 import { trackCustomCategory } from "@/core/customCategoryTracker";
 
 export const MANDATORY_CATEGORIES = [
-  { id: "hospital_distance", label: "Distance to Hospital", mandatory: true },
-  { id: "highway_access", label: "Highway Access", mandatory: true },
-  { id: "schools", label: "Schools", mandatory: true },
+  { id: "hospital_distance", label: "Distance to Hospital" },
+  { id: "highway_access", label: "Highway Access" },
+  { id: "schools", label: "Schools" },
 ];
 
 export const OPTIONAL_CATEGORIES = [
@@ -51,7 +51,8 @@ export default function CategoryPicker({ activeIds, onAdd, onClose }) {
   const [customMode, setCustomMode] = useState(false);
   const [customName, setCustomName] = useState("");
 
-  const filtered = OPTIONAL_CATEGORIES.filter(
+  const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...OPTIONAL_CATEGORIES];
+  const filtered = ALL_CATEGORIES.filter(
     c => !activeIds.includes(c.id) && c.label.toLowerCase().includes(query.toLowerCase())
   );
 

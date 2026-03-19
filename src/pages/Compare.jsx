@@ -46,8 +46,12 @@ function CompareInner() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <div className="bg-[#1a2234] px-6 py-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
+        <div className="absolute inset-0">
+          <img src="/banner-login.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/75" />
+        </div>
+        <div className="relative max-w-5xl mx-auto">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
             <ChevronLeft size={16} /> Back to Search
           </Link>
@@ -101,8 +105,6 @@ function CompareInner() {
 }
 
 function PropertyScoreCard({ property, rank, isWinner, onDelete }) {
-  const [expanded, setExpanded] = useState(false);
-
   const scoreColor = property.percentage >= 70 ? "#10b981" : property.percentage >= 40 ? "#f59e0b" : "#ef4444";
 
   return (
@@ -125,7 +127,6 @@ function PropertyScoreCard({ property, rank, isWinner, onDelete }) {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-3xl font-bold" style={{ color: scoreColor }}>{property.percentage}%</div>
-              <div className="text-xs text-slate-400">{property.weighted_total} / {property.max_possible} pts</div>
             </div>
             <button
               onClick={() => onDelete(property.id)}
@@ -143,34 +144,6 @@ function PropertyScoreCard({ property, rank, isWinner, onDelete }) {
             style={{ width: `${property.percentage}%`, backgroundColor: scoreColor }}
           />
         </div>
-
-        {/* Expand button */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="mt-3 text-xs text-slate-400 hover:text-[#10b981] transition-colors font-medium"
-        >
-          {expanded ? "Hide breakdown ↑" : "Show breakdown ↓"}
-        </button>
-
-        {/* Category breakdown */}
-        {expanded && property.scores?.length > 0 && (
-          <div className="mt-4 grid md:grid-cols-2 gap-2">
-            {property.scores.map(cat => {
-              const pts = cat.importance * cat.score;
-              const max = cat.importance * 10;
-              const pct = max > 0 ? (pts / max) * 100 : 0;
-              return (
-                <div key={cat.category_id} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-slate-50">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-[#1a2234] truncate">{cat.category_label}</div>
-                    <div className="text-[10px] text-slate-400">Importance: {cat.importance} · Score: {cat.score}</div>
-                  </div>
-                  <div className="text-xs font-bold text-slate-500 whitespace-nowrap">{pts}/{max}pts</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

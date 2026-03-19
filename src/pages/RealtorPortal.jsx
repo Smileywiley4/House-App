@@ -67,8 +67,12 @@ function RealtorPortalInner() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="bg-[#1a2234] px-6 py-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
+        <div className="absolute inset-0">
+          <img src="/banner-compare.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/75" />
+        </div>
+        <div className="relative max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-[#10b981]/20 flex items-center justify-center">
               <Building2 size={20} className="text-[#10b981]" />

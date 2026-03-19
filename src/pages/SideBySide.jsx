@@ -67,8 +67,12 @@ function SideBySideInner() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="bg-[#1a2234] px-6 py-6 sticky top-14 z-30">
-        <div className="max-w-6xl mx-auto">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6 sticky top-14 z-30">
+        <div className="absolute inset-0">
+          <img src="/banner-pricing.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/80" />
+        </div>
+        <div className="relative max-w-6xl mx-auto">
           <Link to={createPageUrl("Compare")} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-4 transition">
             <ChevronLeft size={16} /> Back to Properties
           </Link>
@@ -170,7 +174,6 @@ function ColumnsView({ comparing, winner, allCategories, getScore, scoreColor })
               <div className="text-sm font-bold text-[#1a2234] leading-tight">{p.property_address?.split(",")[0]}</div>
               <div className="text-xs text-slate-400 mt-0.5">{p.property_address?.split(",").slice(1).join(",").trim()}</div>
               <div className="mt-3 text-3xl font-bold" style={{ color: scoreColor(p.percentage) }}>{p.percentage}%</div>
-              <div className="text-[10px] text-slate-400">{p.weighted_total} / {p.max_possible} pts</div>
               <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${p.percentage}%`, backgroundColor: scoreColor(p.percentage) }} />
               </div>
@@ -192,9 +195,6 @@ function ColumnsView({ comparing, winner, allCategories, getScore, scoreColor })
             {comparing.map(p => {
               const s = getScore(p, cat.id);
               if (!s) return <div key={p.id} className="text-center text-slate-300 text-sm">—</div>;
-              const pts = s.importance * s.score;
-              const max = s.importance * 10;
-              const pct = max > 0 ? (pts / max) * 100 : 0;
               const best = comparing.every(op => {
                 const os = getScore(op, cat.id);
                 if (!os) return true;
@@ -205,10 +205,6 @@ function ColumnsView({ comparing, winner, allCategories, getScore, scoreColor })
                   <div className={`text-xl font-bold ${best ? "text-[#10b981]" : "text-[#1a2234]"}`}>
                     {s.score}<span className="text-xs text-slate-400">/10</span>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: best ? "#10b981" : "#94a3b8" }} />
-                  </div>
-                  <div className="text-[10px] text-slate-400">wt: {s.importance} · {pts}pts</div>
                 </div>
               );
             })}
@@ -237,28 +233,23 @@ function CardsView({ comparing, winner, allCategories, getScore, scoreColor }) {
               <p className="text-slate-400 text-xs">{p.property_address?.split(",").slice(1).join(",").trim()}</p>
               <div className="flex items-end gap-2 mt-3">
                 <span className="text-4xl font-bold" style={{ color: scoreColor(p.percentage) }}>{p.percentage}%</span>
-                <span className="text-xs text-slate-400 mb-1">{p.weighted_total}/{p.max_possible} pts</span>
               </div>
               <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${p.percentage}%`, backgroundColor: scoreColor(p.percentage) }} />
               </div>
             </div>
             <div className="px-6 pb-6 pt-2 space-y-2">
-              {(p.scores || []).map(cat => {
-                const pts = cat.importance * cat.score;
-                const max = cat.importance * 10;
-                return (
+              {(p.scores || []).map(cat => (
                   <div key={cat.category_id} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
                     <span className="text-xs text-slate-600">{cat.category_label}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-[#10b981]" style={{ width: `${(cat.score / 10) * 100}%` }} />
                       </div>
-                      <span className="text-xs font-bold text-[#1a2234] w-8 text-right">{pts}/{max}</span>
+                      <span className="text-xs font-bold text-[#1a2234] w-8 text-right">{cat.score}/10</span>
                     </div>
                   </div>
-                );
-              })}
+              ))}
             </div>
           </div>
         );
@@ -301,7 +292,6 @@ function TableView({ comparing, winner, allCategories, getScore, scoreColor }) {
                 return (
                   <td key={p.id} className="px-5 py-3 text-center">
                     <span className={`text-sm font-bold ${best ? "text-[#10b981]" : "text-slate-600"}`}>{s.score}/10</span>
-                    <div className="text-[10px] text-slate-400">wt {s.importance}</div>
                   </td>
                 );
               })}
@@ -313,7 +303,6 @@ function TableView({ comparing, winner, allCategories, getScore, scoreColor }) {
             {comparing.map(p => (
               <td key={p.id} className="px-5 py-4 text-center">
                 <span className="text-lg font-bold" style={{ color: scoreColor(p.percentage) }}>{p.percentage}%</span>
-                <div className="text-[10px] text-slate-400">{p.weighted_total}/{p.max_possible} pts</div>
               </td>
             ))}
           </tr>

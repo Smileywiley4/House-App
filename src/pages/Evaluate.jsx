@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ChevronLeft, Plus, X, Save, BarChart3, LogIn } from "lucide-react";
+import { ChevronLeft, Plus, X, Save, BarChart3, LogIn, Columns } from "lucide-react";
 import { api } from "@/api";
 import CategorySlider from "@/components/evaluate/CategorySlider.jsx";
 import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker.jsx";
 import AIAutoScore from "@/components/ai/AIAutoScore.jsx";
+import GoogleAutoScore from "@/components/evaluate/GoogleAutoScore.jsx";
 import { PremiumGate } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
@@ -13,6 +14,7 @@ import { useAuth } from "@/lib/AuthContext";
 
 export default function Evaluate() {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const property = {
     address: params.get("address") || "Unknown Address",
@@ -54,8 +56,6 @@ export default function Evaluate() {
   };
 
   const removeCategory = (id) => {
-    const cat = activeCategories.find(c => c.id === id);
-    if (cat?.mandatory) return;
     setActiveCategories(prev => prev.filter(c => c.id !== id));
   };
 
@@ -70,6 +70,33 @@ export default function Evaluate() {
   const weightedTotal = activeCategories.reduce((sum, c) => sum + c.importance * c.score, 0);
   const maxPossible = activeCategories.reduce((sum, c) => sum + c.importance * 10, 0);
   const percentage = maxPossible > 0 ? Math.round((weightedTotal / maxPossible) * 100) : 0;
+
+  const sendToCompare = () => {
+    const payload = {
+      property: {
+        address: property.address,
+        city: property.city,
+        state: property.state,
+        zip: "",
+        price: property.price,
+        bedrooms: property.beds,
+        bathrooms: property.baths,
+        sqft: property.sqft,
+        year_built: property.year,
+      },
+      categories: activeCategories.map(c => ({
+        id: c.id,
+        label: c.label,
+        importance: c.importance,
+        score: c.score,
+        mandatory: c.mandatory || false,
+        neighborhood: c.neighborhood || false,
+        custom: c.custom || false,
+      })),
+    };
+    sessionStorage.setItem("compareProperty", JSON.stringify(payload));
+    navigate(createPageUrl("QuickCompare"));
+  };
 
   const saveScore = async () => {
     setSaving(true);
@@ -92,8 +119,12 @@ export default function Evaluate() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="bg-[#1a2234] px-6 py-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6">
+        <div className="absolute inset-0">
+          <img src="/banner-evaluate.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#1a2234]/75" />
+        </div>
+        <div className="relative max-w-4xl mx-auto">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
             <ChevronLeft size={16} /> Back to Search
           </Link>
@@ -123,7 +154,6 @@ export default function Evaluate() {
             <div className="h-12 w-px bg-slate-100" />
             <div className="text-sm text-slate-500">
             <span className="font-semibold text-[#1a2234]">{activeCategories.length}</span> categories
-            <div className="text-xs mt-0.5 text-slate-400">Weighted by importance</div>
             </div>
             <div className="flex-1 max-w-xs">
               <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -149,6 +179,12 @@ export default function Evaluate() {
               className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-[#1a2234] font-semibold rounded-xl hover:bg-slate-50 transition-colors text-sm border-[#10b981]/30"
             >
               <Plus size={15} /> Add Category
+            </button>
+            <button
+              onClick={sendToCompare}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm"
+            >
+              <Columns size={15} /> Compare
             </button>
             {isAuthenticated ? (
               saved ? (
@@ -180,8 +216,22 @@ export default function Evaluate() {
         </div>
       </div>
 
-      {/* AI Auto-Score (Premium) */}
+      {/* Google Auto-Score (free, deterministic) */}
       <div className="max-w-4xl mx-auto px-6 pt-6">
+        <GoogleAutoScore
+          address={`${property.address}, ${property.city}, ${property.state}`}
+          categories={activeCategories}
+          onApplyScores={(scores) => {
+            setActiveCategories(prev => prev.map(cat => {
+              const s = scores.find(x => x.id === cat.id);
+              return s ? { ...cat, score: Math.min(10, Math.max(1, s.score)) } : cat;
+            }));
+          }}
+        />
+      </div>
+
+      {/* AI Auto-Score (Premium) */}
+      <div className="max-w-4xl mx-auto px-6 pt-4">
         <PremiumGate featureName="AI Auto-Score">
           <AIAutoScore
             property={property}
@@ -198,27 +248,16 @@ export default function Evaluate() {
 
       {/* Categories */}
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-4">
-        {/* Mandatory */}
-        <div className="mb-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Mandatory Categories</span>
-        </div>
-        {activeCategories.filter(c => c.mandatory).map(cat => (
-          <CategorySlider
-            key={cat.id}
-            category={cat}
-            onImportanceChange={updateImportance}
-            onScoreChange={updateScore}
-            onRemove={removeCategory}
-          />
-        ))}
+        {activeCategories.length === 0 && (
+          <div className="text-center py-10 text-slate-400">
+            <p className="text-sm font-medium mb-1">No categories added yet</p>
+            <p className="text-xs">Add categories below to start scoring this property.</p>
+          </div>
+        )}
 
-        {/* Neighborhood */}
-        {activeCategories.filter(c => c.neighborhood).length > 0 && (
+        {activeCategories.filter(c => !c.custom).length > 0 && (
           <>
-            <div className="mt-6 mb-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Neighborhood</span>
-            </div>
-            {activeCategories.filter(c => c.neighborhood).map(cat => (
+            {activeCategories.filter(c => !c.custom).map(cat => (
               <CategorySlider
                 key={cat.id}
                 category={cat}
@@ -230,13 +269,12 @@ export default function Evaluate() {
           </>
         )}
 
-        {/* Custom */}
-        {activeCategories.filter(c => !c.mandatory && !c.neighborhood).length > 0 && (
+        {activeCategories.filter(c => c.custom).length > 0 && (
           <>
             <div className="mt-6 mb-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Your Categories</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Custom Categories</span>
             </div>
-            {activeCategories.filter(c => !c.mandatory && !c.neighborhood).map(cat => (
+            {activeCategories.filter(c => c.custom).map(cat => (
               <CategorySlider
                 key={cat.id}
                 category={cat}

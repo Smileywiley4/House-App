@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { api } from '@/api';
-import { waitForSession } from '@/lib/supabase';
+import { waitForSession, getSharedSupabase } from '@/lib/supabase';
 
 const usePythonBackend = import.meta.env.VITE_USE_PYTHON_BACKEND === 'true';
 const useSupabase = import.meta.env.VITE_USE_SUPABASE === 'true';
@@ -13,9 +13,28 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const authChecked = useRef(false);
 
   useEffect(() => {
     checkAppState();
+
+    const client = getSharedSupabase();
+    if (!client) return;
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session && !authChecked.current) {
+        authChecked.current = true;
+        checkUserAuth();
+      }
+      if (event === 'SIGNED_OUT') {
+        authChecked.current = false;
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+      if (event === 'TOKEN_REFRESHED' && session) {
+        authChecked.current = true;
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkAppState = async () => {
@@ -24,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     if (usePythonBackend || useSupabase) {
       const session = await waitForSession();
       if (session) {
+        authChecked.current = true;
         await checkUserAuth();
       } else {
         setIsAuthenticated(false);

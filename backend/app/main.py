@@ -90,12 +90,17 @@ async def stripe_webhook(request: Request):
 
 @app.get("/health")
 def health():
+    from app.llm import active_provider
     s = get_settings()
     return {
         "status": "ok",
+        "llm_provider": active_provider(),
+        "anthropic_key_set": bool(s.anthropic_api_key),
+        "anthropic_key_prefix": s.anthropic_api_key[:12] + "..." if s.anthropic_api_key else None,
         "openai_key_set": bool(s.openai_api_key),
         "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
         "google_places_key_set": bool(s.google_places_api_key),
+        "google_cse_id_set": bool(s.google_cse_id),
         "supabase_url_set": bool(s.supabase_url),
         "supabase_service_key_set": bool(s.supabase_service_role_key),
     }
