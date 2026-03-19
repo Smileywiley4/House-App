@@ -6,8 +6,17 @@ import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { ForSaleBadge } from "@/components/ForSaleBadge";
+import RequireAuth from "@/components/RequireAuth";
 
 export default function SearchByPreset() {
+  return (
+    <RequireAuth message="Sign in to search by your saved presets">
+      <SearchByPresetInner />
+    </RequireAuth>
+  );
+}
+
+function SearchByPresetInner() {
   const [searchParams] = useSearchParams();
   const clientId = searchParams.get("client_id");
   const presetId = searchParams.get("preset_id");

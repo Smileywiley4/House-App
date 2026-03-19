@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Star, BarChart3, ChevronRight, Home as HomeIcon } from "lucide-react";
+import { Search, MapPin, Star, BarChart3, ChevronRight, Home as HomeIcon, LogIn } from "lucide-react";
 import { getPropertyByAddress } from "@/core/propertyService";
 import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
 import { ForSaleBadge } from "@/components/ForSaleBadge";
 import { AdSlot } from "@/components/AdSlot";
 import { PremiumGate } from "@/components/PremiumGate";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Home() {
   const [address, setAddress] = useState("");
@@ -114,12 +115,7 @@ export default function Home() {
           </div>
 
           <div className="mt-10 text-center">
-            <Link
-              to={createPageUrl("Compare")}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
-            >
-              View My Saved Properties <ChevronRight size={16} />
-            </Link>
+            <AuthAwareLink />
           </div>
         </div>
       )}
@@ -127,7 +123,31 @@ export default function Home() {
   );
 }
 
+function AuthAwareLink() {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    return (
+      <Link
+        to={createPageUrl("Compare")}
+        className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
+      >
+        View My Saved Properties <ChevronRight size={16} />
+      </Link>
+    );
+  }
+  return (
+    <Link
+      to="/login"
+      className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] text-white font-semibold rounded-xl hover:bg-[#059669] transition-colors"
+    >
+      <LogIn size={16} />
+      Sign In to Save & Compare Properties
+    </Link>
+  );
+}
+
 function PropertyCard({ property }) {
+  const { isAuthenticated } = useAuth();
   const fmt = (n) => n?.toLocaleString() ?? "—";
 
   return (
@@ -193,13 +213,23 @@ function PropertyCard({ property }) {
           <AIPropertyInsights property={property} />
         </PremiumGate>
 
-        <Link
-          to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
-          className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
-        >
-          <Star size={18} />
-          Score This Property
-        </Link>
+        {isAuthenticated ? (
+          <Link
+            to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
+            className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
+          >
+            <Star size={18} />
+            Score This Property
+          </Link>
+        ) : (
+          <Link
+            to="/login"
+            className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
+          >
+            <LogIn size={18} />
+            Sign In to Score & Save
+          </Link>
+        )}
       </div>
     </div>
   );

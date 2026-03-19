@@ -8,9 +8,18 @@ import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/Cate
 import AIAutoScore from "@/components/ai/AIAutoScore.jsx";
 import { PremiumGate } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
+import RequireAuth from "@/components/RequireAuth";
 import PresetPicker from "@/components/presets/PresetPicker";
 
 export default function Evaluate() {
+  return (
+    <RequireAuth message="Sign in to score and save properties">
+      <EvaluateInner />
+    </RequireAuth>
+  );
+}
+
+function EvaluateInner() {
   const params = new URLSearchParams(window.location.search);
   const property = {
     address: params.get("address") || "Unknown Address",

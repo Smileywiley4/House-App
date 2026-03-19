@@ -26,7 +26,7 @@ class SearchBody(BaseModel):
 
 
 @router.post("/search")
-async def search(body: SearchBody, user_id: str = Depends(get_current_user_id)):
+async def search(body: SearchBody):
     address = (body.address or "").strip()
     if not address:
         return {"error": "Address is required"}

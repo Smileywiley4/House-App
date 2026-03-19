@@ -5,6 +5,7 @@ import { ChevronLeft, Trophy, LayoutGrid, Columns, Table, Lock } from "lucide-re
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import ShareComparison from "@/components/ShareComparison";
+import RequireAuth from "@/components/RequireAuth";
 
 // View mode toggle options
 const VIEW_MODES = [
@@ -14,6 +15,14 @@ const VIEW_MODES = [
 ];
 
 export default function SideBySide() {
+  return (
+    <RequireAuth message="Sign in to compare properties side by side">
+      <SideBySideInner />
+    </RequireAuth>
+  );
+}
+
+function SideBySideInner() {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("columns");

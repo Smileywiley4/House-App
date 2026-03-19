@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search } from "lucide-react";
+import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
+import { useAuth } from "@/lib/AuthContext";
 
 const t = {
   accent: "#10b981",
@@ -13,15 +14,21 @@ const t = {
 };
 
 export default function Layout({ children, currentPageName }) {
-  const navItems = [
-    { name: "Home", label: "Search", icon: Home },
+  const { isAuthenticated } = useAuth();
+
+  const allNavItems = [
+    { name: "Home", label: "Search", icon: Home, public: true },
     { name: "SearchByPreset", label: "Find by Preset", icon: Search },
     { name: "Compare", label: "Properties", icon: BarChart3 },
     { name: "SideBySide", label: "Compare", icon: Columns },
     { name: "RealtorPortal", label: "Realtors", icon: Building2 },
-    { name: "Pricing", label: "Pricing", icon: Zap },
+    { name: "Pricing", label: "Pricing", icon: Zap, public: true },
     { name: "Profile", label: "Profile", icon: UserCircle },
   ];
+
+  const navItems = isAuthenticated
+    ? allNavItems
+    : allNavItems.filter(i => i.public);
 
   return (
     <div className="min-h-screen bg-[#fafaf8] flex flex-col">
@@ -97,6 +104,25 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             );
           })}
+
+          {isAuthenticated ? (
+            <Link
+              to={createPageUrl("Profile")}
+              className="flex items-center gap-1.5 ml-3 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+            >
+              <UserCircle size={15} />
+              Account
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-1.5 ml-3 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
+              style={{ backgroundColor: t.accent, color: "white" }}
+            >
+              <LogIn size={15} />
+              Sign In
+            </Link>
+          )}
         </nav>
       </header>
 

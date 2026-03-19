@@ -4,8 +4,17 @@ import { createPageUrl } from "@/utils";
 import { ChevronLeft, Trash2, Trophy, Home as HomeIcon, Plus } from "lucide-react";
 import { api } from "@/api";
 import ShareComparison from "@/components/ShareComparison";
+import RequireAuth from "@/components/RequireAuth";
 
 export default function Compare() {
+  return (
+    <RequireAuth message="Sign in to view and manage your saved properties">
+      <CompareInner />
+    </RequireAuth>
+  );
+}
+
+function CompareInner() {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
 

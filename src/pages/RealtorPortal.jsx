@@ -8,11 +8,20 @@ import {
 import { api } from "@/api";
 import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
 import AIListingDescription from "@/components/ai/AIListingDescription";
+import RequireAuth from "@/components/RequireAuth";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 
 const TABS = ["Profile", "Clients", "Private Listings"];
 
 export default function RealtorPortal() {
+  return (
+    <RequireAuth message="Sign in with a Realtor subscription to access the portal">
+      <RealtorPortalInner />
+    </RequireAuth>
+  );
+}
+
+function RealtorPortalInner() {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("Profile");
   const [clients, setClients] = useState([]);

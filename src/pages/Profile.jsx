@@ -8,6 +8,7 @@ import { MANDATORY_CATEGORIES, OPTIONAL_CATEGORIES, NEIGHBORHOOD_CATEGORIES } fr
 import RecommendationEngine from "@/components/profile/RecommendationEngine";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { PremiumGate } from "@/components/PremiumGate";
+import RequireAuth from "@/components/RequireAuth";
 
 const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...NEIGHBORHOOD_CATEGORIES, ...OPTIONAL_CATEGORIES];
 const TABS = [
@@ -19,6 +20,14 @@ const TABS = [
 ];
 
 export default function Profile() {
+  return (
+    <RequireAuth message="Sign in to manage your profile, preferences, and saved presets">
+      <ProfileInner />
+    </RequireAuth>
+  );
+}
+
+function ProfileInner() {
   const { plan, isPremium } = usePlan();
   const [tab, setTab] = useState("account");
   const [user, setUser] = useState(null);

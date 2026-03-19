@@ -22,10 +22,12 @@ export function waitForSession() {
   const client = getSharedSupabase();
   if (!client) return Promise.resolve(null);
   _sessionReady = new Promise((resolve) => {
+    let resolved = false;
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      resolve(session);
+      if (!resolved) { resolved = true; resolve(session); }
       subscription.unsubscribe();
     });
+    setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 3000);
   });
   return _sessionReady;
 }
