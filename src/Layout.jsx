@@ -3,6 +3,7 @@ import { createPageUrl } from "@/utils";
 import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { useAuth } from "@/lib/AuthContext";
+import SearchBarTop from "@/components/SearchBarTop";
 
 const t = {
   accent: "#10b981",
@@ -77,16 +78,18 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       {/* Top nav */}
-      <header className="bg-[#1a2234] border-b border-white/5 px-6 h-14 flex items-center justify-between sticky top-0 z-40">
-        <Link to={createPageUrl("Home")} className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: t.accent }}>
-            <Home size={14} className="text-white" />
-          </div>
-          <span className="font-bold text-white tracking-tight text-base">{t.label}</span>
-          <span className="ml-0.5 text-[10px] font-bold" style={{ color: t.gold }}>✦</span>
-        </Link>
+      <header className="bg-[#1a2234] border-b border-white/5 px-4 sm:px-6 py-2 sticky top-0 z-40">
+        <div className="flex items-center justify-between gap-4">
+          <Link to={createPageUrl("Home")} className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: t.accent }}>
+              <Home size={14} className="text-white" />
+            </div>
+            <span className="font-bold text-white tracking-tight text-base">{t.label}</span>
+            <span className="ml-0.5 text-[10px] font-bold" style={{ color: t.gold }}>✦</span>
+          </Link>
+        </div>
 
-        <nav className="flex items-center gap-1">
+        <nav className="mt-2 flex items-center gap-1 flex-nowrap overflow-x-auto whitespace-nowrap pb-1">
           {navItems.map(({ name, label, icon: Icon }) => {
             const active = currentPageName === name;
             return (
@@ -94,9 +97,7 @@ export default function Layout({ children, currentPageName }) {
                 key={name}
                 to={createPageUrl(name)}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "text-white"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                  active ? "text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
                 style={active ? { backgroundColor: t.accent + "20", color: t.accent } : {}}
               >
@@ -109,7 +110,7 @@ export default function Layout({ children, currentPageName }) {
           {isAuthenticated ? (
             <Link
               to={createPageUrl("Profile")}
-              className="flex items-center gap-1.5 ml-3 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-1.5 ml-1 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all"
             >
               <UserCircle size={15} />
               Account
@@ -117,7 +118,7 @@ export default function Layout({ children, currentPageName }) {
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-1.5 ml-3 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
+              className="flex items-center gap-1.5 ml-1 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
               style={{ backgroundColor: t.accent, color: "white" }}
             >
               <LogIn size={15} />
@@ -125,6 +126,10 @@ export default function Layout({ children, currentPageName }) {
             </Link>
           )}
         </nav>
+
+        <div className="mt-2">
+          <SearchBarTop />
+        </div>
       </header>
 
       <main className="flex-1">

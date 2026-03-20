@@ -19,6 +19,13 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [oauthLoading, setOauthLoading] = useState(false);
 
+  // Forgot password flow (sends a reset link email; never sends passwords)
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+
   const supabase = getSupabase();
   const isSupabaseAuth = !!supabase;
 
@@ -50,6 +57,35 @@ export default function Login() {
       setError(err.message || "Sign in failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!supabase) return;
+
+    setForgotError("");
+    setForgotSent(false);
+
+    const targetEmail = (forgotEmail || "").trim();
+    if (!targetEmail) {
+      setForgotError("Please enter your email address.");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      // After reset, Supabase will redirect back to this page.
+      const redirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`;
+      const { error: err } = await supabase.auth.resetPasswordForEmail(targetEmail, { redirectTo });
+      if (err) throw err;
+      setForgotSent(true);
+    } catch (err) {
+      // Defensive UX: do not reveal whether an email exists (prevents account enumeration).
+      setForgotError("");
+      setForgotSent(true);
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -144,54 +180,126 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
-                  required
-                />
+          {!forgotMode ? (
+            <>
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Email</label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Password</label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSignUp}
+                    disabled={loading}
+                    className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Sign up
+                  </button>
+                </div>
+              </form>
+
+              <div className="mt-4 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotMode(true);
+                    setForgotSent(false);
+                    setForgotError("");
+                    setForgotLoading(false);
+                    setForgotEmail(email);
+                    setError("");
+                    setMessage("");
+                  }}
+                  className="text-xs font-semibold text-[#10b981] hover:underline"
+                >
+                  Forgot password?
+                </button>
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
-                  required
-                />
+            </>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Email</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
-              >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-                Sign in
-              </button>
-              <button
-                type="button"
-                onClick={handleSignUp}
-                disabled={loading}
-                className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 disabled:opacity-60"
-              >
-                Sign up
-              </button>
-            </div>
-          </form>
+
+              {forgotError && (
+                <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 rounded-xl p-3">
+                  <AlertCircle size={16} />
+                  {forgotError}
+                </div>
+              )}
+
+              {forgotSent ? (
+                <div className="text-[#10b981] text-sm bg-[#10b981]/10 rounded-xl p-3">
+                  If an account exists for that email, we emailed you a password reset link. Check your inbox (and spam folder).
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
+                >
+                  {forgotLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+                  Send reset link
+                </button>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForgotMode(false)}
+                  disabled={forgotLoading}
+                  className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 disabled:opacity-60"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </form>
+          )}
 
           <div className="mt-6 pt-6 border-t border-slate-100">
             <button

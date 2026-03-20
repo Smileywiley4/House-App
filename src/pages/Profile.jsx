@@ -36,8 +36,18 @@ function ProfileInner() {
   const [loadingScores, setLoadingScores] = useState(true);
 
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [realtorLicense, setRealtorLicense] = useState("");
+  const [brokerage, setBrokerage] = useState("");
+  const [stateVal, setStateVal] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordSaved, setPasswordSaved] = useState(false);
 
   // Weights: 0–10 per category
   const [weights, setWeights] = useState({});
@@ -53,6 +63,10 @@ function ProfileInner() {
     api.auth.me().then(u => {
       setUser(u);
       setFullName(u.full_name || "");
+      setEmail(u.email || "");
+      setRealtorLicense(u.realtor_license || "");
+      setBrokerage(u.brokerage || "");
+      setStateVal(u.state || "");
       const savedW = u.default_weights || {};
       const initial = {};
       ALL_CATEGORIES.forEach(c => {
@@ -69,10 +83,51 @@ function ProfileInner() {
 
   const saveAccount = async () => {
     setSaving(true);
-    await api.auth.updateMe({ full_name: fullName });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaved(false);
+    try {
+      await api.auth.updateMe({
+        full_name: fullName,
+        realtor_license: realtorLicense,
+        brokerage,
+        state: stateVal,
+      });
+      if (email && user?.email && email !== user.email) {
+        await api.auth.updateEmail(email);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      // Let the UI remain usable; show error inline if possible
+      console.error(err);
+      alert(err?.message || "Could not save account changes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changePassword = async () => {
+    setPasswordError("");
+    if (!newPassword) {
+      setPasswordError("Please enter a new password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      await api.auth.updatePassword(newPassword);
+      setPasswordSaved(true);
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordSaved(false), 2000);
+    } catch (err) {
+      console.error(err);
+      setPasswordError(err?.message || "Could not update password. Try again.");
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   const savePreferences = async () => {
@@ -146,7 +201,7 @@ function ProfileInner() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-slate-100 sticky top-14 z-20 overflow-x-auto">
+      <div className="bg-white border-b border-slate-100 sticky top-[112px] sm:top-14 z-20 overflow-x-auto">
         <div className="max-w-4xl mx-auto px-6 flex gap-1 min-w-max">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
@@ -188,11 +243,44 @@ function ProfileInner() {
                 <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Email</label>
                 <input
                   type="email"
-                  value={user?.email || ""}
-                  disabled
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-sm cursor-not-allowed"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
                 />
-                <p className="text-xs text-slate-400 mt-1">Email cannot be changed.</p>
+                <p className="text-xs text-slate-400 mt-1">Email changes may require confirmation depending on your Supabase settings.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">State</label>
+                <input
+                  type="text"
+                  value={stateVal}
+                  onChange={(e) => setStateVal(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  placeholder="e.g. CA"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Realtor License (optional)</label>
+                <input
+                  type="text"
+                  value={realtorLicense}
+                  onChange={(e) => setRealtorLicense(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  placeholder="License number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Brokerage (optional)</label>
+                <input
+                  type="text"
+                  value={brokerage}
+                  onChange={(e) => setBrokerage(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  placeholder="Brokerage name"
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Plan</label>
@@ -217,7 +305,64 @@ function ProfileInner() {
                     {portalLoading ? "Opening…" : "Manage subscription"}
                   </button>
                 )}
+                {isPremium && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setPortalLoading(true);
+                      try {
+                        const { url } = await api.subscription.getPortalUrl();
+                        if (url) window.location.href = url;
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setPortalLoading(false);
+                      }
+                    }}
+                    disabled={portalLoading}
+                    className="mt-2 text-xs font-semibold text-red-400 hover:underline disabled:opacity-60"
+                  >
+                    {portalLoading ? "Opening…" : "Cancel subscription"}
+                  </button>
+                )}
+                {isPremium && (
+                  <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                    You can update payment methods or cancel in Stripe. If you cancel, charges stop after your current billing period ends.
+                  </p>
+                )}
               </div>
+
+              <div className="pt-2">
+                <p className="text-sm font-semibold text-[#1a2234] mb-2">Change password</p>
+                <div className="space-y-3">
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm transition"
+                  />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm transition"
+                  />
+                  {passwordError && <p className="text-xs text-red-600 font-semibold">{passwordError}</p>}
+                  <button
+                    type="button"
+                    onClick={changePassword}
+                    disabled={passwordSaving}
+                    className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+                      passwordSaved ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                    } disabled:opacity-60`}
+                  >
+                    {passwordSaving ? "Updating..." : passwordSaved ? "Password updated" : "Update password"}
+                  </button>
+                </div>
+              </div>
+
               <div className="pt-1">
                 <button
                   onClick={saveAccount}

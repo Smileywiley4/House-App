@@ -60,7 +60,7 @@ export default function SharedComparison() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="bg-[#1a2234] px-6 py-6 sticky top-0 z-30">
+      <div className="bg-[#1a2234] px-6 py-6 sticky top-[112px] sm:top-14 z-30">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>

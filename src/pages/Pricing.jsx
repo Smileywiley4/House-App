@@ -3,6 +3,7 @@ import { Check, Zap, Lock, Star, Users, Map, Building2, Loader2 } from "lucide-r
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { api } from "@/api";
+import { useAuth } from "@/lib/AuthContext";
 
 const PLANS = [
   {
@@ -71,6 +72,13 @@ const COMING_SOON = [
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+
+  const interval = annual ? "annual" : "monthly";
+  // Update this whenever you change the on-screen terms content.
+  const termsVersion = "2026-02";
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -107,9 +115,80 @@ export default function Pricing() {
 
       {/* Plans */}
       <div className="max-w-5xl mx-auto px-6 py-16">
+        <div className="max-w-3xl mx-auto mb-10">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => {
+                  setCheckoutError("");
+                  setTermsAccepted(e.target.checked);
+                }}
+                className="mt-1 h-4 w-4 accent-[#10b981]"
+                aria-label="Accept Terms and Conditions"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[#1a2234]">
+                  I agree to the Terms & Conditions and authorize recurring billing
+                </p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  By selecting <span className="font-semibold">{interval === "annual" ? "Annual" : "Monthly"}</span>{" "}
+                  billing for your Premium/Realtor plan, you authorize PropertyPulse to charge the payment method you provide{" "}
+                  on a {interval === "annual" ? "yearly" : "monthly"} basis. Your subscription automatically renews unless you cancel.
+                  If you cancel, your billing stops after your current billing period ends.
+                </p>
+                <details className="mt-3">
+                  <summary className="text-xs font-semibold text-[#1a2234] cursor-pointer">
+                    Terms & Conditions (template)
+                  </summary>
+                  <div className="mt-3 text-[11px] text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-52 overflow-y-auto">
+                    <p className="mb-2">
+                      1) Service. PropertyPulse provides subscription features for property scoring, comparison, and related tools.
+                    </p>
+                    <p className="mb-2">
+                      2) Payment Authorization. You authorize recurring charges via Stripe for the selected plan and billing interval.
+                      Charges may be processed by Stripe and shown on your statement under the merchant descriptor used by Stripe.
+                    </p>
+                    <p className="mb-2">
+                      3) Auto-Renewal. Subscriptions renew automatically for the selected interval unless cancelled in your account.
+                    </p>
+                    <p className="mb-2">
+                      4) Cancellation. If you cancel, you will keep access through the end of your current billing period; no further charges will be made after the period ends.
+                    </p>
+                    <p className="mb-2">
+                      5) Refunds. Refunds (if any) are handled in accordance with our refund policy as described in the full Terms & Conditions.
+                    </p>
+                    <p className="mb-2">
+                      6) Legal & Compliance. You agree to comply with applicable laws, and you consent to processing of your payment details by Stripe as required to complete billing.
+                    </p>
+                    <p className="mb-0">
+                      Replace this template with your final Terms & Conditions drafted/approved by legal counsel. This UI is a technical implementation only.
+                    </p>
+                  </div>
+                </details>
+              </div>
+            </div>
+            {checkoutError && (
+              <p className="text-xs text-red-600 mt-3 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                {checkoutError}
+              </p>
+            )}
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-6">
           {PLANS.map(plan => (
-            <PlanCard key={plan.id} plan={plan} annual={annual} />
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              annual={annual}
+              interval={interval}
+              acceptedTerms={termsAccepted}
+              isAuthenticated={isAuthenticated}
+              termsVersion={termsVersion}
+              onSetError={setCheckoutError}
+            />
           ))}
         </div>
 
@@ -150,21 +229,36 @@ export default function Pricing() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition">
               View Realtor Portal
             </Link>
-            <button onClick={async () => {
-              try {
-                const base = typeof window !== "undefined" ? window.location.origin : "";
-                const { url } = await api.subscription.createCheckoutSession({
-                  planId: "realtor",
-                  successUrl: `${base}/Profile?upgraded=1`,
-                  cancelUrl: `${base}/Pricing`,
-                });
-                if (url) window.location.href = url;
-              } catch (err) {
-                console.error(err);
-                alert("Could not start checkout. Try again or contact support.");
-              }
-            }}
-              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl text-sm hover:bg-white/5 transition">
+            <button
+              onClick={async () => {
+                try {
+                  setCheckoutError("");
+                  if (!isAuthenticated) {
+                    const base = typeof window !== "undefined" ? window.location.origin : "";
+                    window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing`)}`;
+                    return;
+                  }
+                  if (!termsAccepted) {
+                    setCheckoutError("Please accept the Terms & Conditions to continue with checkout.");
+                    return;
+                  }
+                  const base = typeof window !== "undefined" ? window.location.origin : "";
+                  const { url } = await api.subscription.createCheckoutSession({
+                    planId: "realtor",
+                    interval,
+                    terms_accepted: termsAccepted,
+                    terms_version: termsVersion,
+                    successUrl: `${base}/Profile?upgraded=1`,
+                    cancelUrl: `${base}/Pricing`,
+                  });
+                  if (url) window.location.href = url;
+                } catch (err) {
+                  console.error(err);
+                  setCheckoutError(err?.message || "Could not start checkout. Try again or contact support.");
+                }
+              }}
+              disabled={!termsAccepted}
+              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl text-sm hover:bg-white/5 transition disabled:opacity-60">
               Upgrade to Realtor — ${annual ? "199.99/yr" : "19.99/mo"}
             </button>
           </div>
@@ -179,7 +273,7 @@ export default function Pricing() {
   );
 }
 
-function PlanCard({ plan, annual }) {
+function PlanCard({ plan, annual, interval, acceptedTerms, isAuthenticated, termsVersion, onSetError }) {
   const [loading, setLoading] = useState(false);
   const price = annual && plan.annual > 0
     ? plan.annual
@@ -225,23 +319,36 @@ function PlanCard({ plan, annual }) {
         <button
           onClick={async () => {
             if (plan.id === "free") { window.location.href = "/"; return; }
+            onSetError?.("");
+            if (!isAuthenticated) {
+              const base = typeof window !== "undefined" ? window.location.origin : "";
+              window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing`)}`;
+              return;
+            }
+            if (!acceptedTerms) {
+              onSetError?.("Please accept the Terms & Conditions to continue with checkout.");
+              return;
+            }
             setLoading(true);
             try {
               const base = typeof window !== "undefined" ? window.location.origin : "";
               const { url } = await api.subscription.createCheckoutSession({
                 planId: plan.id,
+                interval,
+                terms_accepted: acceptedTerms,
+                terms_version: termsVersion,
                 successUrl: `${base}/Profile?upgraded=1`,
                 cancelUrl: `${base}/Pricing`,
               });
               if (url) window.location.href = url;
             } catch (err) {
               console.error(err);
-              alert("Could not start checkout. Try again or contact support.");
+              onSetError?.(err?.message || "Could not start checkout. Try again or contact support.");
             } finally {
               setLoading(false);
             }
           }}
-          disabled={loading}
+          disabled={loading || (!acceptedTerms && plan.id !== "free")}
           className={`w-full py-3 rounded-xl font-bold text-sm transition mb-7 flex items-center justify-center gap-2 ${
             plan.accent
               ? "bg-[#10b981] hover:bg-[#059669] text-white"

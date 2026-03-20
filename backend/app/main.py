@@ -68,8 +68,12 @@ async def stripe_webhook(request: Request):
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        user_id = session.get("client_reference_id") or session.get("subscription_data", {}).get("metadata", {}).get("user_id")
-        plan_id = (session.get("subscription_data") or {}).get("metadata", {}).get("plan_id", "premium")
+        meta = session.get("metadata") or {}
+        user_id = meta.get("user_id") or session.get("client_reference_id") or (session.get("subscription_data", {}) or {}).get("metadata", {}).get("user_id")
+        plan_id = meta.get("plan_id") or (session.get("subscription_data") or {}).get("metadata", {}).get("plan_id", "premium")
+        # Defensive mapping: only allow expected plan values.
+        if plan_id not in ["premium", "realtor"]:
+            plan_id = "premium"
         customer_id = session.get("customer")
         if user_id:
             supabase = get_supabase_admin()

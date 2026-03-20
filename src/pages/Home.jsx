@@ -14,6 +14,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [bannerSrc] = useState(() => {
+    // Randomize hero banner on each refresh for a fresh perspective.
+    return Math.random() < 0.5 ? "/hero-banner.png" : "/hero-banner-alt.png";
+  });
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -36,7 +40,7 @@ export default function Home() {
       {/* Hero */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-20 text-center">
         <div className="absolute inset-0">
-          <img src="/hero-banner.png" alt="" className="w-full h-full object-cover" />
+          <img src={bannerSrc} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-[#1a2234]/75" />
         </div>
         <div className="relative max-w-2xl mx-auto">

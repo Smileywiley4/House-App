@@ -67,7 +67,7 @@ function SideBySideInner() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6 sticky top-14 z-30">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6 sticky top-[112px] sm:top-14 z-30">
         <div className="absolute inset-0">
           <img src="/banner-pricing.png" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-[#1a2234]/80" />

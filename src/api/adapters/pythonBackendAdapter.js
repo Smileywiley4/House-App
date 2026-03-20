@@ -40,6 +40,15 @@ export function createPythonBackendAdapter() {
     auth: {
       me: () => request('GET', '/api/auth/me'),
       updateMe: (profile) => request('PATCH', '/api/auth/me', profile),
+      updateEmail: async (email) => {
+        // Supabase client updates auth email; backend /api/auth/me only stores profile fields.
+        const { error } = await supabase.auth.updateUser({ email });
+        if (error) throw error;
+      },
+      updatePassword: async (password) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+      },
       logout: async (returnUrl) => {
         await supabase.auth.signOut();
         if (typeof window !== 'undefined' && returnUrl) window.location.href = returnUrl;

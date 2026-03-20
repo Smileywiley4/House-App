@@ -10,8 +10,15 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
+    # Backward-compatible single price IDs (treated as monthly if the interval-specific IDs are not set)
     stripe_premium_price_id: str = ""
     stripe_realtor_price_id: str = ""
+
+    # Recommended interval-specific Price IDs
+    stripe_premium_monthly_price_id: str = ""
+    stripe_premium_annual_price_id: str = ""
+    stripe_realtor_monthly_price_id: str = ""
+    stripe_realtor_annual_price_id: str = ""
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     google_places_api_key: str = ""

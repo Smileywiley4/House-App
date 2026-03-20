@@ -86,7 +86,7 @@ function RealtorPortalInner() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-slate-100 sticky top-14 z-20">
+      <div className="bg-white border-b border-slate-100 sticky top-[112px] sm:top-14 z-20">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex gap-1">
             {TABS.map(t => (

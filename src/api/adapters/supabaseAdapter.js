@@ -73,6 +73,14 @@ export function createSupabaseAdapter() {
         await supabase.from('profiles').update(updates).eq('id', user.id);
         return profileToUser({ ...user, ...updates });
       },
+      updateEmail: async (email) => {
+        const { error } = await supabase.auth.updateUser({ email });
+        if (error) throw error;
+      },
+      updatePassword: async (password) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+      },
       logout: async (returnUrl) => {
         await supabase.auth.signOut();
         if (typeof window !== 'undefined' && returnUrl) window.location.href = returnUrl;

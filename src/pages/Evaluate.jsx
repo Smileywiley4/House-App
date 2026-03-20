@@ -16,15 +16,24 @@ export default function Evaluate() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
+
+  const readParam = (key) => {
+    const v = params.get(key);
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    if (!s || s === "null" || s === "undefined") return null;
+    return s;
+  };
+
   const property = {
-    address: params.get("address") || "Unknown Address",
-    city: params.get("city") || "",
-    state: params.get("state") || "",
-    price: params.get("price") || null,
-    beds: params.get("beds") || null,
-    baths: params.get("baths") || null,
-    sqft: params.get("sqft") || null,
-    year: params.get("year") || null,
+    address: readParam("address") || "Unknown Address",
+    city: readParam("city") || "",
+    state: readParam("state") || "",
+    price: readParam("price"),
+    beds: readParam("beds"),
+    baths: readParam("baths"),
+    sqft: readParam("sqft"),
+    year: readParam("year"),
   };
 
   const [activeCategories, setActiveCategories] = useState(() => {

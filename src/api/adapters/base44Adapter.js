@@ -8,6 +8,12 @@ export const base44Adapter = {
   auth: {
     me: () => base44.auth.me(),
     updateMe: (profile) => base44.auth.updateMe(profile),
+    updateEmail: async () => {
+      throw new Error("Email updates require Supabase/Python backend");
+    },
+    updatePassword: async () => {
+      throw new Error("Password updates require Supabase/Python backend");
+    },
     logout: (returnUrl) => (returnUrl != null ? base44.auth.logout(returnUrl) : base44.auth.logout()),
     redirectToLogin: (returnUrl) => base44.auth.redirectToLogin(returnUrl ?? window?.location?.href),
   },
