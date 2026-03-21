@@ -33,6 +33,27 @@ async function request(method, path, body = undefined) {
   return res.json();
 }
 
+async function uploadVisitPhoto(savedId, file, caption) {
+  const token = await getToken();
+  const form = new FormData();
+  form.append('file', file);
+  if (caption) form.append('caption', caption);
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${baseUrl}/api/library/saved-properties/${encodeURIComponent(savedId)}/photos`, {
+    method: 'POST',
+    headers,
+    body: form,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = new Error(await res.text() || res.statusText);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
 export function createPythonBackendAdapter() {
   const supabase = getSupabase();
 
@@ -101,6 +122,32 @@ export function createPythonBackendAdapter() {
     subscription: {
       createCheckoutSession: (options) => request('POST', '/api/subscription/create-checkout-session', options).then((r) => ({ url: r?.url })),
       getPortalUrl: () => request('GET', '/api/subscription/portal').then((r) => ({ url: r?.url })),
+    },
+    /** Premium/Realtor: visit photos, folders, realtor sharing */
+    library: {
+      searchRealtors: (q) => request('GET', `/api/library/realtors/search?q=${encodeURIComponent(q || '')}`),
+      listSaved: () => request('GET', '/api/library/saved-properties'),
+      getSaved: (id) => request('GET', `/api/library/saved-properties/${encodeURIComponent(id)}`),
+      createSaved: (data) => request('POST', '/api/library/saved-properties', data),
+      updateSaved: (id, data) => request('PATCH', `/api/library/saved-properties/${encodeURIComponent(id)}`, data),
+      deleteSaved: (id) => request('DELETE', `/api/library/saved-properties/${encodeURIComponent(id)}`),
+      uploadPhoto: (savedId, file, caption) => uploadVisitPhoto(savedId, file, caption),
+      deletePhoto: (savedId, photoId) =>
+        request('DELETE', `/api/library/saved-properties/${encodeURIComponent(savedId)}/photos/${encodeURIComponent(photoId)}`),
+      importListingPhotos: (savedId, listingUrl) =>
+        request('POST', `/api/library/saved-properties/${encodeURIComponent(savedId)}/import-listing-photos`, {
+          listing_url: listingUrl,
+        }),
+      shareWithRealtor: (savedId, body) =>
+        request('POST', `/api/library/saved-properties/${encodeURIComponent(savedId)}/share`, body),
+      listFolders: () => request('GET', '/api/library/folders'),
+      createFolder: (data) => request('POST', '/api/library/folders', data),
+      deleteFolder: (id) => request('DELETE', `/api/library/folders/${encodeURIComponent(id)}`),
+      addToFolder: (folderId, savedPropertyId) =>
+        request('POST', `/api/library/folders/${encodeURIComponent(folderId)}/items`, { saved_property_id: savedPropertyId }),
+      removeFromFolder: (folderId, savedPropertyId) =>
+        request('DELETE', `/api/library/folders/${encodeURIComponent(folderId)}/items/${encodeURIComponent(savedPropertyId)}`),
+      realtorInbox: () => request('GET', '/api/library/realtor/inbox'),
     },
   };
 }

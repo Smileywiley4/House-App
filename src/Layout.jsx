@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn } from "lucide-react";
+import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
@@ -26,6 +26,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "RealtorPortal", label: "Realtors", icon: Building2 },
     { name: "Pricing", label: "Pricing", icon: Zap, public: true },
     { name: "Profile", label: "Profile", icon: UserCircle },
+    { name: "PropertyVisits", label: "Visits", icon: Camera },
   ];
 
   const navItems = isAuthenticated

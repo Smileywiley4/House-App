@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Users, Home as HomeIcon, Plus, Lock, ChevronRight,
-  Phone, Mail, DollarSign, FileText, Trash2, Building2, BadgeCheck, X, Bookmark, Search
+  Phone, Mail, DollarSign, FileText, Trash2, Building2, BadgeCheck, X, Bookmark, Search, Share2
 } from "lucide-react";
 import { api } from "@/api";
 import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
@@ -11,7 +11,7 @@ import AIListingDescription from "@/components/ai/AIListingDescription";
 import RequireAuth from "@/components/RequireAuth";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 
-const TABS = ["Profile", "Clients", "Private Listings"];
+const TABS = ["Profile", "Clients", "Private Listings", "Shared visits"];
 
 export default function RealtorPortal() {
   return (
@@ -32,6 +32,8 @@ function RealtorPortalInner() {
   const [saved, setSaved] = useState(false);
   const [showClientForm, setShowClientForm] = useState(false);
   const [showListingForm, setShowListingForm] = useState(false);
+  const [inbox, setInbox] = useState([]);
+  const [inboxLoading, setInboxLoading] = useState(false);
 
   useEffect(() => {
     api.auth.me().then(u => {
@@ -49,6 +51,16 @@ function RealtorPortalInner() {
 
   const isRealtor = user?.role === "realtor" || user?.role === "admin" || user?.plan === "realtor" || user?.plan === "admin";
   const isPremiumOrRealtor = user?.plan === "premium" || isRealtor;
+
+  useEffect(() => {
+    if (tab !== "Shared visits" || !isRealtor) return;
+    setInboxLoading(true);
+    api.library
+      .realtorInbox()
+      .then((rows) => setInbox(Array.isArray(rows) ? rows : []))
+      .catch(() => setInbox([]))
+      .finally(() => setInboxLoading(false));
+  }, [tab, isRealtor]);
 
   const saveProfile = async () => {
     setSaving(true);
@@ -276,6 +288,84 @@ function RealtorPortalInner() {
                     setListings(prev => [created, ...prev]);
                     setShowListingForm(false);
                   }} onClose={() => setShowListingForm(false)} />
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── SHARED VISITS (premium buyers → realtor inbox) ── */}
+        {tab === "Shared visits" && (
+          <div>
+            {!isRealtor ? (
+              <UpgradeGate plan="realtor" />
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <Share2 className="text-[#10b981]" size={22} />
+                  <div>
+                    <h2 className="font-bold text-[#1a2234] text-lg">Client visit shares</h2>
+                    <p className="text-slate-400 text-sm">
+                      Premium clients can share in-person photos and scores from Property Visits.
+                    </p>
+                  </div>
+                </div>
+                {inboxLoading ? (
+                  <div className="flex justify-center py-16">
+                    <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : inbox.length === 0 ? (
+                  <EmptyState
+                    icon={Share2}
+                    title="No shared visits yet"
+                    desc="When a client shares a property from Visits, it will appear here with their score and photos."
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    {inbox.map((item) => (
+                      <div
+                        key={item.share_id}
+                        className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+                      >
+                        <div className="flex flex-wrap justify-between gap-2 mb-3">
+                          <div>
+                            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide">From</div>
+                            <div className="font-bold text-[#1a2234]">
+                              {item.buyer?.full_name || item.buyer?.email || "Client"}
+                            </div>
+                          </div>
+                          <div className="text-xs text-slate-400">
+                            {item.shared_at ? new Date(item.shared_at).toLocaleString() : ""}
+                          </div>
+                        </div>
+                        {item.message && (
+                          <p className="text-sm text-slate-600 mb-4 border-l-2 border-[#10b981]/40 pl-3">{item.message}</p>
+                        )}
+                        <div className="font-semibold text-[#1a2234] mb-1">{item.property?.property_address}</div>
+                        {item.property?.personal_score != null && (
+                          <p className="text-sm text-slate-600 mb-3">
+                            Visit score: <span className="font-bold text-[#10b981]">{item.property.personal_score}/10</span>
+                          </p>
+                        )}
+                        {item.property?.visit_notes && (
+                          <p className="text-sm text-slate-500 mb-4">{item.property.visit_notes}</p>
+                        )}
+                        {item.photos?.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {item.photos.map((ph) => (
+                              <div key={ph.id} className="aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-100">
+                                {ph.signed_url ? (
+                                  <img src={ph.signed_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">Photo</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </>
             )}

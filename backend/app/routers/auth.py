@@ -12,6 +12,7 @@ class UpdateProfileBody(BaseModel):
     realtor_license: str | None = None
     brokerage: str | None = None
     state: str | None = None
+    linked_realtor_id: str | None = None
 
 
 def _profile_to_user(row: dict | None) -> dict | None:
@@ -27,6 +28,7 @@ def _profile_to_user(row: dict | None) -> dict | None:
         "realtor_license": row.get("realtor_license") or "",
         "brokerage": row.get("brokerage") or "",
         "state": row.get("state") or "",
+        "linked_realtor_id": str(row["linked_realtor_id"]) if row.get("linked_realtor_id") else None,
     }
 
 

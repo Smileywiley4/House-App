@@ -344,5 +344,24 @@ export function createSupabaseAdapter() {
         return { url: `${base}/Profile` };
       },
     },
+    library: {
+      searchRealtors: () =>
+        Promise.reject(new Error('Visit library requires Python backend (VITE_USE_PYTHON_BACKEND=true)')),
+      listSaved: () => Promise.reject(new Error('Visit library requires Python backend')),
+      getSaved: () => Promise.reject(new Error('Visit library requires Python backend')),
+      createSaved: () => Promise.reject(new Error('Visit library requires Python backend')),
+      updateSaved: () => Promise.reject(new Error('Visit library requires Python backend')),
+      deleteSaved: () => Promise.reject(new Error('Visit library requires Python backend')),
+      uploadPhoto: () => Promise.reject(new Error('Visit library requires Python backend')),
+      deletePhoto: () => Promise.reject(new Error('Visit library requires Python backend')),
+      importListingPhotos: () => Promise.reject(new Error('Visit library requires Python backend')),
+      shareWithRealtor: () => Promise.reject(new Error('Visit library requires Python backend')),
+      listFolders: () => Promise.reject(new Error('Visit library requires Python backend')),
+      createFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
+      deleteFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
+      addToFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
+      removeFromFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
+      realtorInbox: () => Promise.reject(new Error('Visit library requires Python backend')),
+    },
   };
 }
