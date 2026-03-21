@@ -111,9 +111,15 @@ Use the API to read/write app documents & cache, download files, and get **conte
 
 Or use `app.config.js` and `process.env` so keys are not committed.
 
-## Location
+## Location (`expo-location`)
 
-The `expo-maps` config plugin requests **when-in-use** location so the map can show the user dot and “my location” UI after the user taps **Enable location**.
+```bash
+npx expo install expo-location
+```
+
+Included in **`package.json`**. **`app.json`** registers the **`expo-location`** config plugin (foreground / when-in-use only) plus **`NSLocationWhenInUseUsageDescription`** on iOS and **`ACCESS_FINE_LOCATION`** / **`ACCESS_COARSE_LOCATION`** on Android.
+
+**`components/PropertyMap.js`** uses **`expo-location`** to **`requestForegroundPermissionsAsync`**, read **`getForegroundPermissionsAsync`**, and **`getCurrentPositionAsync`** when allowed. After permission, the map **centers on the user** (zoom 14) and enables **`isMyLocationEnabled`** / the my-location control via **`expo-maps`**. Rebuild native projects after adding the plugin.
 
 ## Media library (`expo-media-library`)
 

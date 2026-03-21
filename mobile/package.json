@@ -17,6 +17,7 @@
     "expo-file-system": "56.0.0-canary-20260305-5163746",
     "expo-image": "56.0.0-canary-20260305-5163746",
     "expo-linking": "56.0.0-canary-20260305-5163746",
+    "expo-location": "56.0.0-canary-20260305-5163746",
     "expo-maps": "56.0.0-canary-20260305-5163746",
     "expo-media-library": "56.0.0-canary-20260305-5163746",
     "expo-notifications": "56.0.0-canary-20260305-5163746",

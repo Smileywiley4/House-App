@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { User, Save, BarChart3, Trophy, Settings, ChevronRight, Trash2, Check, Sparkles, Bookmark, Plus, UserPlus } from "lucide-react";
+import { User, Save, BarChart3, Trophy, Settings, ChevronRight, Trash2, Check, Sparkles, Bookmark, Plus, UserPlus, Monitor } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import { MANDATORY_CATEGORIES, OPTIONAL_CATEGORIES, NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
@@ -10,10 +11,12 @@ import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { PremiumGate } from "@/components/PremiumGate";
 import RequireAuth from "@/components/RequireAuth";
 import InviteFriendsPanel from "@/components/profile/InviteFriendsPanel";
+import AppearanceSettings from "@/components/profile/AppearanceSettings";
 
 const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...NEIGHBORHOOD_CATEGORIES, ...OPTIONAL_CATEGORIES];
 const TABS = [
   { id: "account", label: "Account", icon: User },
+  { id: "display", label: "Display", icon: Monitor },
   { id: "preferences", label: "Score Preferences", icon: Settings },
   { id: "presets", label: "Presets", icon: Bookmark },
   { id: "foryou", label: "For You", icon: Sparkles },
@@ -182,7 +185,7 @@ function ProfileInner() {
   const winner = sorted[0];
 
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
+    <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
         <div className="absolute inset-0">
@@ -203,7 +206,7 @@ function ProfileInner() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-slate-100 sticky top-[112px] sm:top-14 z-20 overflow-x-auto">
+      <div className="bg-card/90 dark:bg-background/80 backdrop-blur-md border-b border-border sticky top-[112px] sm:top-14 z-20 overflow-x-auto">
         <div className="max-w-4xl mx-auto px-6 flex gap-1 min-w-max">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
@@ -212,7 +215,7 @@ function ProfileInner() {
               className={`flex items-center gap-2 px-4 py-4 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 tab === id
                   ? "border-[#10b981] text-[#10b981]"
-                  : "border-transparent text-slate-500 hover:text-[#1a2234]"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <Icon size={15} />
@@ -224,68 +227,71 @@ function ProfileInner() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
 
+        {/* ─── DISPLAY (theme + brightness) ─── */}
+        {tab === "display" && <AppearanceSettings />}
+
         {/* ─── ACCOUNT TAB ─── */}
         {tab === "account" && (
           <div className="max-w-lg">
-            <h2 className="text-lg font-bold text-[#1a2234] mb-1">Account Details</h2>
+            <h2 className="text-lg font-bold text-foreground mb-1">Account Details</h2>
             <p className="text-slate-400 text-sm mb-6">Manage your personal information.</p>
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Full Name</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Full Name</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                   placeholder="Your full name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Email</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                 />
                 <p className="text-xs text-slate-400 mt-1">Email changes may require confirmation depending on your Supabase settings.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">State</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">State</label>
                 <input
                   type="text"
                   value={stateVal}
                   onChange={(e) => setStateVal(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                   placeholder="e.g. CA"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Realtor License (optional)</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Realtor License (optional)</label>
                 <input
                   type="text"
                   value={realtorLicense}
                   onChange={(e) => setRealtorLicense(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                   placeholder="License number"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Brokerage (optional)</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Brokerage (optional)</label>
                 <input
                   type="text"
                   value={brokerage}
                   onChange={(e) => setBrokerage(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm text-[#1a2234] transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                   placeholder="Brokerage name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#1a2234] mb-1.5">Plan</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Plan</label>
                 <p className="text-sm text-slate-600 capitalize">{plan || "Free"}</p>
                 {isPremium && (
                   <button
@@ -335,21 +341,21 @@ function ProfileInner() {
               </div>
 
               <div className="pt-2">
-                <p className="text-sm font-semibold text-[#1a2234] mb-2">Change password</p>
+                <p className="text-sm font-semibold text-foreground mb-2">Change password</p>
                 <div className="space-y-3">
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="New password"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm transition"
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                   />
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#10b981] text-sm transition"
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
                   />
                   {passwordError && <p className="text-xs text-red-600 font-semibold">{passwordError}</p>}
                   <button
@@ -384,7 +390,7 @@ function ProfileInner() {
                 { label: "Top Score", value: winner ? `${winner.percentage}%` : "—" },
                 { label: "Avg Score", value: scores.length ? `${Math.round(scores.reduce((a, s) => a + s.percentage, 0) / scores.length)}%` : "—" },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 text-center">
+                <div key={label} className="bg-card rounded-2xl border border-border shadow-sm p-5 text-center">
                   <div className="text-2xl font-bold text-[#10b981]">{value}</div>
                   <div className="text-xs text-slate-400 mt-1">{label}</div>
                 </div>
@@ -398,7 +404,7 @@ function ProfileInner() {
           <div>
             <div className="flex items-start justify-between mb-6 gap-4">
               <div>
-                <h2 className="text-lg font-bold text-[#1a2234] mb-1">Scoring Weights</h2>
+                <h2 className="text-lg font-bold text-foreground mb-1">Scoring Weights</h2>
                 <p className="text-slate-400 text-sm">Set how much each category matters to you (0 = don't care, 10 = critical). These auto-fill when you score a property.</p>
               </div>
               <button
@@ -442,14 +448,14 @@ function ProfileInner() {
         {tab === "presets" && (
           <div>
             <div className="mb-6">
-              <h2 className="text-lg font-bold text-[#1a2234] mb-1">Saved Presets</h2>
+              <h2 className="text-lg font-bold text-foreground mb-1">Saved Presets</h2>
               <p className="text-slate-400 text-sm">
                 Save your scoring weights and search filters as presets to keep your multi-property search consistent.
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
-              <h3 className="font-semibold text-[#1a2234] mb-4">Save current preferences as preset</h3>
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mb-6">
+              <h3 className="font-semibold text-foreground mb-4">Save current preferences as preset</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1">Preset name</label>
@@ -458,7 +464,7 @@ function ProfileInner() {
                     value={presetName}
                     onChange={e => setPresetName(e.target.value)}
                     placeholder="e.g. First Home Search"
-                    className="w-full max-w-md px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
+                    className="w-full max-w-md px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm"
                   />
                 </div>
                 <div>
@@ -478,15 +484,15 @@ function ProfileInner() {
             {presets.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 <Bookmark size={40} className="mx-auto mb-3 text-slate-200" />
-                <p className="font-semibold text-[#1a2234] mb-1">No presets yet</p>
+                <p className="font-semibold text-foreground mb-1">No presets yet</p>
                 <p className="text-sm">Save your preferences above to use them across properties and search.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {presets.map(p => (
-                  <div key={p.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center justify-between gap-4">
+                  <div key={p.id} className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-center justify-between gap-4">
                     <div>
-                      <p className="font-bold text-[#1a2234]">{p.name}</p>
+                      <p className="font-bold text-foreground">{p.name}</p>
                       <p className="text-xs text-slate-400 mt-0.5">
                         {Object.keys(p.weights || {}).length} categories · {(p.filters && Object.keys(p.filters).length) ? "Filters set" : "No filters"}
                       </p>
@@ -500,7 +506,7 @@ function ProfileInner() {
                       </Link>
                       <button
                         onClick={() => loadPreset(p)}
-                        className="px-3 py-2 text-sm font-semibold text-[#1a2234] hover:bg-slate-100 rounded-xl"
+                        className="px-3 py-2 text-sm font-semibold text-foreground hover:bg-slate-100 rounded-xl"
                       >
                         Load
                       </button>
@@ -533,7 +539,7 @@ function ProfileInner() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-bold text-[#1a2234] mb-1">Saved Properties</h2>
+                <h2 className="text-lg font-bold text-foreground mb-1">Saved Properties</h2>
                 <p className="text-slate-400 text-sm">{scores.length} propert{scores.length !== 1 ? "ies" : "y"} scored</p>
               </div>
               <Link
@@ -551,7 +557,7 @@ function ProfileInner() {
             ) : scores.length === 0 ? (
               <div className="text-center py-16 text-slate-400">
                 <BarChart3 size={40} className="mx-auto mb-3 text-slate-200" />
-                <p className="font-semibold text-[#1a2234] mb-1">No saved properties yet</p>
+                <p className="font-semibold text-foreground mb-1">No saved properties yet</p>
                 <p className="text-sm">Score a property to see it here.</p>
                 <Link to={createPageUrl("Home")} className="inline-flex mt-5 px-5 py-2.5 bg-[#1a2234] text-white font-bold rounded-xl text-sm">
                   Search Properties
@@ -563,13 +569,13 @@ function ProfileInner() {
                   const isWinner = s.id === winner?.id;
                   const color = scoreColor(s.percentage);
                   return (
-                    <div key={s.id} className={`bg-white rounded-2xl border shadow-sm p-5 flex items-center gap-5 ${isWinner ? "border-[#10b981]" : "border-slate-100"}`}>
+                    <div key={s.id} className={`bg-card rounded-2xl border shadow-sm p-5 flex items-center gap-5 ${isWinner ? "border-[#10b981]" : "border-border"}`}>
                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold shrink-0 ${isWinner ? "bg-[#10b981] text-white" : "bg-slate-100 text-slate-500"}`}>
                         {isWinner ? <Trophy size={18} /> : `#${i + 1}`}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-bold text-[#1a2234] text-sm truncate">{s.property_address}</p>
+                          <p className="font-bold text-foreground text-sm truncate">{s.property_address}</p>
                           {isWinner && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>Top Pick ✦</span>}
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">{s.scores?.length} categories · Scored out of 100</p>
@@ -622,11 +628,13 @@ function WeightRow({ cat, value, onChange, accent }) {
   const w = value ?? 5;
   const pct = w * 10;
   const label = w === 0 ? "Ignore" : w <= 3 ? "Low" : w <= 6 ? "Medium" : w <= 8 ? "High" : "Critical";
+  const { resolvedTheme } = useTheme();
+  const trackEnd = resolvedTheme === "dark" ? "#475569" : "#e2e8f0";
 
   return (
-    <div className="bg-white rounded-xl border border-slate-100 p-4">
+    <div className="bg-card rounded-xl border border-border p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-[#1a2234]">{cat.label}</span>
+        <span className="text-xs font-semibold text-foreground">{cat.label}</span>
         <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: accent + "18", color: accent }}>
           {w}/10 · {label}
         </span>
@@ -638,9 +646,9 @@ function WeightRow({ cat, value, onChange, accent }) {
         value={w}
         onChange={e => onChange(Number(e.target.value))}
         className="w-full h-2 rounded-full appearance-none cursor-pointer"
-        style={{ background: `linear-gradient(to right, ${accent} ${pct}%, #e2e8f0 ${pct}%)` }}
+        style={{ background: `linear-gradient(to right, ${accent} ${pct}%, ${trackEnd} ${pct}%)` }}
       />
-      <div className="flex justify-between text-[10px] text-slate-300 mt-1">
+      <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
         <span>0 — Don't care</span>
         <span>10 — Critical</span>
       </div>

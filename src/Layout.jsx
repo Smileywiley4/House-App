@@ -34,7 +34,7 @@ export default function Layout({ children, currentPageName }) {
     : allNavItems.filter(i => i.public);
 
   return (
-    <div className="min-h-screen bg-[#fafaf8] flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors">
       <style>{`
         :root {
           --accent: ${t.accent};

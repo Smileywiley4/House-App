@@ -6,6 +6,7 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { AppearanceProvider } from '@/lib/AppearanceProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Login from './pages/Login';
 
@@ -56,18 +57,20 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <NavigationTracker />
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="*" element={<AppShell />} />
-            </Routes>
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </AuthProvider>
+      <AppearanceProvider>
+        <AuthProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <NavigationTracker />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="*" element={<AppShell />} />
+              </Routes>
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </AuthProvider>
+      </AppearanceProvider>
     </ErrorBoundary>
   )
 }

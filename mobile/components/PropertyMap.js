@@ -1,36 +1,102 @@
-import { Platform, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { AppleMaps, GoogleMaps, useLocationPermissions } from 'expo-maps';
+import { useState, useEffect, useCallback } from 'react';
+import { Platform, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { AppleMaps, GoogleMaps } from 'expo-maps';
+import * as Location from 'expo-location';
 
-/** Default region — wire to your property search / geocode API later. */
+/** Default region — US center until we have permission + a fix. */
 const DEFAULT_CAMERA = {
   coordinates: { latitude: 39.8283, longitude: -98.5795 },
   zoom: 4,
 };
 
-const MARKERS_APPLE = [
-  {
-    id: 'property-pulse',
-    coordinates: DEFAULT_CAMERA.coordinates,
-    title: 'Property Pulse',
-  },
-];
-
-const MARKERS_GOOGLE = [
-  {
-    id: 'property-pulse',
-    coordinates: DEFAULT_CAMERA.coordinates,
-    title: 'Property Pulse',
-    snippet: 'Explore homes in this area',
-  },
-];
+function buildMarkers(coords, title) {
+  const c = coords || DEFAULT_CAMERA.coordinates;
+  return {
+    apple: [{ id: 'property-pulse', coordinates: c, title }],
+    google: [
+      {
+        id: 'property-pulse',
+        coordinates: c,
+        title,
+        snippet: 'Your area',
+      },
+    ],
+  };
+}
 
 /**
- * Native maps (expo-maps): Apple Maps on iOS, Google Maps on Android.
- * Not available in Expo Go — use a dev build. iOS 18+ for Apple Maps features.
+ * Native maps (expo-maps) + expo-location for permission and coordinates.
+ * Apple Maps on iOS, Google Maps on Android. Not in Expo Go — use a dev build.
  */
 export default function PropertyMap() {
-  const [locationPermission, requestLocationPermission] = useLocationPermissions();
-  const showUserLocation = locationPermission?.granted === true;
+  const [cameraPosition, setCameraPosition] = useState(DEFAULT_CAMERA);
+  const [locationGranted, setLocationGranted] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+
+  const applyPosition = useCallback(async () => {
+    try {
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude, longitude } = loc.coords;
+      setCameraPosition({
+        coordinates: { latitude, longitude },
+        zoom: 14,
+      });
+    } catch (e) {
+      console.warn('[expo-location]', e);
+      Alert.alert('Location', e?.message || 'Could not read your current position.');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    let cancelled = false;
+
+    (async () => {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (cancelled) return;
+      const granted = status === 'granted';
+      setLocationGranted(granted);
+      if (granted) {
+        setLoadingLocation(true);
+        try {
+          await applyPosition();
+        } finally {
+          if (!cancelled) setLoadingLocation(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyPosition]);
+
+  const requestLocationAccess = async () => {
+    setLoadingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      const granted = status === 'granted';
+      setLocationGranted(granted);
+      if (!granted) {
+        Alert.alert(
+          'Location',
+          'Permission was not granted. You can enable location for Property Pulse in system Settings.'
+        );
+        return;
+      }
+      await applyPosition();
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const markers = buildMarkers(
+    cameraPosition.coordinates,
+    locationGranted ? 'Near you' : 'Property Pulse'
+  );
 
   if (Platform.OS === 'web') {
     return (
@@ -46,42 +112,57 @@ export default function PropertyMap() {
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>Map</Text>
-      {!showUserLocation && (
-        <TouchableOpacity style={styles.locBtn} onPress={requestLocationPermission}>
-          <Text style={styles.locBtnText}>Enable location to show where you are on the map</Text>
+      {!locationGranted && (
+        <TouchableOpacity
+          style={styles.locBtn}
+          onPress={requestLocationAccess}
+          disabled={loadingLocation}
+        >
+          {loadingLocation ? (
+            <ActivityIndicator color="#10b981" />
+          ) : (
+            <Text style={styles.locBtnText}>Allow location to center the map on you</Text>
+          )}
         </TouchableOpacity>
+      )}
+      {locationGranted && loadingLocation && (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color="#10b981" size="small" />
+          <Text style={styles.loadingText}>Getting your location…</Text>
+        </View>
       )}
       {Platform.OS === 'ios' ? (
         <AppleMaps.View
           style={styles.map}
-          cameraPosition={DEFAULT_CAMERA}
-          markers={MARKERS_APPLE}
+          cameraPosition={cameraPosition}
+          markers={markers.apple}
           properties={{
-            isMyLocationEnabled: showUserLocation,
+            isMyLocationEnabled: locationGranted,
             mapType: AppleMaps.MapType.STANDARD,
           }}
           uiSettings={{
-            myLocationButtonEnabled: showUserLocation,
+            myLocationButtonEnabled: locationGranted,
             scaleBarEnabled: true,
           }}
         />
       ) : (
         <GoogleMaps.View
           style={styles.map}
-          cameraPosition={DEFAULT_CAMERA}
-          markers={MARKERS_GOOGLE}
+          cameraPosition={cameraPosition}
+          markers={markers.google}
           properties={{
-            isMyLocationEnabled: showUserLocation,
+            isMyLocationEnabled: locationGranted,
             mapType: GoogleMaps.MapType.NORMAL,
           }}
           uiSettings={{
-            myLocationButtonEnabled: showUserLocation,
+            myLocationButtonEnabled: locationGranted,
             compassEnabled: true,
           }}
         />
       )}
       <Text style={styles.hint}>
-        Add your Google Maps SDK API key under android.config.googleMaps in app.json for release Android builds.
+        Location uses expo-location (foreground only). Add your Google Maps SDK API key under android.config.googleMaps
+        in app.json for release Android builds.
       </Text>
     </View>
   );
@@ -109,11 +190,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: 'rgba(16,185,129,0.15)',
     borderRadius: 10,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   locBtnText: {
     color: '#10b981',
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  loadingText: {
+    color: '#94a3b8',
+    fontSize: 12,
   },
   hint: {
     color: '#64748b',
