@@ -11,7 +11,17 @@
   "dependencies": {
     "expo": "^56.0.0-canary-20260305-5163746",
     "expo-camera": "56.0.0-canary-20260305-5163746",
+    "expo-constants": "56.0.0-canary-20260305-5163746",
+    "expo-contacts": "56.0.0-canary-20260305-5163746",
+    "expo-device": "56.0.0-canary-20260305-5163746",
+    "expo-file-system": "56.0.0-canary-20260305-5163746",
+    "expo-image": "56.0.0-canary-20260305-5163746",
+    "expo-linking": "56.0.0-canary-20260305-5163746",
+    "expo-maps": "56.0.0-canary-20260305-5163746",
+    "expo-media-library": "56.0.0-canary-20260305-5163746",
+    "expo-notifications": "56.0.0-canary-20260305-5163746",
     "expo-sharing": "56.0.0-canary-20260305-5163746",
+    "expo-sms": "56.0.0-canary-20260305-5163746",
     "expo-status-bar": "56.0.0-canary-20260305-5163746",
     "react": "19.2.3",
     "react-native": "0.84.1"

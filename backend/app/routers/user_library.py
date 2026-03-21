@@ -105,6 +105,13 @@ class ShareBody(BaseModel):
     include_photos: bool = True
 
 
+class PeerShareBody(BaseModel):
+    recipient_user_id: str = Field(..., min_length=10)
+    folder_id: str | None = None
+    saved_property_id: str | None = None
+    message: str | None = Field(None, max_length=2000)
+
+
 class ImportListingBody(BaseModel):
     listing_url: HttpUrl
 
@@ -116,6 +123,50 @@ def _assert_owns_saved(supabase, user_id: str, saved_id: str) -> dict:
     return r.data[0]
 
 
+def _get_saved_readable(supabase, viewer_id: str, saved_id: str) -> tuple[dict | None, str | None]:
+    """Return (row, 'owner'|'peer') or (None, None)."""
+    r = supabase.table("user_saved_properties").select("*").eq("id", saved_id).execute()
+    if not r.data:
+        return None, None
+    row = r.data[0]
+    if row["user_id"] == viewer_id:
+        return row, "owner"
+    ps = (
+        supabase.table("library_peer_shares")
+        .select("id")
+        .eq("recipient_user_id", viewer_id)
+        .eq("saved_property_id", saved_id)
+        .limit(1)
+        .execute()
+    )
+    if ps.data:
+        return row, "peer"
+    # Folder share: can open each listing inside a folder shared with you
+    folder_rows = (
+        supabase.table("property_folder_items").select("folder_id").eq("saved_property_id", saved_id).execute()
+    )
+    for fr in folder_rows.data or []:
+        fid = fr["folder_id"]
+        sh = (
+            supabase.table("library_peer_shares")
+            .select("id")
+            .eq("recipient_user_id", viewer_id)
+            .eq("folder_id", fid)
+            .limit(1)
+            .execute()
+        )
+        if sh.data:
+            return row, "peer"
+    return None, None
+
+
+def _assert_owns_folder(supabase, user_id: str, folder_id: str) -> dict:
+    r = supabase.table("property_folders").select("*").eq("id", folder_id).eq("user_id", user_id).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return r.data[0]
+
+
 async def _assert_realtor_subscribed(supabase, realtor_id: str) -> dict:
     r = supabase.table("profiles").select("id, plan, full_name, email").eq("id", realtor_id).execute()
     if not r.data:
@@ -124,6 +175,36 @@ async def _assert_realtor_subscribed(supabase, realtor_id: str) -> dict:
     if (row.get("plan") or "free") not in ("realtor", "admin"):
         raise HTTPException(status_code=400, detail="Target user must have an active Realtor subscription")
     return row
+
+
+@router.get("/users/search")
+async def search_users_for_sharing(q: str = "", user_id: str = Depends(require_paid_plan)):
+    """Find any profile by name or email (for sharing folders / saved properties)."""
+    supabase = get_supabase_admin()
+    needle = (q or "").strip().lower()
+    r = supabase.table("profiles").select("id, full_name, email, plan").limit(80).execute()
+    rows = r.data or []
+    if needle:
+        rows = [
+            x
+            for x in rows
+            if x.get("id") != user_id
+            and (
+                needle in (x.get("full_name") or "").lower()
+                or needle in (x.get("email") or "").lower()
+            )
+        ][:25]
+    else:
+        rows = [x for x in rows if x.get("id") != user_id][:25]
+    return [
+        {
+            "id": str(x["id"]),
+            "full_name": x.get("full_name"),
+            "email": x.get("email"),
+            "plan": x.get("plan") or "free",
+        }
+        for x in rows
+    ]
 
 
 @router.get("/realtors/search")
@@ -200,7 +281,9 @@ async def list_saved_properties(user_id: str = Depends(require_paid_plan)):
 @router.get("/saved-properties/{saved_id}")
 async def get_saved_property(saved_id: str, user_id: str = Depends(require_paid_plan)):
     supabase = get_supabase_admin()
-    row = _assert_owns_saved(supabase, user_id, saved_id)
+    row, access = _get_saved_readable(supabase, user_id, saved_id)
+    if not row or not access:
+        raise HTTPException(status_code=404, detail="Saved property not found")
     pr = (
         supabase.table("user_property_photos")
         .select("*")
@@ -214,6 +297,18 @@ async def get_saved_property(saved_id: str, user_id: str = Depends(require_paid_
         photos.append(_photo_row(p, url))
     data = _saved_row(row)
     data["photos"] = photos
+    data["access"] = access
+    if access == "peer":
+        owner_p = supabase.table("profiles").select("id, full_name, email").eq("id", row["user_id"]).execute()
+        data["owner"] = (
+            {
+                "id": str(owner_p.data[0]["id"]),
+                "full_name": owner_p.data[0].get("full_name"),
+                "email": owner_p.data[0].get("email"),
+            }
+            if owner_p.data
+            else {}
+        )
     return data
 
 
@@ -536,3 +631,180 @@ async def remove_from_folder(folder_id: str, saved_property_id: str, user_id: st
         "saved_property_id", saved_property_id
     ).execute()
     return {"ok": True}
+
+
+# ── Peer sharing (folders & saved properties between accounts) ──
+
+
+@router.post("/peer-shares")
+async def create_peer_share(body: PeerShareBody, user_id: str = Depends(require_paid_plan)):
+    """Share a folder or a single saved visit with another user (read-only for them)."""
+    supabase = get_supabase_admin()
+    if body.recipient_user_id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot share with yourself")
+    rec = supabase.table("profiles").select("id").eq("id", body.recipient_user_id).execute()
+    if not rec.data:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    folder_id = body.folder_id
+    saved_id = body.saved_property_id
+    if (folder_id is None) == (saved_id is None):
+        raise HTTPException(status_code=400, detail="Provide exactly one of folder_id or saved_property_id")
+
+    if folder_id:
+        _assert_owns_folder(supabase, user_id, folder_id)
+        row = {
+            "owner_user_id": user_id,
+            "recipient_user_id": body.recipient_user_id,
+            "folder_id": folder_id,
+            "saved_property_id": None,
+            "message": body.message,
+        }
+    else:
+        _assert_owns_saved(supabase, user_id, saved_id)
+        row = {
+            "owner_user_id": user_id,
+            "recipient_user_id": body.recipient_user_id,
+            "folder_id": None,
+            "saved_property_id": saved_id,
+            "message": body.message,
+        }
+
+    try:
+        ins = supabase.table("library_peer_shares").insert(row).select().execute()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Already shared or could not create share")
+    if not ins.data:
+        raise HTTPException(status_code=500, detail="Share failed")
+    return {"id": str(ins.data[0]["id"]), "ok": True}
+
+
+@router.delete("/peer-shares/{share_id}")
+async def delete_peer_share(share_id: str, user_id: str = Depends(require_paid_plan)):
+    supabase = get_supabase_admin()
+    r = supabase.table("library_peer_shares").select("*").eq("id", share_id).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Share not found")
+    row = r.data[0]
+    if row["owner_user_id"] != user_id and row["recipient_user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    supabase.table("library_peer_shares").delete().eq("id", share_id).execute()
+    return {"ok": True}
+
+
+@router.get("/shared-with-me")
+async def shared_with_me(user_id: str = Depends(require_paid_plan)):
+    """Properties and folders others shared with you."""
+    supabase = get_supabase_admin()
+    r = (
+        supabase.table("library_peer_shares")
+        .select("*")
+        .eq("recipient_user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(100)
+        .execute()
+    )
+    out: list[dict] = []
+    for sh in r.data or []:
+        oid = sh["owner_user_id"]
+        owner_p = supabase.table("profiles").select("id, full_name, email").eq("id", oid).execute()
+        owner = owner_p.data[0] if owner_p else {}
+        base = {
+            "share_id": str(sh["id"]),
+            "message": sh.get("message"),
+            "created_at": sh.get("created_at"),
+            "owner": {
+                "id": str(owner.get("id", oid)),
+                "full_name": owner.get("full_name"),
+                "email": owner.get("email"),
+            },
+        }
+        if sh.get("saved_property_id"):
+            sid = sh["saved_property_id"]
+            pr = supabase.table("user_saved_properties").select("*").eq("id", sid).execute()
+            if not pr.data:
+                continue
+            prop = pr.data[0]
+            ph_rows = (
+                supabase.table("user_property_photos").select("*").eq("saved_property_id", sid).order("sort_order").execute()
+            )
+            photos = []
+            for p in ph_rows.data or []:
+                photos.append(_photo_row(p, _sign_url(supabase, p["storage_path"])))
+            out.append(
+                {
+                    **base,
+                    "kind": "saved_property",
+                    "property": _saved_row(prop),
+                    "photos": photos,
+                }
+            )
+        elif sh.get("folder_id"):
+            fid = sh["folder_id"]
+            fr = supabase.table("property_folders").select("*").eq("id", fid).execute()
+            if not fr.data:
+                continue
+            folder = fr.data[0]
+            items = supabase.table("property_folder_items").select("saved_property_id").eq("folder_id", fid).execute()
+            properties: list[dict] = []
+            for it in items.data or []:
+                sid = it["saved_property_id"]
+                pr = supabase.table("user_saved_properties").select("*").eq("id", sid).execute()
+                if pr.data:
+                    properties.append(_saved_row(pr.data[0]))
+            out.append(
+                {
+                    **base,
+                    "kind": "folder",
+                    "folder": {
+                        "id": str(folder["id"]),
+                        "name": folder.get("name"),
+                        "sort_order": folder.get("sort_order"),
+                    },
+                    "properties": properties,
+                }
+            )
+    return out
+
+
+@router.get("/peer-shares/outgoing")
+async def peer_shares_outgoing(user_id: str = Depends(require_paid_plan)):
+    """Shares you created with other people."""
+    supabase = get_supabase_admin()
+    r = (
+        supabase.table("library_peer_shares")
+        .select("*")
+        .eq("owner_user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(100)
+        .execute()
+    )
+    out = []
+    for sh in r.data or []:
+        rid = sh["recipient_user_id"]
+        rp = supabase.table("profiles").select("id, full_name, email").eq("id", rid).execute()
+        rec = rp.data[0] if rp.data else {}
+        item: dict = {
+            "share_id": str(sh["id"]),
+            "message": sh.get("message"),
+            "created_at": sh.get("created_at"),
+            "recipient": {
+                "id": str(rec.get("id", rid)),
+                "full_name": rec.get("full_name"),
+                "email": rec.get("email"),
+            },
+        }
+        if sh.get("saved_property_id"):
+            sid = sh["saved_property_id"]
+            pr = supabase.table("user_saved_properties").select("property_address").eq("id", sid).execute()
+            item["kind"] = "saved_property"
+            item["saved_property_id"] = str(sid)
+            item["property_address"] = pr.data[0].get("property_address") if pr.data else ""
+        else:
+            fid = sh["folder_id"]
+            fr = supabase.table("property_folders").select("name").eq("id", fid).execute()
+            item["kind"] = "folder"
+            item["folder_id"] = str(fid)
+            item["folder_name"] = fr.data[0].get("name") if fr.data else ""
+        out.append(item)
+    return out

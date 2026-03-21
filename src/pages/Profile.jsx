@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { User, Save, BarChart3, Trophy, Settings, ChevronRight, Trash2, Check, Sparkles, Bookmark, Plus } from "lucide-react";
+import { User, Save, BarChart3, Trophy, Settings, ChevronRight, Trash2, Check, Sparkles, Bookmark, Plus, UserPlus } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import { MANDATORY_CATEGORIES, OPTIONAL_CATEGORIES, NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
@@ -9,6 +9,7 @@ import RecommendationEngine from "@/components/profile/RecommendationEngine";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { PremiumGate } from "@/components/PremiumGate";
 import RequireAuth from "@/components/RequireAuth";
+import InviteFriendsPanel from "@/components/profile/InviteFriendsPanel";
 
 const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...NEIGHBORHOOD_CATEGORIES, ...OPTIONAL_CATEGORIES];
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
   { id: "preferences", label: "Score Preferences", icon: Settings },
   { id: "presets", label: "Presets", icon: Bookmark },
   { id: "foryou", label: "For You", icon: Sparkles },
+  { id: "invite", label: "Invite & share", icon: UserPlus },
   { id: "history", label: "Saved Properties", icon: BarChart3 },
 ];
 
@@ -522,6 +524,9 @@ function ProfileInner() {
             <RecommendationEngine scores={scores} weights={weights} />
           </PremiumGate>
         )}
+
+        {/* ─── INVITE & SHARE TAB ─── */}
+        {tab === "invite" && <InviteFriendsPanel />}
 
         {/* ─── HISTORY TAB ─── */}
         {tab === "history" && (

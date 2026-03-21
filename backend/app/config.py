@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     google_places_api_key: str = ""
     google_cse_id: str = ""
     cors_origins: str = "http://localhost:5173"
+    # Public web app URL for invite links (e.g. https://app.example.com)
+    app_public_url: str = "http://localhost:5173"
     port: int = 8000
 
     model_config = {"env_file": ".env", "extra": "ignore"}

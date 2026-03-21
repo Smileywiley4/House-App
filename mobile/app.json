@@ -12,13 +12,23 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.propertypulse.mobile",
+      "deploymentTarget": "18.0",
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Property Pulse uses the camera to capture in-person photos of homes you visit.",
-        "NSPhotoLibraryUsageDescription": "Save and share visit photos from your library."
+        "NSPhotoLibraryUsageDescription": "Property Pulse can read your photo library when you choose existing photos for visit notes.",
+        "NSPhotoLibraryAddUsageDescription": "Property Pulse saves visit photos you take to your photo library when you choose Save to Photos.",
+        "NSContactsUsageDescription": "Property Pulse uses your contacts to pick phone numbers when you send text message invites to join the app."
       }
     },
     "android": {
+      "package": "com.propertypulse.mobile",
+      "permissions": [
+        "READ_CONTACTS",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -30,12 +40,63 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#10b981",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-image",
+        {
+          "disableLibdav1d": true
+        }
+      ],
+      [
+        "expo-file-system",
+        {
+          "supportsOpeningDocumentsInPlace": true,
+          "enableFileSharing": true
+        }
+      ],
+      [
+        "expo-sharing",
+        {
+          "ios": {
+            "enabled": true,
+            "activationRule": {
+              "supportsImageWithMaxCount": 5
+            }
+          },
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": ["image/*"],
+            "multipleShareMimeTypes": ["image/*"]
+          }
+        }
+      ],
+      "expo-contacts",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Property Pulse to access your photos when you pick images for property visits.",
+          "savePhotosPermission": "Allow Property Pulse to save visit photos you capture to your library.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
       [
         "expo-camera",
         {
           "cameraPermission": "Allow Property Pulse to use the camera for in-person property visit photos.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-maps",
+        {
+          "requestLocationPermission": true,
+          "locationPermission": "Property Pulse uses your location to show where you are on the map and nearby homes."
         }
       ]
     ]

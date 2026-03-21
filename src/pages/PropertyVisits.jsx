@@ -10,6 +10,7 @@ import {
   Loader2,
   Home,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { api } from "@/api";
 import RequireAuth from "@/components/RequireAuth";
@@ -47,6 +48,12 @@ function PropertyVisitsInner() {
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
 
+  const [sharedWithMe, setSharedWithMe] = useState([]);
+  const [peerQuery, setPeerQuery] = useState("");
+  const [peerUsers, setPeerUsers] = useState([]);
+  const [peerShareMsg, setPeerShareMsg] = useState("");
+  const [shareFolderOpen, setShareFolderOpen] = useState(null);
+
   const load = useCallback(async () => {
     if (!isPremium) {
       setLoading(false);
@@ -54,13 +61,20 @@ function PropertyVisitsInner() {
     }
     setErr(null);
     try {
-      const [list, flds] = await Promise.all([api.library.listSaved(), api.library.listFolders()]);
+      const incomingP = api.library.sharedWithMe ? api.library.sharedWithMe().catch(() => []) : Promise.resolve([]);
+      const [list, flds, incoming] = await Promise.all([
+        api.library.listSaved(),
+        api.library.listFolders(),
+        incomingP,
+      ]);
       setSaved(Array.isArray(list) ? list : []);
       setFolders(Array.isArray(flds) ? flds : []);
+      setSharedWithMe(Array.isArray(incoming) ? incoming : []);
     } catch (e) {
       setErr(e?.message || "Could not load library");
       setSaved([]);
       setFolders([]);
+      setSharedWithMe([]);
     } finally {
       setLoading(false);
     }
@@ -118,6 +132,15 @@ function PropertyVisitsInner() {
       setRealtors(Array.isArray(r) ? r : []);
     } catch {
       setRealtors([]);
+    }
+  };
+
+  const searchPeers = async () => {
+    try {
+      const r = await api.library.searchUsers(peerQuery);
+      setPeerUsers(Array.isArray(r) ? r : []);
+    } catch {
+      setPeerUsers([]);
     }
   };
 
@@ -238,19 +261,76 @@ function PropertyVisitsInner() {
                 Create
               </button>
             </div>
-            <ul className="text-sm text-slate-600 space-y-1">
+            <ul className="text-sm text-slate-600 space-y-2">
               {folders.map((f) => (
-                <li key={f.id} className="flex justify-between items-center py-1">
-                  <span>
-                    {f.name} <span className="text-slate-400">({f.item_count})</span>
-                  </span>
-                  <button
-                    type="button"
-                    className="text-red-600 text-xs"
-                    onClick={() => api.library.deleteFolder(f.id).then(load)}
-                  >
-                    Delete
-                  </button>
+                <li key={f.id} className="border border-slate-100 rounded-lg p-2">
+                  <div className="flex justify-between items-center gap-2">
+                    <span>
+                      {f.name} <span className="text-slate-400">({f.item_count})</span>
+                    </span>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        type="button"
+                        className="text-[#10b981] text-xs font-medium"
+                        onClick={() => setShareFolderOpen((x) => (x === f.id ? null : f.id))}
+                      >
+                        {shareFolderOpen === f.id ? "Close" : "Share"}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-red-600 text-xs"
+                        onClick={() => api.library.deleteFolder(f.id).then(load)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  {shareFolderOpen === f.id && (
+                    <div className="mt-2 pt-2 border-t border-slate-100 space-y-2">
+                      <p className="text-[11px] text-slate-500">Share the whole folder (all listings inside) with another account.</p>
+                      <div className="flex gap-2">
+                        <input
+                          className="flex-1 rounded border border-slate-200 px-2 py-1 text-xs"
+                          placeholder="Search name or email"
+                          value={peerQuery}
+                          onChange={(e) => setPeerQuery(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="px-2 py-1 rounded bg-slate-100 text-xs"
+                          onClick={searchPeers}
+                        >
+                          Find
+                        </button>
+                      </div>
+                      <ul className="text-xs space-y-1 max-h-24 overflow-y-auto">
+                        {peerUsers.map((u) => (
+                          <li key={u.id} className="flex justify-between gap-1">
+                            <span>{u.full_name || u.email}</span>
+                            <button
+                              type="button"
+                              className="text-[#10b981] font-medium"
+                              onClick={async () => {
+                                try {
+                                  await api.library.createPeerShare({
+                                    recipient_user_id: u.id,
+                                    folder_id: f.id,
+                                    message: peerShareMsg || undefined,
+                                  });
+                                  setShareFolderOpen(null);
+                                  load();
+                                } catch (e) {
+                                  setErr(e?.message || "Could not share folder");
+                                }
+                              }}
+                            >
+                              Share folder
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -277,6 +357,51 @@ function PropertyVisitsInner() {
                 </select>
               </p>
             )}
+
+            {sharedWithMe.length > 0 && (
+              <div className="border-t border-slate-100 pt-4">
+                <h3 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <Users size={16} className="text-[#10b981]" />
+                  Shared with you
+                </h3>
+                <ul className="space-y-3 max-h-56 overflow-y-auto text-sm">
+                  {sharedWithMe.map((item) => (
+                    <li key={item.share_id} className="rounded-lg border border-slate-100 p-2 bg-slate-50/80">
+                      <div className="text-xs text-slate-500 mb-1">
+                        From {item.owner?.full_name || item.owner?.email || "Someone"}
+                      </div>
+                      {item.kind === "saved_property" && item.property && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(item.property.id)}
+                          className="text-left font-medium text-slate-800 hover:text-[#10b981]"
+                        >
+                          {item.property.property_address}
+                        </button>
+                      )}
+                      {item.kind === "folder" && item.folder && (
+                        <div>
+                          <div className="font-medium text-slate-800">{item.folder.name}</div>
+                          <ul className="mt-1 space-y-1">
+                            {(item.properties || []).map((p) => (
+                              <li key={p.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedId(p.id)}
+                                  className="text-left text-xs text-slate-600 hover:text-[#10b981] underline"
+                                >
+                                  {p.property_address}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
@@ -289,10 +414,19 @@ function PropertyVisitsInner() {
               <Loader2 className="w-8 h-8 text-[#10b981] animate-spin" />
             </div>
           )}
-          {selectedId && detail && !detailLoading && (
+          {selectedId && detail && !detailLoading && (() => {
+            const isOwner = !detail.access || detail.access === "owner";
+            return (
             <div className="space-y-4">
+              {!isOwner && (
+                <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-indigo-900">
+                  <strong>View-only</strong> — shared by {detail.owner?.full_name || detail.owner?.email || "another user"}.
+                  Realtors you work with can still receive shares from your own copies when you save a property to your library.
+                </div>
+              )}
               <div className="flex justify-between gap-2">
                 <h2 className="font-semibold text-slate-900 line-clamp-3">{detail.property_address}</h2>
+                {isOwner && (
                 <button
                   type="button"
                   className="text-red-600 text-sm shrink-0"
@@ -305,6 +439,7 @@ function PropertyVisitsInner() {
                 >
                   Delete
                 </button>
+                )}
               </div>
 
               <div>
@@ -314,6 +449,7 @@ function PropertyVisitsInner() {
                   min={1}
                   max={10}
                   value={detail.personal_score ?? 5}
+                  disabled={!isOwner}
                   onChange={async (e) => {
                     const v = Number(e.target.value);
                     const u = await api.library.updateSaved(detail.id, { personal_score: v });
@@ -327,15 +463,18 @@ function PropertyVisitsInner() {
               <div>
                 <label className="text-xs font-medium text-slate-600">Notes</label>
                 <textarea
-                  className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm min-h-[80px]"
+                  className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm min-h-[80px] disabled:bg-slate-50"
                   value={detail.visit_notes || ""}
+                  disabled={!isOwner}
                   onBlur={async (e) => {
+                    if (!isOwner) return;
                     await api.library.updateSaved(detail.id, { visit_notes: e.target.value });
                   }}
                   onChange={(e) => setDetail({ ...detail, visit_notes: e.target.value })}
                 />
               </div>
 
+              {isOwner && (
               <div>
                 <label className="text-xs font-medium text-slate-600">Import photos from a listing URL</label>
                 <div className="flex gap-2 mt-1">
@@ -368,7 +507,9 @@ function PropertyVisitsInner() {
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">Only use URLs you have rights to view. Best-effort image detection.</p>
               </div>
+              )}
 
+              {isOwner && (
               <div>
                 <label className="text-xs font-medium text-slate-600 flex items-center gap-2">
                   <ImagePlus size={14} />
@@ -391,6 +532,7 @@ function PropertyVisitsInner() {
                   }}
                 />
               </div>
+              )}
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {(detail.photos || []).map((p) => (
@@ -403,6 +545,7 @@ function PropertyVisitsInner() {
                     <span className="absolute bottom-0 left-0 right-0 text-[10px] bg-black/50 text-white px-1 py-0.5 truncate">
                       {p.source === "listing_import" ? "Listing" : "Yours"}
                     </span>
+                    {isOwner && (
                     <button
                       type="button"
                       className="absolute top-1 right-1 p-1 rounded bg-black/50 text-white opacity-0 group-hover:opacity-100"
@@ -413,10 +556,12 @@ function PropertyVisitsInner() {
                     >
                       <Trash2 size={14} />
                     </button>
+                    )}
                   </div>
                 ))}
               </div>
 
+              {isOwner && (
               <div className="border-t border-slate-100 pt-4">
                 <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-2">
                   <Share2 size={16} />
@@ -473,8 +618,68 @@ function PropertyVisitsInner() {
                   rows={2}
                 />
               </div>
+              )}
+
+              {isOwner && (
+              <div className="border-t border-slate-100 pt-4">
+                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-2">
+                  <Users size={16} />
+                  Share with another account
+                </h3>
+                <p className="text-xs text-slate-500 mb-2">
+                  Share this saved visit with a partner, co-buyer, or realtor (any plan). They’ll see it under Visits → Shared with you.
+                </p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                    placeholder="Search name or email"
+                    value={peerQuery}
+                    onChange={(e) => setPeerQuery(e.target.value)}
+                  />
+                  <button type="button" className="px-3 py-1.5 rounded-lg bg-slate-100 text-sm" onClick={searchPeers}>
+                    Find
+                  </button>
+                </div>
+                <ul className="text-sm space-y-1 mb-2 max-h-28 overflow-y-auto">
+                  {peerUsers.map((u) => (
+                    <li key={u.id} className="flex justify-between items-center gap-2">
+                      <span>
+                        {u.full_name || u.email} <span className="text-slate-400 text-xs">{u.plan}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="text-[#10b981] text-xs font-medium"
+                        onClick={async () => {
+                          try {
+                            await api.library.createPeerShare({
+                              recipient_user_id: u.id,
+                              saved_property_id: detail.id,
+                              message: peerShareMsg || undefined,
+                            });
+                            setPeerShareMsg("");
+                            load();
+                          } catch (e) {
+                            setErr(e?.message || "Share failed");
+                          }
+                        }}
+                      >
+                        Share property
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <textarea
+                  className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                  placeholder="Optional note"
+                  value={peerShareMsg}
+                  onChange={(e) => setPeerShareMsg(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              )}
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>

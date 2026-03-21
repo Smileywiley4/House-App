@@ -10,6 +10,7 @@ function getSupabase() {
 export default function Login() {
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+  const inviteToken = searchParams.get("invite");
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -28,6 +29,18 @@ export default function Login() {
 
   const supabase = getSupabase();
   const isSupabaseAuth = !!supabase;
+
+  useEffect(() => {
+    if (!inviteToken || import.meta.env.VITE_USE_PYTHON_BACKEND !== "true") return;
+    const base = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+    if (!base) return;
+    fetch(`${base}/api/invitations/validate?token=${encodeURIComponent(inviteToken)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.valid && d.invitee_email) setEmail(d.invitee_email);
+      })
+      .catch(() => {});
+  }, [inviteToken]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -52,6 +65,22 @@ export default function Login() {
     try {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) throw err;
+      if (inviteToken && import.meta.env.VITE_USE_PYTHON_BACKEND === "true") {
+        const base = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+        if (base) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            await fetch(`${base}/api/invitations/accept`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ token: inviteToken }),
+            }).catch(() => {});
+          }
+        }
+      }
       window.location.href = redirect;
     } catch (err) {
       setError(err.message || "Sign in failed");

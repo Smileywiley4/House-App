@@ -84,5 +84,16 @@ export const base44Adapter = {
     addToFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
     removeFromFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
     realtorInbox: () => Promise.reject(new Error('Visit library requires Python backend')),
+    searchUsers: () => Promise.reject(new Error('Visit library requires Python backend')),
+    createPeerShare: () => Promise.reject(new Error('Visit library requires Python backend')),
+    deletePeerShare: () => Promise.reject(new Error('Visit library requires Python backend')),
+    sharedWithMe: () => Promise.reject(new Error('Visit library requires Python backend')),
+    peerSharesOutgoing: () => Promise.reject(new Error('Visit library requires Python backend')),
+  },
+  invitations: {
+    send: () => Promise.reject(new Error('Invitations require Python backend')),
+    validateToken: () => Promise.reject(new Error('Invitations require Python backend')),
+    accept: () => Promise.reject(new Error('Invitations require Python backend')),
+    listSent: () => Promise.reject(new Error('Invitations require Python backend')),
   },
 };

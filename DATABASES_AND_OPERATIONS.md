@@ -19,6 +19,7 @@
 | `20250222000000_propertypulse_schema.sql` | Core schema: profiles, property_scores, clients, private_listings, handle_new_user trigger |
 | `20250222100000_property_cache_and_stripe.sql` | property_cache table, profiles.stripe_customer_id |
 | `20250226000000_user_presets.sql` | user_presets table (presets feature) |
+| `20250301000000_mobile_device_snapshots.sql` | Opt-in anonymous Expo/mobile device-class rows for analytics (`mobile_device_snapshots`) |
 
 **Apply migrations:**
 

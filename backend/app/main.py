@@ -12,7 +12,7 @@ import stripe
 
 from app.config import get_settings
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations
 
 
 @asynccontextmanager
@@ -47,6 +47,7 @@ app.include_router(llm.router, prefix="/api/integrations")
 app.include_router(subscription.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(user_library.router, prefix="/api")
+app.include_router(invitations.router, prefix="/api")
 
 
 @app.post("/api/webhooks/stripe")

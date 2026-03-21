@@ -33,6 +33,12 @@ async function request(method, path, body = undefined) {
   return res.json();
 }
 
+async function publicGet(path) {
+  const res = await fetch(`${baseUrl}${path}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  return res.json();
+}
+
 async function uploadVisitPhoto(savedId, file, caption) {
   const token = await getToken();
   const form = new FormData();
@@ -148,6 +154,17 @@ export function createPythonBackendAdapter() {
       removeFromFolder: (folderId, savedPropertyId) =>
         request('DELETE', `/api/library/folders/${encodeURIComponent(folderId)}/items/${encodeURIComponent(savedPropertyId)}`),
       realtorInbox: () => request('GET', '/api/library/realtor/inbox'),
+      searchUsers: (q) => request('GET', `/api/library/users/search?q=${encodeURIComponent(q || '')}`),
+      createPeerShare: (body) => request('POST', '/api/library/peer-shares', body),
+      deletePeerShare: (shareId) => request('DELETE', `/api/library/peer-shares/${encodeURIComponent(shareId)}`),
+      sharedWithMe: () => request('GET', '/api/library/shared-with-me'),
+      peerSharesOutgoing: () => request('GET', '/api/library/peer-shares/outgoing'),
+    },
+    invitations: {
+      send: (body) => request('POST', '/api/invitations', body),
+      validateToken: (token) => publicGet(`/api/invitations/validate?token=${encodeURIComponent(token)}`),
+      accept: (token) => request('POST', '/api/invitations/accept', { token }),
+      listSent: () => request('GET', '/api/invitations/sent'),
     },
   };
 }
