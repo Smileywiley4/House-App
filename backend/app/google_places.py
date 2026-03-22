@@ -1,4 +1,15 @@
-"""Google Maps/Places API integration for verified property data."""
+"""
+Google Maps / Places integration for verified property data and **Google Auto-Score**.
+
+Auto-score (`get_autoscore_data` → `/api/property/autoscore`) requires **one browser/server API key**:
+
+- **Geocoding API** — `maps.googleapis.com/maps/api/geocode/json`
+- **Places API** (legacy **Nearby Search**) — `maps.googleapis.com/maps/api/place/nearbysearch/json`
+
+Enable both on the same Google Cloud project as `GOOGLE_PLACES_API_KEY`. Restrict the key to these APIs.
+
+Other features may use **Places API (New)** (`places.googleapis.com`) — enable that separately if you use `places_v1_search_nearby`.
+"""
 import math
 import logging
 import httpx
@@ -8,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+# Places API (New) — https://developers.google.com/maps/documentation/places/web-service/nearby-search
+PLACES_V1_SEARCH_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
+DEFAULT_SEARCH_NEARBY_FIELD_MASK = (
+    "places.displayName,places.formattedAddress,places.location,places.types,places.id"
+)
 
 
 def _api_key() -> str | None:
@@ -39,6 +55,49 @@ def _haversine(lat1, lon1, lat2, lon2) -> float:
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+async def places_v1_search_nearby(
+    body: dict,
+    *,
+    field_mask: str | None = None,
+) -> tuple[dict | list | None, int, str | None]:
+    """
+    POST places.googleapis.com/v1/places:searchNearby (Places API New).
+
+    Returns (parsed_json, http_status, error_message).
+    error_message is set when status >= 400.
+    """
+    key = _api_key()
+    if not key:
+        return None, 503, "GOOGLE_PLACES_API_KEY is not configured"
+    mask = (field_mask or "").strip() or DEFAULT_SEARCH_NEARBY_FIELD_MASK
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": mask,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(PLACES_V1_SEARCH_NEARBY_URL, json=body, headers=headers)
+        if resp.content:
+            try:
+                data = resp.json()
+            except Exception:
+                data = {"raw": resp.text[:4000]}
+        else:
+            data = {}
+        if resp.status_code >= 400:
+            msg = None
+            if isinstance(data, dict):
+                msg = data.get("error", {}).get("message") if isinstance(data.get("error"), dict) else data.get("message")
+            msg = msg or resp.text[:2000] or f"HTTP {resp.status_code}"
+            logger.warning("Places searchNearby failed: %s", msg)
+            return data, resp.status_code, msg
+        return data, resp.status_code, None
+    except Exception as e:
+        logger.error("Places searchNearby error: %s", e)
+        return None, 502, str(e)
 
 
 async def geocode_address(address: str) -> dict | None:

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/api';
 import { waitForSession, getSharedSupabase } from '@/lib/supabase';
 
@@ -13,40 +13,35 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const authChecked = useRef(false);
+  const mounted = useRef(true);
 
-  useEffect(() => {
-    checkAppState();
-
-    const client = getSharedSupabase();
-    if (!client) return;
-    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session && !authChecked.current) {
-        authChecked.current = true;
-        checkUserAuth();
-      }
-      if (event === 'SIGNED_OUT') {
-        authChecked.current = false;
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-      if (event === 'TOKEN_REFRESHED' && session) {
-        authChecked.current = true;
-      }
-    });
-    return () => subscription.unsubscribe();
+  const checkUserAuth = useCallback(async () => {
+    try {
+      setIsLoadingAuth(true);
+      const currentUser = await api.auth.me();
+      if (!mounted.current) return;
+      setUser(currentUser);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('User auth check failed:', error);
+      if (!mounted.current) return;
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      if (mounted.current) setIsLoadingAuth(false);
+    }
   }, []);
 
-  const checkAppState = async () => {
+  const checkAppState = useCallback(async () => {
     setAuthError(null);
 
     if (usePythonBackend || useSupabase) {
       const session = await waitForSession();
       if (session) {
-        authChecked.current = true;
         await checkUserAuth();
       } else {
         setIsAuthenticated(false);
+        setUser(null);
         setIsLoadingAuth(false);
       }
       return;
@@ -54,21 +49,48 @@ export const AuthProvider = ({ children }) => {
 
     setIsAuthenticated(false);
     setIsLoadingAuth(false);
-  };
+  }, [checkUserAuth]);
 
-  const checkUserAuth = async () => {
-    try {
-      setIsLoadingAuth(true);
-      const currentUser = await api.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoadingAuth(false);
-    }
-  };
+  useEffect(() => {
+    mounted.current = true;
+    checkAppState();
+
+    const client = getSharedSupabase();
+    if (!client) return undefined;
+
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+        return;
+      }
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'INITIAL_SESSION' ||
+        event === 'USER_UPDATED'
+      ) {
+        if (session) {
+          checkUserAuth();
+        }
+      }
+    });
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      client.auth.getSession().then(({ data: { session } }) => {
+        if (session) checkUserAuth();
+      });
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      mounted.current = false;
+      subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [checkAppState, checkUserAuth]);
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
@@ -94,6 +116,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       navigateToLogin,
       checkAppState,
+      refreshUser: checkUserAuth,
     }}>
       {children}
     </AuthContext.Provider>

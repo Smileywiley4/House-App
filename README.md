@@ -14,7 +14,7 @@ Compare properties with weighted scoring: search an address, score categories th
    python -m venv .venv
    source .venv/bin/activate   # or .venv\Scripts\activate on Windows
    pip install -r requirements.txt
-   cp .env.example .env        # fill SUPABASE_*, STRIPE_*, OPENAI_API_KEY, CORS_ORIGINS
+   cp .env.example .env        # fill SUPABASE_*, STRIPE_*, LLM keys, optional Google APIs — see [docs/API_CONFIGURATION.md](docs/API_CONFIGURATION.md)
    uvicorn app.main:app --reload
    ```
    Backend runs at `http://localhost:8000`. Optional: Stripe webhook at `POST /api/webhooks/stripe` to set `profiles.plan` after payment.
@@ -42,7 +42,7 @@ Compare properties with weighted scoring: search an address, score categories th
 ## Quick start (Base44)
 
 1. Clone, then `npm install`
-2. Create `.env` or `.env.local` (see [.env.example](.env.example)):
+2. Create `.env` or `.env.local` (see [.env.example](.env.example); all APIs: [docs/API_CONFIGURATION.md](docs/API_CONFIGURATION.md)):
 
 ```bash
 VITE_BASE44_APP_ID=your_app_id
@@ -100,8 +100,9 @@ So: **API + core (routes, constants, hooks) are portable.** Pages and components
 
 ## Ads (free users only)
 
-- **Free users** see ad slots (e.g. Google AdSense/Google Ads). **Premium and Realtor** users do not. `<AdSlot>` in `src/components/AdSlot.jsx` only renders when `usePlan().showAds` is true.
+- **Free users** see ad slots (**Google AdSense** publisher ads — not the advertiser “Google Ads API”). **Premium and Realtor** users do not. `<AdSlot>` in `src/components/AdSlot.jsx` only renders when `usePlan().showAds` is true.
 - **Web:** Set `VITE_GOOGLE_ADS_CLIENT_ID` and `VITE_GOOGLE_ADS_SLOT_LEADERBOARD` (and optionally `VITE_GOOGLE_ADS_SLOT_INFEED`) in env. Ads appear in the footer and on the Home page.
+- **Revenue vs Stripe:** AdSense pays you via **Google**; **Stripe** is for subscriptions. Optional daily AdSense estimates: `POST /api/integrations/revenue/adsense-daily-snapshot` (admin). Details: [docs/PUBLISHER_REVENUE_ADSENSE_STRIPE.md](docs/PUBLISHER_REVENUE_ADSENSE_STRIPE.md).
 - **iOS/Android:** Use the same `showAds` check; render your native ad SDK (e.g. react-native-google-mobile-ads) instead of the web AdSlot component.
 
 ## Property accuracy & “For Sale” badge

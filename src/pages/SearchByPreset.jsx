@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Bookmark, Building2, Lock } from "lucide-react";
+import { Search, MapPin, Bookmark, Lock } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";

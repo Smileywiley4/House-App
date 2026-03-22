@@ -120,6 +120,11 @@ export default function Home() {
             ))}
           </div>
 
+          {/* AdSense in-feed style slot (free users) — pair with VITE_GOOGLE_ADS_SLOT_INFEED */}
+          <div className="max-w-3xl mx-auto mt-14">
+            <AdSlot format="infeed" className="min-h-[100px]" />
+          </div>
+
           <div className="mt-10 text-center">
             <AuthAwareLink />
           </div>
@@ -130,7 +135,14 @@ export default function Home() {
 }
 
 function AuthAwareLink() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoadingAuth } = useAuth();
+  if (isLoadingAuth) {
+    return (
+      <div className="inline-flex items-center justify-center min-h-[44px] px-6">
+        <span className="w-6 h-6 border-2 border-[#10b981]/30 border-t-[#10b981] rounded-full animate-spin" aria-hidden />
+      </div>
+    );
+  }
   if (isAuthenticated) {
     return (
       <Link
@@ -217,6 +229,10 @@ function PropertyCard({ property }) {
         <PremiumGate featureName="AI Property Insights">
           <AIPropertyInsights property={property} />
         </PremiumGate>
+
+        <div className="mt-8 max-w-2xl mx-auto">
+          <AdSlot format="rectangle" className="min-h-[250px]" />
+        </div>
 
         <Link
           to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}

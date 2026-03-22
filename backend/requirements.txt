@@ -6,6 +6,9 @@ python-dotenv>=1.0.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 httpx>=0.27.0
+google-auth>=2.29.0
+# Optional: one-time AdSense OAuth helper (scripts/adsense_oauth_to_env.py); same flow as googleads-adsense-examples v2/python
+google-auth-oauthlib>=1.2.0
 stripe>=11.0.0
 openai>=1.0.0
 anthropic>=0.80.0

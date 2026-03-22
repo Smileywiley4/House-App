@@ -38,7 +38,17 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
       const data = await api.property.autoscore(address);
       setResult(data);
     } catch (e) {
-      setError("Could not auto-score. Google API may not be configured.");
+      let msg = e?.message || (typeof e === "string" ? e : "") || "Could not auto-score.";
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed?.detail) msg = typeof parsed.detail === "string" ? parsed.detail : JSON.stringify(parsed.detail);
+      } catch {
+        /* plain text error */
+      }
+      if (e?.status === 503 && !msg.includes("GOOGLE_PLACES") && !msg.includes("Geocoding")) {
+        msg = `${msg} (Check GOOGLE_PLACES_API_KEY + Geocoding API + Places API in GCP.)`;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

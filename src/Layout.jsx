@@ -1,9 +1,17 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera } from "lucide-react";
+import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const t = {
   accent: "#10b981",
@@ -15,8 +23,9 @@ const t = {
 };
 
 export default function Layout({ children, currentPageName }) {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
 
+  /** Profile / account hub is opened from the header avatar only (upper right). */
   const allNavItems = [
     { name: "Home", label: "Search", icon: Home, public: true },
     { name: "QuickCompare", label: "Compare", icon: Columns, public: true },
@@ -25,7 +34,6 @@ export default function Layout({ children, currentPageName }) {
     { name: "SideBySide", label: "Side by Side", icon: Columns },
     { name: "RealtorPortal", label: "Realtors", icon: Building2 },
     { name: "Pricing", label: "Pricing", icon: Zap, public: true },
-    { name: "Profile", label: "Profile", icon: UserCircle },
     { name: "PropertyVisits", label: "Visits", icon: Camera },
   ];
 
@@ -81,13 +89,88 @@ export default function Layout({ children, currentPageName }) {
       {/* Top nav */}
       <header className="bg-[#1a2234] border-b border-white/5 px-4 sm:px-6 py-2 sticky top-0 z-40">
         <div className="flex items-center justify-between gap-4">
-          <Link to={createPageUrl("Home")} className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: t.accent }}>
+          <Link to={createPageUrl("Home")} className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: t.accent }}>
               <Home size={14} className="text-white" />
             </div>
-            <span className="font-bold text-white tracking-tight text-base">{t.label}</span>
-            <span className="ml-0.5 text-[10px] font-bold" style={{ color: t.gold }}>✦</span>
+            <span className="font-bold text-white tracking-tight text-base truncate">{t.label}</span>
+            <span className="ml-0.5 text-[10px] font-bold shrink-0" style={{ color: t.gold }}>✦</span>
           </Link>
+
+          <div className="flex items-center shrink-0">
+            {isLoadingAuth ? (
+              <span
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5"
+                aria-hidden
+              >
+                <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+              </span>
+            ) : isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234]"
+                    aria-label="Open account menu"
+                  >
+                    <UserCircle size={22} strokeWidth={1.75} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={8}>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-0.5">
+                      <span className="text-sm font-semibold truncate">{user?.full_name || "My account"}</span>
+                      {user?.email && (
+                        <span className="text-xs font-normal text-muted-foreground truncate">{user.email}</span>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to={createPageUrl("Profile")} className="cursor-pointer">
+                      <UserCircle className="text-muted-foreground" />
+                      Profile &amp; account
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to={`${createPageUrl("Profile")}?tab=settings`} className="cursor-pointer">
+                      <Settings className="text-muted-foreground" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to={`${createPageUrl("Profile")}?tab=billing`} className="cursor-pointer">
+                      <CreditCard className="text-muted-foreground" />
+                      Billing
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to={`${createPageUrl("Profile")}?tab=security`} className="cursor-pointer">
+                      <Shield className="text-muted-foreground" />
+                      Security
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30"
+                    onClick={() => logout(true)}
+                  >
+                    <LogOut className="text-red-600" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition hover:opacity-95"
+                style={{ backgroundColor: t.accent, color: "white" }}
+              >
+                <LogIn size={16} />
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
 
         <nav className="mt-2 flex items-center gap-1 flex-nowrap overflow-x-auto whitespace-nowrap pb-1">
@@ -107,25 +190,6 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             );
           })}
-
-          {isAuthenticated ? (
-            <Link
-              to={createPageUrl("Profile")}
-              className="flex items-center gap-1.5 ml-1 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-            >
-              <UserCircle size={15} />
-              Account
-            </Link>
-          ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-1.5 ml-1 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
-              style={{ backgroundColor: t.accent, color: "white" }}
-            >
-              <LogIn size={15} />
-              Sign In
-            </Link>
-          )}
         </nav>
 
         <div className="mt-2">

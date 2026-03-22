@@ -3,7 +3,15 @@ import { useAuth } from "@/lib/AuthContext";
 import { LogIn } from "lucide-react";
 
 export default function RequireAuth({ children, message = "Sign in to access this feature" }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoadingAuth } = useAuth();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#10b981]/30 border-t-[#10b981] rounded-full animate-spin" aria-label="Loading" />
+      </div>
+    );
+  }
 
   if (isAuthenticated) return children;
 

@@ -1,11 +1,12 @@
 """Property search by address. Google for verified location, web search for real listing data, LLM to structure."""
 import hashlib
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, Header, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from app.dependencies import get_supabase_admin, get_current_user_id
 from app.llm import get_property_by_address_llm, search_properties_by_criteria_llm, has_llm_provider, active_provider
-from app.google_places import get_property_via_google, get_autoscore_data
+from app.google_places import get_property_via_google, get_autoscore_data, places_v1_search_nearby
 from app.web_search import search_property_listings, format_search_context
 
 router = APIRouter(prefix="/property", tags=["property"])
@@ -93,6 +94,26 @@ def _cache_key(addr: str) -> str:
 
 class SearchBody(BaseModel):
     address: str
+
+
+@router.post("/places/search-nearby")
+async def places_search_nearby(
+    body: dict = Body(...),
+    _user_id: str = Depends(get_current_user_id),
+    x_goog_field_mask: str | None = Header(None, alias="X-Goog-FieldMask"),
+):
+    """
+    Google Places API (New) — `places:searchNearby`.
+    Same JSON body as the official API. Optional header `X-Goog-FieldMask` (default includes
+    displayName, formattedAddress, location, types, id). Server uses `GOOGLE_PLACES_API_KEY`.
+    https://developers.google.com/maps/documentation/places/web-service/nearby-search
+    """
+    data, status, err = await places_v1_search_nearby(body, field_mask=x_goog_field_mask)
+    if status >= 400:
+        if isinstance(data, dict):
+            return JSONResponse(content=data, status_code=status)
+        raise HTTPException(status_code=status, detail=err or "Places searchNearby failed")
+    return data
 
 
 @router.post("/search")
@@ -270,7 +291,11 @@ async def autoscore(body: AutoScoreBody):
     if not raw:
         raise HTTPException(
             status_code=503,
-            detail="Could not retrieve location data. Ensure GOOGLE_PLACES_API_KEY is configured.",
+            detail=(
+                "Could not geocode this address. Set GOOGLE_PLACES_API_KEY on the backend and enable "
+                "**Geocoding API** and **Places API** (Nearby Search) for that key's GCP project. "
+                "See docs/API_CONFIGURATION.md → Google Auto-Score."
+            ),
         )
 
     scores = _compute_autoscores(raw)

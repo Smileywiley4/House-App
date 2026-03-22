@@ -48,6 +48,19 @@ async def require_paid_plan(user_id: str = Depends(get_current_user_id)) -> str:
     return user_id
 
 
+async def require_admin_plan(user_id: str = Depends(get_current_user_id)) -> str:
+    """Google Workspace admin proxies — only profiles with plan `admin`."""
+    supabase = get_supabase_admin()
+    r = supabase.table("profiles").select("plan").eq("id", user_id).execute()
+    plan = (r.data[0] if r.data else {}).get("plan") or "free"
+    if plan != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin plan required for Google Workspace admin API proxy",
+        )
+    return user_id
+
+
 async def require_realtor_plan(user_id: str = Depends(get_current_user_id)) -> str:
     """Realtor tier (or admin) — for inbox of shared visits."""
     supabase = get_supabase_admin()

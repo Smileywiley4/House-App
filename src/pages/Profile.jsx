@@ -1,10 +1,31 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { User, Save, BarChart3, Trophy, Settings, ChevronRight, Trash2, Check, Sparkles, Bookmark, Plus, UserPlus, Monitor } from "lucide-react";
+import {
+  User,
+  Save,
+  BarChart3,
+  Trophy,
+  ChevronRight,
+  Trash2,
+  Check,
+  Sparkles,
+  Bookmark,
+  Plus,
+  UserPlus,
+  LayoutDashboard,
+  Shield,
+  CreditCard,
+  Activity,
+  SlidersHorizontal,
+  Cog,
+  LogOut,
+} from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
+import { useAuth } from "@/lib/AuthContext";
+import { getSharedSupabase } from "@/lib/supabase";
 import { MANDATORY_CATEGORIES, OPTIONAL_CATEGORIES, NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import RecommendationEngine from "@/components/profile/RecommendationEngine";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
@@ -15,14 +36,20 @@ import AppearanceSettings from "@/components/profile/AppearanceSettings";
 
 const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...NEIGHBORHOOD_CATEGORIES, ...OPTIONAL_CATEGORIES];
 const TABS = [
-  { id: "account", label: "Account", icon: User },
-  { id: "display", label: "Display", icon: Monitor },
-  { id: "preferences", label: "Score Preferences", icon: Settings },
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "profile", label: "Profile", icon: User },
+  { id: "usage", label: "Usage", icon: Activity },
+  { id: "settings", label: "Settings", icon: Cog },
+  { id: "security", label: "Security", icon: Shield },
+  { id: "billing", label: "Billing", icon: CreditCard },
+  { id: "preferences", label: "Score Preferences", icon: SlidersHorizontal },
   { id: "presets", label: "Presets", icon: Bookmark },
   { id: "foryou", label: "For You", icon: Sparkles },
   { id: "invite", label: "Invite & share", icon: UserPlus },
   { id: "history", label: "Saved Properties", icon: BarChart3 },
 ];
+
+const VALID_PROFILE_TAB_IDS = new Set(TABS.map((t) => t.id));
 
 export default function Profile() {
   return (
@@ -34,7 +61,26 @@ export default function Profile() {
 
 function ProfileInner() {
   const { plan, isPremium } = usePlan();
-  const [tab, setTab] = useState("account");
+  const { logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState("overview");
+
+  const selectTab = (id) => {
+    setTab(id);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", id);
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  useEffect(() => {
+    const q = searchParams.get("tab");
+    if (q && VALID_PROFILE_TAB_IDS.has(q)) setTab(q);
+  }, [searchParams]);
   const [user, setUser] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [scores, setScores] = useState([]);
@@ -211,7 +257,7 @@ function ProfileInner() {
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setTab(id)}
+              onClick={() => selectTab(id)}
               className={`flex items-center gap-2 px-4 py-4 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 tab === id
                   ? "border-[#10b981] text-[#10b981]"
@@ -227,14 +273,79 @@ function ProfileInner() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
 
-        {/* ─── DISPLAY (theme + brightness) ─── */}
-        {tab === "display" && <AppearanceSettings />}
+        {/* ─── OVERVIEW ─── */}
+        {tab === "overview" && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-1">Overview</h2>
+              <p className="text-slate-400 text-sm">Your account at a glance and shortcuts to every section.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { id: "profile", title: "Profile", desc: "Personal & contact info", icon: User },
+                { id: "usage", title: "Usage", desc: "Scores, presets, activity", icon: Activity },
+                { id: "settings", title: "Settings", desc: "Appearance & this device", icon: Cog },
+                { id: "security", title: "Security", desc: "Password & sign out", icon: Shield },
+                { id: "billing", title: "Billing", desc: "Plan & payment methods", icon: CreditCard },
+                { id: "preferences", title: "Score preferences", desc: "Category weights", icon: SlidersHorizontal },
+                { id: "presets", title: "Presets", desc: "Saved filter sets", icon: Bookmark },
+                { id: "history", title: "Saved properties", desc: "Scored listings", icon: BarChart3 },
+                { id: "foryou", title: "For You", desc: "Recommendations", icon: Sparkles },
+                { id: "invite", title: "Invite & share", desc: "Friends & links", icon: UserPlus },
+              ].map(({ id, title, desc, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => selectTab(id)}
+                  className="text-left bg-card rounded-2xl border border-border shadow-sm p-5 hover:border-[#10b981]/50 transition-colors"
+                >
+                  <Icon size={20} className="text-[#10b981] mb-2" />
+                  <p className="font-bold text-foreground text-sm">{title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                </button>
+              ))}
+            </div>
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Shield size={18} className="text-[#10b981]" />
+                Staying signed in
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your session is kept in this browser&apos;s storage for the whole visit and across reloads. When you switch back to this tab, we refresh your login automatically. To remain signed in, avoid clearing site data or blocking storage for this site. Use{" "}
+                <button type="button" className="text-[#10b981] font-semibold hover:underline" onClick={() => selectTab("security")}>
+                  Security
+                </button>{" "}
+                to sign out on this device only.
+              </p>
+            </div>
+          </div>
+        )}
 
-        {/* ─── ACCOUNT TAB ─── */}
-        {tab === "account" && (
+        {/* ─── SETTINGS (appearance + device) ─── */}
+        {tab === "settings" && (
+          <div className="space-y-8 max-w-2xl">
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-1">Settings</h2>
+              <p className="text-slate-400 text-sm">Display options and how this browser keeps you signed in.</p>
+            </div>
+            <AppearanceSettings />
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h3 className="font-semibold text-foreground mb-2">This browser &amp; device</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                The web app can&apos;t change your phone or computer&apos;s system permissions, but you can help the session last by allowing cookies and site data for this origin in your browser settings (Safari: Settings → Privacy; Chrome: Site settings).
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Private/incognito windows usually discard storage when closed—use a normal window to stay signed in between sessions.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ─── PROFILE (personal info only) ─── */}
+        {tab === "profile" && (
           <div className="max-w-lg">
-            <h2 className="text-lg font-bold text-foreground mb-1">Account Details</h2>
-            <p className="text-slate-400 text-sm mb-6">Manage your personal information.</p>
+            <h2 className="text-lg font-bold text-foreground mb-1">Profile</h2>
+            <p className="text-slate-400 text-sm mb-6">Personal information tied to your account.</p>
 
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
               <div>
@@ -290,86 +401,6 @@ function ProfileInner() {
                   placeholder="Brokerage name"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Plan</label>
-                <p className="text-sm text-slate-600 capitalize">{plan || "Free"}</p>
-                {isPremium && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setPortalLoading(true);
-                      try {
-                        const { url } = await api.subscription.getPortalUrl();
-                        if (url) window.location.href = url;
-                      } catch (err) {
-                        console.error(err);
-                      } finally {
-                        setPortalLoading(false);
-                      }
-                    }}
-                    disabled={portalLoading}
-                    className="mt-2 text-xs font-semibold text-[#10b981] hover:underline disabled:opacity-60"
-                  >
-                    {portalLoading ? "Opening…" : "Manage subscription"}
-                  </button>
-                )}
-                {isPremium && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setPortalLoading(true);
-                      try {
-                        const { url } = await api.subscription.getPortalUrl();
-                        if (url) window.location.href = url;
-                      } catch (err) {
-                        console.error(err);
-                      } finally {
-                        setPortalLoading(false);
-                      }
-                    }}
-                    disabled={portalLoading}
-                    className="mt-2 text-xs font-semibold text-red-400 hover:underline disabled:opacity-60"
-                  >
-                    {portalLoading ? "Opening…" : "Cancel subscription"}
-                  </button>
-                )}
-                {isPremium && (
-                  <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                    You can update payment methods or cancel in Stripe. If you cancel, charges stop after your current billing period ends.
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-2">
-                <p className="text-sm font-semibold text-foreground mb-2">Change password</p>
-                <div className="space-y-3">
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New password"
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
-                  />
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
-                  />
-                  {passwordError && <p className="text-xs text-red-600 font-semibold">{passwordError}</p>}
-                  <button
-                    type="button"
-                    onClick={changePassword}
-                    disabled={passwordSaving}
-                    className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-                      passwordSaved ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
-                    } disabled:opacity-60`}
-                  >
-                    {passwordSaving ? "Updating..." : passwordSaved ? "Password updated" : "Update password"}
-                  </button>
-                </div>
-              </div>
 
               <div className="pt-1">
                 <button
@@ -383,18 +414,144 @@ function ProfileInner() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="grid grid-cols-3 gap-4 mt-6">
+        {/* ─── USAGE ─── */}
+        {tab === "usage" && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-1">Usage</h2>
+              <p className="text-slate-400 text-sm">How you&apos;re using Property Pulse.</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { label: "Saved Properties", value: scores.length },
-                { label: "Top Score", value: winner ? `${winner.percentage}%` : "—" },
-                { label: "Avg Score", value: scores.length ? `${Math.round(scores.reduce((a, s) => a + s.percentage, 0) / scores.length)}%` : "—" },
+                { label: "Saved properties", value: scores.length },
+                { label: "Presets", value: presets.length },
+                { label: "Top score", value: winner ? `${winner.percentage}%` : "—" },
+                { label: "Avg score", value: scores.length ? `${Math.round(scores.reduce((a, s) => a + s.percentage, 0) / scores.length)}%` : "—" },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-card rounded-2xl border border-border shadow-sm p-5 text-center">
                   <div className="text-2xl font-bold text-[#10b981]">{value}</div>
-                  <div className="text-xs text-slate-400 mt-1">{label}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{label}</div>
                 </div>
               ))}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => selectTab("history")}
+                className="px-4 py-2 rounded-xl bg-[#1a2234] text-white text-sm font-semibold hover:bg-[#243050]"
+              >
+                View saved properties
+              </button>
+              <button
+                type="button"
+                onClick={() => selectTab("presets")}
+                className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted/50"
+              >
+                Manage presets
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── SECURITY ─── */}
+        {tab === "security" && (
+          <div className="max-w-lg space-y-8">
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-1">Security</h2>
+              <p className="text-slate-400 text-sm">Password and session for this browser.</p>
+            </div>
+            <SessionOnDeviceCard />
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+              <p className="text-sm font-semibold text-foreground">Change password</p>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                />
+                {passwordError && <p className="text-xs text-red-600 font-semibold">{passwordError}</p>}
+                <button
+                  type="button"
+                  onClick={changePassword}
+                  disabled={passwordSaving}
+                  className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+                    passwordSaved ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                  } disabled:opacity-60`}
+                >
+                  {passwordSaving ? "Updating..." : passwordSaved ? "Password updated" : "Update password"}
+                </button>
+              </div>
+            </div>
+            <div className="bg-card rounded-2xl border border-destructive/30 p-6">
+              <p className="text-sm font-semibold text-foreground mb-2">Sign out on this device</p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Ends your session in this browser only. Other devices stay signed in until you sign out there too.
+              </p>
+              <button
+                type="button"
+                onClick={() => logout(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-red-600 hover:bg-red-700 text-white"
+              >
+                <LogOut size={16} />
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── BILLING ─── */}
+        {tab === "billing" && (
+          <div className="max-w-lg space-y-6">
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-1">Billing &amp; payment</h2>
+              <p className="text-slate-400 text-sm">Your plan and Stripe customer portal.</p>
+            </div>
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Current plan</label>
+                <p className="text-lg capitalize text-foreground">{plan || "Free"}</p>
+              </div>
+              {isPremium ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setPortalLoading(true);
+                      try {
+                        const { url } = await api.subscription.getPortalUrl();
+                        if (url) window.location.href = url;
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setPortalLoading(false);
+                      }
+                    }}
+                    disabled={portalLoading}
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#10b981] hover:bg-[#059669] text-white disabled:opacity-60"
+                  >
+                    {portalLoading ? "Opening…" : "Open billing portal"}
+                  </button>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    In the Stripe portal you can update payment methods, view invoices, and cancel your subscription. If you cancel, charges stop after the current billing period ends.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  You&apos;re on the free plan. Upgrade from the app when you&apos;re ready for premium features.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -601,6 +758,51 @@ function ProfileInner() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function SessionOnDeviceCard() {
+  const [info, setInfo] = useState({ loading: true, email: null, expiresAt: null });
+  useEffect(() => {
+    const c = getSharedSupabase();
+    if (!c) {
+      setInfo({ loading: false, email: null, expiresAt: null });
+      return;
+    }
+    c.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setInfo({ loading: false, email: null, expiresAt: null });
+        return;
+      }
+      const exp = session.expires_at ? new Date(session.expires_at * 1000) : null;
+      setInfo({
+        loading: false,
+        email: session.user?.email ?? null,
+        expiresAt: exp,
+      });
+    });
+  }, []);
+  if (info.loading) {
+    return (
+      <div className="bg-card rounded-2xl border border-border p-6 text-sm text-muted-foreground">
+        Loading session…
+      </div>
+    );
+  }
+  return (
+    <div className="bg-card rounded-2xl border border-border p-6 space-y-2">
+      <h3 className="font-semibold text-foreground text-sm">Signed in on this browser</h3>
+      {info.email && <p className="text-sm text-muted-foreground">Account: {info.email}</p>}
+      {info.expiresAt && (
+        <p className="text-xs text-muted-foreground">
+          Tokens refresh automatically while you use the app; current access segment expires around{" "}
+          {info.expiresAt.toLocaleString()}.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Your login is kept in this browser&apos;s storage for the session. Don&apos;t clear site data for this site if you want to stay signed in.
+      </p>
     </div>
   );
 }

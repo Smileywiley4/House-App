@@ -12,7 +12,7 @@ import stripe
 
 from app.config import get_settings
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, revenue, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate
 
 
 @asynccontextmanager
@@ -44,6 +44,26 @@ app.include_router(private_listings.router, prefix="/api/entities")
 app.include_router(presets.router, prefix="/api/entities")
 app.include_router(property.router, prefix="/api")
 app.include_router(llm.router, prefix="/api/integrations")
+app.include_router(google_amp.router, prefix="/api/integrations")
+app.include_router(google_workspace_datatransfer.router, prefix="/api/integrations")
+app.include_router(google_adsense.router, prefix="/api/integrations")
+app.include_router(google_adsense_platform.router, prefix="/api/integrations")
+app.include_router(google_analytics_hub.router, prefix="/api/integrations")
+app.include_router(google_android_management.router, prefix="/api/integrations")
+app.include_router(google_chat.router, prefix="/api/integrations")
+app.include_router(google_chrome_webstore.router, prefix="/api/integrations")
+app.include_router(google_data_fusion.router, prefix="/api/integrations")
+app.include_router(google_datamanager.router, prefix="/api/integrations")
+app.include_router(google_doubleclicksearch.router, prefix="/api/integrations")
+app.include_router(google_drive.router, prefix="/api/integrations")
+app.include_router(google_policyanalyzer.router, prefix="/api/integrations")
+app.include_router(google_policysimulator.router, prefix="/api/integrations")
+app.include_router(google_saasservicemgmt.router, prefix="/api/integrations")
+app.include_router(google_servicenetworking.router, prefix="/api/integrations")
+app.include_router(google_filestore.router, prefix="/api/integrations")
+app.include_router(google_oslogin.router, prefix="/api/integrations")
+app.include_router(google_translate.router, prefix="/api/integrations")
+app.include_router(revenue.router, prefix="/api/integrations")
 app.include_router(subscription.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(user_library.router, prefix="/api")
@@ -106,6 +126,35 @@ def health():
         "openai_key_set": bool(s.openai_api_key),
         "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
         "google_places_key_set": bool(s.google_places_api_key),
+        "google_amp_url_key_set": bool(s.google_amp_url_api_key or s.google_places_api_key),
+        "google_workspace_datatransfer_configured": bool(
+            s.google_workspace_sa_json_path.strip()
+            and s.google_workspace_delegated_admin_email.strip()
+        ),
+        "google_adsense_configured": bool(
+            s.google_adsense_client_id.strip()
+            and s.google_adsense_client_secret.strip()
+            and s.google_adsense_refresh_token.strip()
+        ),
+        "google_doubleclicksearch_configured": bool(
+            s.google_doubleclicksearch_client_id.strip()
+            and s.google_doubleclicksearch_client_secret.strip()
+            and s.google_doubleclicksearch_refresh_token.strip()
+        ),
+        "google_analytics_hub_configured": bool(s.google_analytics_hub_sa_json_path.strip()),
+        "google_android_management_configured": bool(s.google_android_management_sa_json_path.strip()),
+        "google_chat_configured": bool(s.google_chat_sa_json_path.strip()),
+        "google_chrome_webstore_configured": bool(s.google_chrome_webstore_sa_json_path.strip()),
+        "google_data_fusion_configured": bool(s.google_data_fusion_sa_json_path.strip()),
+        "google_filestore_configured": bool(s.google_filestore_sa_json_path.strip()),
+        "google_oslogin_configured": bool(s.google_oslogin_sa_json_path.strip()),
+        "google_translate_configured": bool(s.google_translate_sa_json_path.strip()),
+        "google_datamanager_configured": bool(s.google_datamanager_sa_json_path.strip()),
+        "google_drive_configured": bool(s.google_drive_sa_json_path.strip()),
+        "google_policyanalyzer_configured": bool(s.google_policyanalyzer_sa_json_path.strip()),
+        "google_policysimulator_configured": bool(s.google_policysimulator_sa_json_path.strip()),
+        "google_saasservicemgmt_configured": bool(s.google_saasservicemgmt_sa_json_path.strip()),
+        "google_servicenetworking_configured": bool(s.google_servicenetworking_sa_json_path.strip()),
         "google_cse_id_set": bool(s.google_cse_id),
         "supabase_url_set": bool(s.supabase_url),
         "supabase_service_key_set": bool(s.supabase_service_role_key),

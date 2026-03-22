@@ -2,9 +2,17 @@ import { useEffect, useRef } from "react";
 import { usePlan } from "@/core/hooks/usePlan";
 
 /**
- * Renders an ad slot for free users only. Premium/realtor users see nothing.
- * Configure via env: VITE_GOOGLE_ADS_CLIENT_ID, VITE_GOOGLE_ADS_SLOT_* (e.g. VITE_GOOGLE_ADS_SLOT_LEADERBOARD).
- * Safe to use on web; for React Native use a native ad SDK (e.g. react-native-google-mobile-ads) and same showAds check.
+ * Google AdSense **display** placeholders (publisher monetization).
+ *
+ * - **VITE_GOOGLE_ADS_CLIENT_ID** = AdSense publisher id **`ca-pub-XXXXXXXX`** (Ads → Overview in AdSense).
+ * - **VITE_GOOGLE_ADS_SLOT_*** = numeric **ad unit** slot IDs (Ads → By ad unit).
+ *
+ * Server-side **AdSense Management API** (reports, accounts) uses OAuth in `backend/.env` — same API as Google’s
+ * official samples: https://github.com/googleads/googleads-adsense-examples/tree/main/v2/python
+ * One-time token: `python scripts/adsense_oauth_to_env.py` → `backend/scripts/README_ADSENSE.md`
+ *
+ * Renders for **free** users only (`usePlan().showAds`). Premium/Realtor see nothing.
+ * React Native: use e.g. react-native-google-mobile-ads + same showAds logic.
  */
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_ADS_CLIENT_ID;
 const SLOT_LEADERBOARD = import.meta.env.VITE_GOOGLE_ADS_SLOT_LEADERBOARD || import.meta.env.VITE_GOOGLE_ADS_SLOT_1;

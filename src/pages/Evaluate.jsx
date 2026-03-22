@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ChevronLeft, Plus, X, Save, BarChart3, LogIn, Columns } from "lucide-react";
+import { ChevronLeft, Plus, Save, BarChart3, LogIn, Columns } from "lucide-react";
 import { api } from "@/api";
 import CategorySlider from "@/components/evaluate/CategorySlider.jsx";
 import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker.jsx";
@@ -13,7 +13,7 @@ import PresetPicker from "@/components/presets/PresetPicker";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Evaluate() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
 
@@ -195,7 +195,11 @@ export default function Evaluate() {
             >
               <Columns size={15} /> Compare
             </button>
-            {isAuthenticated ? (
+            {isLoadingAuth ? (
+              <span className="flex items-center gap-2 px-4 py-2 text-slate-400 text-sm min-w-[8rem] justify-center">
+                <span className="w-4 h-4 border-2 border-[#10b981]/30 border-t-[#10b981] rounded-full animate-spin" aria-hidden />
+              </span>
+            ) : isAuthenticated ? (
               saved ? (
                 <Link
                   to={createPageUrl("Compare")}

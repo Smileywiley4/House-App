@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Search, MapPin, Plus, X, Trophy, ChevronDown, ChevronUp, BarChart3, Loader2, Check } from "lucide-react";
+import { Search, MapPin, X, Trophy, ChevronDown, ChevronUp, BarChart3, Loader2, Check } from "lucide-react";
 import { getPropertyByAddress } from "@/core/propertyService";
 import { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";

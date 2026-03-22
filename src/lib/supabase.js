@@ -13,37 +13,20 @@ export function getSharedSupabase() {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        flowType: 'pkce',
       },
     });
   }
   return _client;
 }
 
-let _sessionReady = null;
-
 /**
- * Wait for Supabase to finish recovering the session from localStorage
- * or from OAuth redirect tokens in the URL hash.
+ * Resolves the current Supabase session from persisted storage (localStorage).
+ * Safe to call on every API request — does not use a one-shot timeout that could drop valid sessions.
  */
 export function waitForSession() {
-  if (_sessionReady) return _sessionReady;
   const client = getSharedSupabase();
   if (!client) return Promise.resolve(null);
-  _sessionReady = new Promise((resolve) => {
-    let resolved = false;
-    const done = (session) => {
-      if (!resolved) { resolved = true; resolve(session); }
-    };
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      done(session);
-    });
-    client.auth.getSession().then(({ data: { session } }) => {
-      if (session) done(session);
-    });
-    setTimeout(() => {
-      done(null);
-      subscription.unsubscribe();
-    }, 5000);
-  });
-  return _sessionReady;
+  return client.auth.getSession().then(({ data: { session } }) => session ?? null);
 }

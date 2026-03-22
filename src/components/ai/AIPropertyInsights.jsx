@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, MapPin, School, Heart, Car, ShoppingBag, Trees, TrendingUp, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "@/api";
 
 export default function AIPropertyInsights({ property }) {

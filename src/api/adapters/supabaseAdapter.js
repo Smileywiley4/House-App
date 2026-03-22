@@ -82,7 +82,7 @@ export function createSupabaseAdapter() {
         if (error) throw error;
       },
       logout: async (returnUrl) => {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
         if (typeof window !== 'undefined' && returnUrl) window.location.href = returnUrl;
       },
       redirectToLogin: (returnUrl) => {
@@ -315,6 +315,10 @@ export function createSupabaseAdapter() {
         }
         return { source: 'public', properties: [] };
       },
+      placesSearchNearby: () =>
+        Promise.reject(
+          new Error('Google Places searchNearby requires Python backend (VITE_USE_PYTHON_BACKEND=true).'),
+        ),
     },
     integrations: {
       invokeLLM: async (options) => {
@@ -325,6 +329,615 @@ export function createSupabaseAdapter() {
         if (data?.error) throw new Error(data.error);
         return data?.result ?? data;
       },
+      ampUrlBatchGet: async () => {
+        throw new Error('Google AMP URL API is available when VITE_USE_PYTHON_BACKEND=true and the FastAPI google_amp router is deployed.');
+      },
+      workspaceDataTransfer: {
+        listApplications: async () => {
+          throw new Error('Workspace Data Transfer proxy requires Python backend.');
+        },
+        getApplication: async () => {
+          throw new Error('Workspace Data Transfer proxy requires Python backend.');
+        },
+        listTransfers: async () => {
+          throw new Error('Workspace Data Transfer proxy requires Python backend.');
+        },
+        getTransfer: async () => {
+          throw new Error('Workspace Data Transfer proxy requires Python backend.');
+        },
+        createTransfer: async () => {
+          throw new Error('Workspace Data Transfer proxy requires Python backend.');
+        },
+      },
+      adsense: {
+        listAccounts: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        getAccount: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        listChildAccounts: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        listAdClients: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        generateReport: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        generateReportCsv: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        listSites: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        listPayments: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+        listAlerts: async () => {
+          throw new Error('AdSense API proxy requires Python backend.');
+        },
+      },
+      adsensePlatform: {
+        listAccounts: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        lookupAccount: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        getAccount: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        createAccount: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        closeAccount: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        createEvent: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        listSites: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        getSite: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        createSite: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        requestSiteReview: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        deleteSite: async () => {
+          throw new Error('AdSense Platform API requires Python backend.');
+        },
+        transparent: {
+          listPlatforms: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          getPlatform: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          listGroups: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          getGroup: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          patchGroup: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          listChildSites: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          getChildSite: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+          patchChildSite: async () => {
+            throw new Error('AdSense Platform API (transparent) requires Python backend.');
+          },
+        },
+      },
+      revenue: {
+        adsenseDailySnapshot: async () => {
+          throw new Error('Revenue snapshots require Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        listSnapshots: async () => {
+          throw new Error('Revenue snapshots require Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      analyticsHub: (() => {
+        const err = async () => {
+          throw new Error('Analytics Hub API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          listDataExchanges: err,
+          getDataExchange: err,
+          createDataExchange: err,
+          patchDataExchange: err,
+          deleteDataExchange: err,
+          subscribeDataExchange: err,
+          listDataExchangeSubscriptions: err,
+          dataExchangeGetIamPolicy: err,
+          dataExchangeSetIamPolicy: err,
+          dataExchangeTestIamPermissions: err,
+          listListings: err,
+          getListing: err,
+          createListing: err,
+          patchListing: err,
+          deleteListing: err,
+          subscribeListing: err,
+          listListingSubscriptions: err,
+          listingGetIamPolicy: err,
+          listingSetIamPolicy: err,
+          listingTestIamPermissions: err,
+          listQueryTemplates: err,
+          getQueryTemplate: err,
+          createQueryTemplate: err,
+          patchQueryTemplate: err,
+          deleteQueryTemplate: err,
+          submitQueryTemplate: err,
+          approveQueryTemplate: err,
+          listSubscriptions: err,
+          getSubscription: err,
+          refreshSubscription: err,
+          revokeSubscription: err,
+          deleteSubscription: err,
+          subscriptionGetIamPolicy: err,
+          subscriptionSetIamPolicy: err,
+          listOrgDataExchanges: err,
+        };
+      })(),
+      androidManagement: (() => {
+        const err = async () => {
+          throw new Error('Android Management API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          createSignupUrl: err,
+          listEnterprises: err,
+          createEnterprise: err,
+          getEnterprise: err,
+          patchEnterprise: err,
+          deleteEnterprise: err,
+          generateEnterpriseUpgradeUrl: err,
+          createEnrollmentToken: err,
+          listEnrollmentTokens: err,
+          getEnrollmentToken: err,
+          deleteEnrollmentToken: err,
+          createWebToken: err,
+          listDevices: err,
+          getDevice: err,
+          patchDevice: err,
+          deleteDevice: err,
+          issueDeviceCommand: err,
+          listDeviceOperations: err,
+          getDeviceOperation: err,
+          cancelDeviceOperation: err,
+          listPolicies: err,
+          getPolicy: err,
+          patchPolicy: err,
+          deletePolicy: err,
+          modifyPolicyApplications: err,
+          removePolicyApplications: err,
+          getApplication: err,
+          listWebApps: err,
+          createWebApp: err,
+          getWebApp: err,
+          patchWebApp: err,
+          deleteWebApp: err,
+          createMigrationToken: err,
+          listMigrationTokens: err,
+          getMigrationToken: err,
+          getProvisioningInfo: err,
+        };
+      })(),
+      googleChat: (() => {
+        const err = async () => {
+          throw new Error('Google Chat API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          downloadMedia: err,
+          uploadAttachment: err,
+          listSpaces: err,
+          searchSpaces: err,
+          createSpace: err,
+          setupSpace: err,
+          findDirectMessage: err,
+          getSpace: err,
+          patchSpace: err,
+          deleteSpace: err,
+          completeImportSpace: err,
+          createMessage: err,
+          listMessages: err,
+          getMessage: err,
+          updateMessage: err,
+          patchMessage: err,
+          deleteMessage: err,
+          getMessageAttachment: err,
+          createReaction: err,
+          listReactions: err,
+          deleteReaction: err,
+          listMembers: err,
+          getMember: err,
+          createMember: err,
+          patchMember: err,
+          deleteMember: err,
+          listSpaceEvents: err,
+          getSpaceEvent: err,
+          createCustomEmoji: err,
+          listCustomEmojis: err,
+          getCustomEmoji: err,
+          deleteCustomEmoji: err,
+          getSpaceReadState: err,
+          updateSpaceReadState: err,
+          getThreadReadState: err,
+          getSpaceNotificationSetting: err,
+          patchSpaceNotificationSetting: err,
+        };
+      })(),
+      chromeWebstore: (() => {
+        const err = async () => {
+          throw new Error('Chrome Web Store API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          publishItem: err,
+          fetchItemStatus: err,
+          cancelSubmission: err,
+          setPublishedDeployPercentage: err,
+          uploadPackage: err,
+        };
+      })(),
+      dataFusion: (() => {
+        const err = async () => {
+          throw new Error('Data Fusion API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          getLocation: err,
+          listLocations: err,
+          getOperation: err,
+          deleteOperation: err,
+          listOperations: err,
+          cancelOperation: err,
+          listInstances: err,
+          createInstance: err,
+          getInstance: err,
+          patchInstance: err,
+          deleteInstance: err,
+          restartInstance: err,
+          getInstanceIamPolicy: err,
+          setInstanceIamPolicy: err,
+          testInstanceIamPermissions: err,
+          createDnsPeering: err,
+          listDnsPeerings: err,
+          deleteDnsPeering: err,
+          listVersions: err,
+        };
+      })(),
+      dataFusionV1beta1: (() => {
+        const err = async () => {
+          throw new Error('Data Fusion API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          getLocation: err,
+          listLocations: err,
+          getOperation: err,
+          deleteOperation: err,
+          listOperations: err,
+          cancelOperation: err,
+          listInstances: err,
+          createInstance: err,
+          getInstance: err,
+          patchInstance: err,
+          deleteInstance: err,
+          restartInstance: err,
+          getInstanceIamPolicy: err,
+          setInstanceIamPolicy: err,
+          testInstanceIamPermissions: err,
+          createDnsPeering: err,
+          listDnsPeerings: err,
+          deleteDnsPeering: err,
+          listVersions: err,
+          upgradeInstance: err,
+          removeIamPolicy: err,
+          listNamespaces: err,
+          getNamespaceIamPolicy: err,
+          setNamespaceIamPolicy: err,
+          testNamespaceIamPermissions: err,
+        };
+      })(),
+      filestore: (() => {
+        const err = async () => {
+          throw new Error('Filestore API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          getLocation: err,
+          listLocations: err,
+          getOperation: err,
+          deleteOperation: err,
+          listOperations: err,
+          cancelOperation: err,
+          listInstances: err,
+          createInstance: err,
+          getInstance: err,
+          patchInstance: err,
+          deleteInstance: err,
+          restoreInstance: err,
+          revertInstance: err,
+          promoteReplica: err,
+          pauseReplica: err,
+          resumeReplica: err,
+          listSnapshots: err,
+          getSnapshot: err,
+          createSnapshot: err,
+          deleteSnapshot: err,
+          patchSnapshot: err,
+          listBackups: err,
+          getBackup: err,
+          createBackup: err,
+          deleteBackup: err,
+          patchBackup: err,
+        };
+      })(),
+      filestoreV1beta1: (() => {
+        const err = async () => {
+          throw new Error('Filestore API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          getLocation: err,
+          listLocations: err,
+          getOperation: err,
+          deleteOperation: err,
+          listOperations: err,
+          cancelOperation: err,
+          listInstances: err,
+          createInstance: err,
+          getInstance: err,
+          patchInstance: err,
+          deleteInstance: err,
+          restoreInstance: err,
+          revertInstance: err,
+          promoteReplica: err,
+          pauseReplica: err,
+          resumeReplica: err,
+          listSnapshots: err,
+          getSnapshot: err,
+          createSnapshot: err,
+          deleteSnapshot: err,
+          patchSnapshot: err,
+          listBackups: err,
+          getBackup: err,
+          createBackup: err,
+          deleteBackup: err,
+          patchBackup: err,
+          listShares: err,
+          getShare: err,
+          createShare: err,
+          deleteShare: err,
+          patchShare: err,
+        };
+      })(),
+      osLogin: (() => {
+        const err = async () => {
+          throw new Error('OS Login API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          signSshPublicKey: err,
+          getLoginProfile: err,
+          importSshPublicKey: err,
+          createSshPublicKey: err,
+          getSshPublicKey: err,
+          patchSshPublicKey: err,
+          deleteSshPublicKey: err,
+          provisionPosixAccount: err,
+          deletePosixAccount: err,
+        };
+      })(),
+      osLoginV1beta: (() => {
+        const err = async () => {
+          throw new Error('OS Login v1beta API requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        return {
+          signSshPublicKey: err,
+          getLoginProfile: err,
+          importSshPublicKey: err,
+          createSshPublicKey: err,
+          getSshPublicKey: err,
+          patchSshPublicKey: err,
+          deleteSshPublicKey: err,
+          provisionPosixAccount: err,
+          deletePosixAccount: err,
+          signSshPublicKeyUserProjectZone: err,
+          signSshPublicKeyUserProjectLocation: err,
+        };
+      })(),
+      translate: (() => {
+        const err = async () => {
+          throw new Error('Cloud Translation API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        const names = [
+          'projectsRomanizeText',
+          'projectsGetSupportedLanguages',
+          'projectsTranslateText',
+          'projectsDetectLanguage',
+          'listLocations',
+          'getLocation',
+          'batchTranslateText',
+          'adaptiveMtTranslate',
+          'locationsRomanizeText',
+          'locationsGetSupportedLanguages',
+          'batchTranslateDocument',
+          'locationsTranslateText',
+          'translateDocument',
+          'refineText',
+          'locationsDetectLanguage',
+          'getModel',
+          'deleteModel',
+          'listModels',
+          'createModel',
+          'listOperations',
+          'getOperation',
+          'deleteOperation',
+          'cancelOperation',
+          'waitOperation',
+          'importDatasetData',
+          'createDataset',
+          'listDatasets',
+          'getDataset',
+          'exportDatasetData',
+          'deleteDataset',
+          'listDatasetExamples',
+          'patchGlossary',
+          'getGlossary',
+          'deleteGlossary',
+          'createGlossary',
+          'listGlossaries',
+          'deleteGlossaryEntry',
+          'getGlossaryEntry',
+          'patchGlossaryEntry',
+          'listGlossaryEntries',
+          'createGlossaryEntry',
+          'deleteAdaptiveMtDataset',
+          'getAdaptiveMtDataset',
+          'createAdaptiveMtDataset',
+          'listAdaptiveMtDatasets',
+          'importAdaptiveMtFile',
+          'listAdaptiveMtSentencesForDataset',
+          'deleteAdaptiveMtFile',
+          'getAdaptiveMtFile',
+          'listAdaptiveMtFiles',
+          'listAdaptiveMtSentencesForFile',
+        ];
+        return Object.fromEntries(names.map((n) => [n, err]));
+      })(),
+      translateV3beta1: (() => {
+        const err = async () => {
+          throw new Error('Cloud Translation API v3beta1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        const names = [
+          'projectsGetSupportedLanguages',
+          'projectsTranslateText',
+          'projectsDetectLanguage',
+          'listLocations',
+          'getLocation',
+          'batchTranslateText',
+          'locationsGetSupportedLanguages',
+          'batchTranslateDocument',
+          'locationsTranslateText',
+          'translateDocument',
+          'refineText',
+          'locationsDetectLanguage',
+          'listOperations',
+          'getOperation',
+          'deleteOperation',
+          'cancelOperation',
+          'waitOperation',
+          'getGlossary',
+          'deleteGlossary',
+          'createGlossary',
+          'listGlossaries',
+        ];
+        return Object.fromEntries(names.map((n) => [n, err]));
+      })(),
+      drive: {
+        v3: async () => {
+          throw new Error('Google Drive API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        upload: async () => {
+          throw new Error('Google Drive API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        resumable: async () => {
+          throw new Error('Google Drive API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v3Raw: async () => {
+          throw new Error('Google Drive API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        uploadRaw: async () => {
+          throw new Error('Google Drive API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        resumableRaw: async () => {
+          throw new Error('Google Drive API v3 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      policyAnalyzer: {
+        activitiesQuery: async () => {
+          throw new Error('Policy Analyzer API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      policySimulator: {
+        v1: async () => {
+          throw new Error('Policy Simulator API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1Raw: async () => {
+          throw new Error('Policy Simulator API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1beta: async () => {
+          throw new Error('Policy Simulator API v1beta requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1betaRaw: async () => {
+          throw new Error('Policy Simulator API v1beta requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      doubleclickSearch: {
+        v2: async () => {
+          throw new Error('DoubleClick Search API v2 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v2Raw: async () => {
+          throw new Error('DoubleClick Search API v2 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      saasRuntime: {
+        v1: async () => {
+          throw new Error('SaaS Runtime API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1Raw: async () => {
+          throw new Error('SaaS Runtime API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1beta1: async () => {
+          throw new Error('SaaS Runtime API v1beta1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1beta1Raw: async () => {
+          throw new Error('SaaS Runtime API v1beta1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      serviceNetworking: {
+        v1: async () => {
+          throw new Error('Service Networking API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+        v1Raw: async () => {
+          throw new Error('Service Networking API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        },
+      },
+      dataManager: (() => {
+        const err = async () => {
+          throw new Error('Google Data Manager API v1 requires Python backend (VITE_USE_PYTHON_BACKEND=true).');
+        };
+        const names = [
+          'audienceMembersIngest',
+          'audienceMembersRemove',
+          'eventsIngest',
+          'requestStatusRetrieve',
+          'insightsRetrieve',
+          'partnerLinksCreate',
+          'partnerLinksDelete',
+          'partnerLinksSearch',
+          'userListDirectLicensesCreate',
+          'userListDirectLicensesGet',
+          'userListDirectLicensesPatch',
+          'userListDirectLicensesList',
+          'userListGlobalLicensesCreate',
+          'userListGlobalLicensesPatch',
+          'userListGlobalLicensesGet',
+          'userListGlobalLicensesList',
+          'userListGlobalLicenseCustomerInfosList',
+          'userListsGet',
+          'userListsList',
+          'userListsCreate',
+          'userListsPatch',
+          'userListsDelete',
+        ];
+        return Object.fromEntries(names.map((n) => [n, err]));
+      })(),
     },
     appLogs: {
       logUserInApp: () => Promise.resolve(),

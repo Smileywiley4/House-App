@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Home, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
 import { getSharedSupabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/AuthContext";
 
 function getSupabase() {
   return getSharedSupabase();
@@ -29,6 +30,17 @@ export default function Login() {
 
   const supabase = getSupabase();
   const isSupabaseAuth = !!supabase;
+  const { isAuthenticated, isLoadingAuth } = useAuth();
+
+  /** Already signed in — leave login page (OAuth hash callback handled separately). */
+  useEffect(() => {
+    if (isLoadingAuth || oauthLoading) return;
+    if (!isAuthenticated) return;
+    const h = typeof window !== "undefined" ? window.location.hash : "";
+    if (h && (h.includes("access_token") || h.includes("refresh_token"))) return;
+    const target = redirect.startsWith("/") ? redirect : `/${redirect}`;
+    navigate(target, { replace: true });
+  }, [isLoadingAuth, isAuthenticated, oauthLoading, redirect, navigate]);
 
   useEffect(() => {
     if (!inviteToken || import.meta.env.VITE_USE_PYTHON_BACKEND !== "true") return;
@@ -165,6 +177,27 @@ export default function Login() {
     );
   }
 
+  if (isSupabaseAuth && isLoadingAuth) {
+    return (
+      <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-[#10b981] animate-spin mb-4" />
+        <p className="text-white font-semibold text-sm">Checking your session…</p>
+      </div>
+    );
+  }
+
+  if (isSupabaseAuth && isAuthenticated) {
+    const h = typeof window !== "undefined" ? window.location.hash : "";
+    if (!(h && (h.includes("access_token") || h.includes("refresh_token")))) {
+      return (
+        <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6">
+          <Loader2 size={32} className="text-[#10b981] animate-spin mb-4" />
+          <p className="text-white font-semibold text-sm">Taking you to the app…</p>
+        </div>
+      );
+    }
+  }
+
   if (!isSupabaseAuth) {
     return (
       <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center p-6">
@@ -195,7 +228,10 @@ export default function Login() {
         </a>
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h1 className="text-xl font-bold text-[#1a2234] mb-2">Sign in</h1>
-          <p className="text-slate-500 text-sm mb-6">Use your account to continue.</p>
+          <p className="text-slate-500 text-sm mb-2">Use your account to continue.</p>
+          <p className="text-slate-400 text-xs mb-6 leading-relaxed">
+            You stay signed in on this browser until you sign out or clear site data for Property Pulse. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
+          </p>
 
           {error && (
             <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 rounded-xl p-3 mb-4">
