@@ -101,7 +101,7 @@ So: **API + core (routes, constants, hooks) are portable.** Pages and components
 ## Ads (free users only)
 
 - **Free users** see ad slots (**Google AdSense** publisher ads — not the advertiser “Google Ads API”). **Premium and Realtor** users do not. `<AdSlot>` in `src/components/AdSlot.jsx` only renders when `usePlan().showAds` is true.
-- **Web:** Set `VITE_GOOGLE_ADS_CLIENT_ID` and `VITE_GOOGLE_ADS_SLOT_LEADERBOARD` (and optionally `VITE_GOOGLE_ADS_SLOT_INFEED`) in env. Ads appear in the footer and on the Home page.
+- **Web:** Set `VITE_GOOGLE_ADS_CLIENT_ID` and slot env vars — step-by-step: [docs/ADSENSE_SETUP.md](docs/ADSENSE_SETUP.md). Ads appear in the footer and on the Home page.
 - **Revenue vs Stripe:** AdSense pays you via **Google**; **Stripe** is for subscriptions. Optional daily AdSense estimates: `POST /api/integrations/revenue/adsense-daily-snapshot` (admin). Details: [docs/PUBLISHER_REVENUE_ADSENSE_STRIPE.md](docs/PUBLISHER_REVENUE_ADSENSE_STRIPE.md).
 - **iOS/Android:** Use the same `showAds` check; render your native ad SDK (e.g. react-native-google-mobile-ads) instead of the web AdSlot component.
 
