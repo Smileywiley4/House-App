@@ -28,6 +28,16 @@ import { IncomingShareBannerGate } from './components/IncomingShareBanner';
 import { useNotificationObserver } from './hooks/useNotificationObserver';
 import { getDeviceSnapshotPayload } from './utils/deviceSnapshot';
 import {
+  configureIap,
+  getCustomerInfo,
+  getEntitlementId,
+  getOfferings,
+  hasActiveEntitlement,
+  isIapAvailableOnThisBuild,
+  purchase,
+  restorePurchases,
+} from './services/iap';
+import {
   getLocalStatsConsent,
   setLocalStatsConsent,
   recordLocalSessionIfConsented,
@@ -47,12 +57,12 @@ Notifications.setNotificationHandler({
 });
 
 function getInviteMessage() {
-  const appUrl = process.env.EXPO_PUBLIC_APP_URL || 'https://your-property-pulse-app.com';
-  return `Join me on Property Pulse: ${appUrl}/login`;
+  const appUrl = process.env.EXPO_PUBLIC_APP_URL || 'https://your-prop-pocket-app.com';
+  return `Join me on Property Pocket: ${appUrl}/login`;
 }
 
 /**
- * Property Pulse mobile shell — camera for in-person visit photos.
+ * Property Pocket mobile shell — camera for in-person visit photos.
  * Wire EXPO_PUBLIC_API_BASE_URL to your FastAPI backend + Supabase auth to upload
  * to POST /api/library/saved-properties/{id}/photos (same as web).
  */
@@ -65,6 +75,11 @@ export default function App() {
   const [lastNotification, setLastNotification] = useState(undefined);
   const [localStatsConsent, setLocalStatsConsentState] = useState(false);
   const [localStatsPreview, setLocalStatsPreview] = useState('');
+  const [iapReady, setIapReady] = useState(false);
+  const [entitlementActive, setEntitlementActive] = useState(false);
+  const [packages, setPackages] = useState([]);
+  const [iapLoading, setIapLoading] = useState(false);
+  const iapConfiguredRef = useRef(false);
   const camRef = useRef(null);
   const deviceSnap = useMemo(() => getDeviceSnapshotPayload(), []);
 
@@ -88,6 +103,32 @@ export default function App() {
 
     return () => {
       notificationListener.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!isIapAvailableOnThisBuild()) return;
+      if (iapConfiguredRef.current) return;
+      try {
+        const ok = await configureIap();
+        if (!ok || cancelled) return;
+        iapConfiguredRef.current = true;
+        setIapReady(true);
+        const [offerings, customerInfo] = await Promise.all([getOfferings(), getCustomerInfo()]);
+        if (cancelled) return;
+        const current = offerings?.current?.availablePackages || [];
+        setPackages(current);
+        setEntitlementActive(hasActiveEntitlement(customerInfo));
+      } catch (e) {
+        if (!cancelled) {
+          console.warn('[iap]', e);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -179,7 +220,7 @@ export default function App() {
         : 'No emails found in contacts.';
     Alert.alert('Invite friends', body);
     try {
-      await Share.share({ message: msg, title: 'Property Pulse' });
+      await Share.share({ message: msg, title: 'Property Pocket' });
     } catch (_) {}
   };
 
@@ -237,6 +278,34 @@ export default function App() {
     }
   };
 
+  const buyPackage = async (pkg) => {
+    try {
+      setIapLoading(true);
+      const res = await purchase(pkg);
+      const info = res?.customerInfo || (await getCustomerInfo());
+      setEntitlementActive(hasActiveEntitlement(info));
+      Alert.alert('Purchase complete', 'Your subscription is active on this Apple ID.');
+    } catch (e) {
+      const msg = e?.userCancelled ? 'Purchase cancelled.' : e?.message || 'Purchase failed.';
+      Alert.alert('In-App Purchase', msg);
+    } finally {
+      setIapLoading(false);
+    }
+  };
+
+  const onRestore = async () => {
+    try {
+      setIapLoading(true);
+      const info = await restorePurchases();
+      setEntitlementActive(hasActiveEntitlement(info));
+      Alert.alert('Restore complete', hasActiveEntitlement(info) ? 'Subscription restored.' : 'No active subscription found.');
+    } catch (e) {
+      Alert.alert('Restore failed', e?.message || 'Could not restore purchases.');
+    } finally {
+      setIapLoading(false);
+    }
+  };
+
   if (!permission) {
     return (
       <View style={styles.container}>
@@ -249,7 +318,7 @@ export default function App() {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Property Pulse — Visits</Text>
+        <Text style={styles.title}>Property Pocket — Visits</Text>
         <Text style={styles.hint}>Camera access is needed for in-person property photos.</Text>
         <TouchableOpacity style={styles.btn} onPress={requestPermission}>
           <Text style={styles.btnText}>Allow camera</Text>
@@ -324,7 +393,42 @@ export default function App() {
         Pulse from the web app when signed in).
       </Text>
 
-      {Platform.OS !== 'web' && (
+      {Platform.OS === 'ios' && (
+        <View style={styles.iapSection}>
+          <Text style={styles.pushTitle}>iOS subscription</Text>
+          {!isIapAvailableOnThisBuild() ? (
+            <Text style={styles.pushHint}>
+              IAP not configured in this build. Set EXPO_PUBLIC_RC_APPLE_API_KEY and configure RevenueCat offerings.
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.pushHint}>
+                Entitlement `{getEntitlementId()}`: {entitlementActive ? 'active' : 'inactive'}
+              </Text>
+              {iapReady && packages.length === 0 && (
+                <Text style={styles.pushHint}>No packages found in current offering.</Text>
+              )}
+              {packages.map((pkg) => (
+                <TouchableOpacity
+                  key={pkg.identifier}
+                  style={[styles.iapBuyBtn, iapLoading && styles.btnDisabled]}
+                  onPress={() => buyPackage(pkg)}
+                  disabled={iapLoading}
+                >
+                  <Text style={styles.iapBuyBtnText}>
+                    {iapLoading ? 'Processing…' : `Buy ${pkg.storeProduct.title} (${pkg.storeProduct.priceString})`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={[styles.iapRestoreBtn, iapLoading && styles.btnDisabled]} onPress={onRestore} disabled={iapLoading}>
+                <Text style={styles.iapRestoreBtnText}>Restore purchases</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
+
+      {__DEV__ && Platform.OS !== 'web' && (
         <View style={styles.pushSection}>
           <Text style={styles.pushTitle}>Push notifications</Text>
           <Text style={styles.pushMono} selectable>
@@ -358,7 +462,7 @@ export default function App() {
         </View>
       )}
 
-      <View style={styles.statsSection}>
+      {__DEV__ && <View style={styles.statsSection}>
         <Text style={styles.pushTitle}>Device insights & backend stats (optional)</Text>
         <Text style={styles.pushHint}>
           Uses expo-device + expo-constants. On native, buckets are saved in app documents; on web, in localStorage. With
@@ -424,7 +528,7 @@ export default function App() {
             {localStatsPreview}
           </Text>
         ) : null}
-      </View>
+      </View>}
       <StatusBar style="light" />
     </ScrollView>
   );
@@ -447,7 +551,7 @@ async function schedulePushNotification() {
 async function registerForPushNotificationsAsync() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'Property Pulse',
+      name: 'Property Pocket',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
@@ -744,5 +848,38 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 11,
     color: '#cbd5e1',
+  },
+  iapSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  iapBuyBtn: {
+    marginTop: 10,
+    backgroundColor: '#10b981',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  iapBuyBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  iapRestoreBtn: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#64748b',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  iapRestoreBtnText: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

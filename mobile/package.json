@@ -6,7 +6,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "doctor": "npx expo-doctor",
+    "prebuild": "expo prebuild",
+    "build:ios": "npx eas build --platform ios --profile production",
+    "submit:ios": "npx eas submit --platform ios --profile production"
   },
   "dependencies": {
     "expo": "^56.0.0-canary-20260305-5163746",
@@ -25,7 +29,8 @@
     "expo-sms": "56.0.0-canary-20260305-5163746",
     "expo-status-bar": "56.0.0-canary-20260305-5163746",
     "react": "19.2.3",
-    "react-native": "0.84.1"
+    "react-native": "0.84.1",
+    "react-native-purchases": "^10.0.1"
   },
   "private": true
 }

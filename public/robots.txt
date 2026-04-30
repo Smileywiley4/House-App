@@ -1,0 +1,5 @@
+# Base robots.txt — overwritten at end of `npm run build` when VITE_SITE_URL is set
+# (see scripts/seo-postbuild.mjs) to add sitemap.xml and a Sitemap: directive.
+
+User-agent: *
+Allow: /

@@ -19,7 +19,12 @@
 | `20250222000000_propertypulse_schema.sql` | Core schema: profiles, property_scores, clients, private_listings, handle_new_user trigger |
 | `20250222100000_property_cache_and_stripe.sql` | property_cache table, profiles.stripe_customer_id |
 | `20250226000000_user_presets.sql` | user_presets table (presets feature) |
-| `20250301000000_mobile_device_snapshots.sql` | Opt-in anonymous Expo/mobile device-class rows for analytics (`mobile_device_snapshots`) |
+| `20250227000000_custom_categories.sql` | custom_categories (analytics); pair with `20260223120000_custom_categories_rls.sql` for RLS |
+| `20250228000000_user_property_library.sql` | Library: saved properties, photos, folders, realtor shares, storage bucket |
+| `20250229000000_peer_sharing_and_invites.sql` | Peer shares + app_invitations |
+| `20250301000000_mobile_device_snapshots.sql` | Opt-in anonymous Expo/mobile device-class rows (`mobile_device_snapshots`) |
+| `20260222000000_publisher_revenue_snapshots.sql` | AdSense daily estimate snapshots |
+| `20260223120000_custom_categories_rls.sql` | Enable RLS on custom_categories (service_role writes only) |
 
 **Apply migrations:**
 

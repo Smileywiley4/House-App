@@ -39,11 +39,11 @@ For **accounting**, export or aggregate both (Stripe Dashboard + AdSense payment
 
 - **`GOOGLE_ADSENSE_CLIENT_ID`**, **`GOOGLE_ADSENSE_CLIENT_SECRET`**, **`GOOGLE_ADSENSE_REFRESH_TOKEN`** in `backend/.env`
 - Scope: `adsense.readonly` (or `adsense` for write operations elsewhere)
-- Proxies under `/api/integrations/google/adsense/...` (admin plan)
+- Proxies under `/api/integrations/google/adsense/...` (requires `profiles.plan = admin`, **`PLATFORM_ADMIN_USER_IDS`**, or both where documented)
 
 ### 3. Daily earnings snapshot (optional)
 
-- Backend: **`POST /api/integrations/revenue/adsense-daily-snapshot`** (admin)  
+- Backend: **`POST /api/integrations/revenue/adsense-daily-snapshot`** (platform admin: `profiles.plan = admin` **or** your user UUID in **`PLATFORM_ADMIN_USER_IDS`** in `backend/.env`)  
   - Calls AdSense `reports:generate` for **`YESTERDAY`** with **`ESTIMATED_EARNINGS`**
   - Upserts into **`publisher_revenue_snapshots`**
 - Optional env: **`GOOGLE_ADSENSE_PUBLISHER_ACCOUNT`** = `pub-…` or `accounts/pub-…`; if unset, uses the **first** account returned by the API.

@@ -94,12 +94,17 @@ def _call_llm(system: str, prompt: str, expect_json: bool = True) -> str | None:
     client = _anthropic_client()
     if client:
         try:
-            resp = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=4096,
-                system=system,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            s = get_settings()
+            kwargs: dict = {
+                "model": s.anthropic_model,
+                "max_tokens": 4096,
+                "system": system,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            # Ephemeral prompt cache — see https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+            if s.anthropic_prompt_cache_ephemeral:
+                kwargs["cache_control"] = {"type": "ephemeral"}
+            resp = client.messages.create(**kwargs)
             text = resp.content[0].text if resp.content else None
             if text:
                 logger.info("LLM response from Anthropic Claude")

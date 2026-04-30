@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.dependencies import get_supabase_admin, require_admin_plan
+from app.dependencies import get_supabase_admin, require_platform_admin
 from app.google_adsense_v2 import adsense_configured
 from app.revenue_adsense import sync_yesterday_snapshot
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/adsense-daily-snapshot")
-async def adsense_daily_snapshot(_admin: str = Depends(require_admin_plan)):
+async def adsense_daily_snapshot(_admin: str = Depends(require_platform_admin)):
     """
     Pull AdSense **estimated earnings** for **YESTERDAY** (Management API) and upsert into
     `publisher_revenue_snapshots`. Schedule this daily (cron + admin JWT, or service account pattern).
@@ -57,7 +57,7 @@ async def adsense_daily_snapshot(_admin: str = Depends(require_admin_plan)):
 @router.get("/snapshots")
 async def list_revenue_snapshots(
     limit: int = Query(90, ge=1, le=500),
-    _admin: str = Depends(require_admin_plan),
+    _admin: str = Depends(require_platform_admin),
 ):
     """Last N rows from publisher_revenue_snapshots (AdSense estimates)."""
     try:

@@ -19,7 +19,16 @@ async function getToken() {
   return session?.access_token ?? null;
 }
 
+function requireApiBase() {
+  if (!baseUrl) {
+    throw new Error(
+      'VITE_API_BASE_URL is missing. Set it in .env.local (e.g. http://localhost:8000) when VITE_USE_PYTHON_BACKEND=true.',
+    );
+  }
+}
+
 async function request(method, path, body = undefined, extraHeaders = undefined) {
+  requireApiBase();
   const token = await getToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -37,12 +46,14 @@ async function request(method, path, body = undefined, extraHeaders = undefined)
 }
 
 async function publicGet(path) {
+  requireApiBase();
   const res = await fetch(`${baseUrl}${path}`, { credentials: 'include' });
   if (!res.ok) throw new Error(await res.text() || res.statusText);
   return res.json();
 }
 
 async function requestBlob(method, path) {
+  requireApiBase();
   const token = await getToken();
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -66,6 +77,7 @@ async function requestBlob(method, path) {
  * @returns {Promise<object|Blob|null|Response>}
  */
 async function requestDriveProxy(method, path, options = {}) {
+  requireApiBase();
   const {
     query = {},
     jsonBody,
@@ -108,6 +120,7 @@ async function requestDriveProxy(method, path, options = {}) {
 }
 
 async function uploadVisitPhoto(savedId, file, caption) {
+  requireApiBase();
   const token = await getToken();
   const form = new FormData();
   form.append('file', file);

@@ -1,7 +1,7 @@
 """Stripe checkout and portal. Webhook updates profile.plan (see main.py)."""
 import logging
 from fastapi import APIRouter, Depends, Request, HTTPException
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import AliasChoices, BaseModel, Field, ConfigDict
 import stripe
 from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id
@@ -13,13 +13,28 @@ logger = logging.getLogger(__name__)
 class CreateCheckoutBody(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    plan_id: str = Field(alias="planId")
-    interval: str = "monthly"  # "monthly" | "annual"
-    terms_accepted: bool = False
-    terms_version: str = "default"
+    plan_id: str = Field(validation_alias=AliasChoices("planId", "plan_id"))
+    interval: str = Field(
+        default="monthly",
+        validation_alias=AliasChoices("interval", "billingInterval"),
+    )  # "monthly" | "annual"
+    terms_accepted: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("terms_accepted", "termsAccepted"),
+    )
+    terms_version: str = Field(
+        default="default",
+        validation_alias=AliasChoices("terms_version", "termsVersion"),
+    )
 
-    success_url: str | None = Field(default=None, alias="successUrl")
-    cancel_url: str | None = Field(default=None, alias="cancelUrl")
+    success_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("successUrl", "success_url"),
+    )
+    cancel_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("cancelUrl", "cancel_url"),
+    )
 
 
 @router.post("/create-checkout-session")
@@ -61,11 +76,12 @@ async def create_checkout_session(body: CreateCheckoutBody, user_id: str = Depen
         r = supabase.table("profiles").select("stripe_customer_id").eq("id", user_id).execute()
         existing_customer_id = (r.data[0].get("stripe_customer_id") if r.data else None) or None
 
+        base = (s.app_public_url or "http://localhost:5173").rstrip("/")
         session = stripe.checkout.Session.create(
             mode="subscription",
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url=body.success_url or "http://localhost:5173/Profile",
-            cancel_url=body.cancel_url or "http://localhost:5173/Pricing",
+            success_url=body.success_url or f"{base}/Profile",
+            cancel_url=body.cancel_url or f"{base}/Pricing",
             client_reference_id=user_id,
             customer=existing_customer_id,
             metadata={
@@ -95,9 +111,10 @@ async def get_portal_url(user_id: str = Depends(get_current_user_id)):
     if not customer_id:
         return {"url": None}
     try:
+        base = (s.app_public_url or "http://localhost:5173").rstrip("/")
         session = stripe.billing_portal.Session.create(
             customer=customer_id,
-            return_url="http://localhost:5173/Profile",
+            return_url=f"{base}/Profile",
         )
         return {"url": session.url}
     except Exception:

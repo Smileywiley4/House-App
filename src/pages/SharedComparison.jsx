@@ -51,7 +51,7 @@ export default function SharedComparison() {
         <h2 className="text-xl font-bold text-[#1a2234] mb-2">Invalid Share Link</h2>
         <p className="text-slate-400 text-sm mb-6">This link may be expired or malformed.</p>
         <Link to={createPageUrl("Home")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white font-bold rounded-xl text-sm">
-          <HomeIcon size={15} /> Go to Property Pulse
+          <HomeIcon size={15} /> Go to Property Pocket
         </Link>
       </div>
     </div>
@@ -64,11 +64,11 @@ export default function SharedComparison() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div className="text-[#10b981] text-xs font-bold uppercase tracking-widest mb-1">Property Pulse · Shared Comparison</div>
+              <div className="text-[#10b981] text-xs font-bold uppercase tracking-widest mb-1">Property Pocket · Shared Comparison</div>
               <h1 className="text-xl font-bold text-white">
                 {scores.length} Propert{scores.length !== 1 ? "ies" : "y"} Compared
               </h1>
-              <p className="text-slate-400 text-xs mt-0.5">View-only · shared by a Property Pulse user</p>
+              <p className="text-slate-400 text-xs mt-0.5">View-only · shared by a Property Pocket user</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex bg-white/10 rounded-xl p-1 gap-1">
@@ -81,7 +81,7 @@ export default function SharedComparison() {
               </div>
               <Link to={createPageUrl("Home")}
                 className="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-xs transition">
-                Try Property Pulse →
+                Try Property Pocket →
               </Link>
             </div>
           </div>

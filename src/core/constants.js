@@ -1,7 +1,7 @@
 /**
  * App-wide constants. Safe to use in React and React Native.
  */
-export const APP_NAME = 'Property Pulse';
+export const APP_NAME = 'Property Pocket';
 
 export const THEME = {
   accent: '#10b981',

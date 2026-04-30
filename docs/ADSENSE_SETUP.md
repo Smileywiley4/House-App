@@ -60,4 +60,5 @@ To pull **reporting** into your backend (not required for ads to show):
 | “Tag error” in console | Slot doesn’t belong to that `ca-pub`, or duplicate `push` on same element (this app guards that) |
 | Works locally, not prod | Missing env on host, or domain not added in AdSense |
 
-The web client loads **one** `adsbygoogle.js` per page and pushes each `<ins class="adsbygoogle">` after the script loads (`AdSlot.jsx`).
+The web client loads **one** `adsbygoogle.js` per page and pushes each `<ins class="adsbygoogle">` after the script loads (`AdSlot.jsx`).  
+`data-ad-format` is mapped to values Google accepts (`horizontal`, `fluid`, `auto`) — not slot nicknames like `leaderboard`.

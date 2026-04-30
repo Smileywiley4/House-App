@@ -1,0 +1,17 @@
+{
+  "name": "Property Pocket",
+  "short_name": "Prop Pocket",
+  "description": "Compare and score homes with weighted categories.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafaf8",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

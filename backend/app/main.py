@@ -11,8 +11,9 @@ from fastapi.responses import JSONResponse
 import stripe
 
 from app.config import get_settings
+from app.stripe_billing import plan_from_subscription_price_ids, stripe_customer_id
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, revenue, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, revenue, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook
 
 
 @asynccontextmanager
@@ -68,6 +69,7 @@ app.include_router(subscription.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(user_library.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
+app.include_router(revenuecat_webhook.router, prefix="/api")
 
 
 @app.post("/api/webhooks/stripe")
@@ -96,7 +98,7 @@ async def stripe_webhook(request: Request):
         # Defensive mapping: only allow expected plan values.
         if plan_id not in ["premium", "realtor"]:
             plan_id = "premium"
-        customer_id = session.get("customer")
+        customer_id = stripe_customer_id(session.get("customer"))
         if user_id:
             supabase = get_supabase_admin()
             supabase.table("profiles").update({
@@ -104,9 +106,19 @@ async def stripe_webhook(request: Request):
                 "stripe_customer_id": customer_id,
             }).eq("id", user_id).execute()
 
+    if event["type"] == "customer.subscription.updated":
+        sub = event["data"]["object"]
+        customer_id = stripe_customer_id(sub.get("customer"))
+        sub_status = (sub.get("status") or "").lower()
+        if customer_id and sub_status in ("active", "trialing", "past_due"):
+            plan_id = plan_from_subscription_price_ids(sub, s)
+            if plan_id:
+                supabase = get_supabase_admin()
+                supabase.table("profiles").update({"plan": plan_id}).eq("stripe_customer_id", customer_id).execute()
+
     if event["type"] == "customer.subscription.deleted":
         sub = event["data"]["object"]
-        customer_id = sub.get("customer")
+        customer_id = stripe_customer_id(sub.get("customer"))
         if customer_id:
             supabase = get_supabase_admin()
             supabase.table("profiles").update({"plan": "free", "stripe_customer_id": None}).eq("stripe_customer_id", customer_id).execute()
@@ -124,6 +136,8 @@ def health():
         "anthropic_key_set": bool(s.anthropic_api_key),
         "anthropic_key_prefix": s.anthropic_api_key[:12] + "..." if s.anthropic_api_key else None,
         "openai_key_set": bool(s.openai_api_key),
+        "anthropic_model": s.anthropic_model if s.anthropic_api_key else None,
+        "anthropic_prompt_cache_ephemeral": bool(s.anthropic_prompt_cache_ephemeral) if s.anthropic_api_key else None,
         "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
         "google_places_key_set": bool(s.google_places_api_key),
         "google_amp_url_key_set": bool(s.google_amp_url_api_key or s.google_places_api_key),
@@ -158,4 +172,6 @@ def health():
         "google_cse_id_set": bool(s.google_cse_id),
         "supabase_url_set": bool(s.supabase_url),
         "supabase_service_key_set": bool(s.supabase_service_role_key),
+        "platform_admin_user_ids_set": bool(s.platform_admin_user_ids.strip()),
+        "revenuecat_webhook_configured": bool(s.revenuecat_webhook_secret.strip()),
     }

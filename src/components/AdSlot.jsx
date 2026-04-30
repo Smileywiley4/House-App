@@ -158,6 +158,9 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
   }
 
   const isRectangle = format === "rectangle";
+  /** Google AdSense accepts auto|horizontal|vertical|rectangle|fluid — not arbitrary names like "leaderboard". */
+  const adFormat =
+    format === "rectangle" ? "auto" : format === "infeed" ? "fluid" : "horizontal";
 
   return (
     <div className={className}>
@@ -167,7 +170,7 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
         style={{ display: "block", minHeight: isRectangle ? 250 : 90 }}
         data-ad-client={CLIENT_ID}
         data-ad-slot={slotId}
-        data-ad-format={format === "rectangle" ? "auto" : format}
+        data-ad-format={adFormat}
         data-full-width-responsive={format !== "rectangle" ? "true" : "false"}
       />
     </div>

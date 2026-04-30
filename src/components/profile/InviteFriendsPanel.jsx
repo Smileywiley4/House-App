@@ -130,7 +130,7 @@ export default function InviteFriendsPanel() {
               value={msg}
               onChange={(e) => setMsg(e.target.value)}
               rows={2}
-              placeholder="Join me on Property Pulse…"
+              placeholder="Join me on Property Pocket…"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
             />
           </div>

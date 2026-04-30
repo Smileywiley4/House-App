@@ -1,247 +1,204 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Search, MapPin, Star, BarChart3, ChevronRight, Home as HomeIcon, LogIn } from "lucide-react";
-import { getPropertyByAddress } from "@/core/propertyService";
-import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
-import { ForSaleBadge } from "@/components/ForSaleBadge";
-import { AdSlot } from "@/components/AdSlot";
-import { PremiumGate } from "@/components/PremiumGate";
-import { useAuth } from "@/lib/AuthContext";
+import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
-export default function Home() {
-  const [address, setAddress] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
-  const [bannerSrc] = useState(() => {
-    // Randomize hero banner on each refresh for a fresh perspective.
-    return Math.random() < 0.5 ? "/hero-banner.png" : "/hero-banner-alt.png";
-  });
+const featured = [
+  {
+    id: 1,
+    client: 'Nike',
+    title: 'In Motion',
+    image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=1600&h=900&fit=crop',
+    wide: true,
+  },
+  {
+    id: 2,
+    client: "Levi's",
+    title: 'Undone',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&h=1000&fit=crop',
+  },
+  {
+    id: 3,
+    client: 'Apple',
+    title: 'City Pulse',
+    image: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&h=1000&fit=crop',
+  },
+  {
+    id: 4,
+    client: 'Porsche',
+    title: 'Raw Edge',
+    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&h=900&fit=crop',
+    wide: true,
+  },
+  {
+    id: 5,
+    client: 'Spotify',
+    title: 'Frequency',
+    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=1000&fit=crop',
+  },
+  {
+    id: 6,
+    client: 'HBO',
+    title: 'The Archive',
+    image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&h=1000&fit=crop',
+  },
+]
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!address.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getPropertyByAddress(address);
-      setResult(data);
-    } catch (err) {
-      setError(err.message || "Could not load property. Try again.");
-      setResult(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+const clients = [
+  'Nike', 'Apple', 'Google', 'Porsche', "Levi's", 'Spotify',
+  'Adidas', 'Amazon', 'Samsung', 'Gucci', 'HBO', 'Netflix',
+  'Microsoft', 'BMW', 'Chanel', 'Louis Vuitton',
+]
 
-  return (
-    <div className="min-h-screen bg-[#fafaf8]">
-      {/* Hero */}
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-20 text-center">
-        <div className="absolute inset-0">
-          <img src={bannerSrc} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/75" />
-        </div>
-        <div className="relative max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <HomeIcon className="text-[#10b981]" size={28} />
-            <span className="text-[#10b981] font-semibold tracking-widest text-sm uppercase">HomeScore</span>
-            <span className="text-[#c9a84c] text-xs">✦</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            Find Your Dream Home.<br />
-            <span className="text-[#10b981]">Score It Mathematically.</span>
-          </h1>
-          <p className="text-slate-400 text-lg mb-10">
-            Search any property, rate what matters to you, and compare homes with a weighted score — not just a gut feeling.
-          </p>
-          <form onSubmit={handleSearch} className="flex gap-3 max-w-xl mx-auto">
-            <div className="flex-1 relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter a property address..."
-                className="w-full pl-11 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-[#c9a84c] focus:bg-white/15 transition-all text-base"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Search size={18} />
-              )}
-              {loading ? "Searching..." : "Search"}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Ad: free users only */}
-      <div className="max-w-5xl mx-auto px-6 py-4">
-        <AdSlot format="leaderboard" className="min-h-[90px]" />
-      </div>
-
-      {/* Result */}
-      {error && (
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <p className="text-center text-red-600 text-sm bg-red-50 rounded-xl py-3 px-4">{error}</p>
-        </div>
-      )}
-      {result && (
-        <div className="max-w-5xl mx-auto px-6 py-12">
-          <PropertyCard property={result} />
-        </div>
-      )}
-
-      {/* Feature Highlights */}
-      {!result && (
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <h2 className="text-center text-3xl font-bold text-[#1a2234] mb-14">How It Works</h2>
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              { icon: Search, title: "Search Any Property", desc: "Enter any address to instantly pull up property details, location data, and proximity to key amenities." },
-              { icon: Star, title: "Score What Matters", desc: "Set importance weights for 30+ categories — from roof quality to school ratings — then score the property." },
-              { icon: BarChart3, title: "Compare Mathematically", desc: "Get a weighted score for each property and compare them side-by-side to make confident decisions." }
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white rounded-2xl p-10 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="w-14 h-14 rounded-xl bg-[#10b981]/10 flex items-center justify-center mb-6">
-                  <Icon className="text-[#10b981]" size={26} />
-                </div>
-                <h3 className="font-bold text-[#1a2234] text-xl mb-3">{title}</h3>
-                <p className="text-slate-500 leading-relaxed text-base">{desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* AdSense in-feed style slot (free users) — pair with VITE_GOOGLE_ADS_SLOT_INFEED */}
-          <div className="max-w-3xl mx-auto mt-14">
-            <AdSlot format="infeed" className="min-h-[100px]" />
-          </div>
-
-          <div className="mt-10 text-center">
-            <AuthAwareLink />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function useInView(threshold = 0.1) {
+  const ref = useRef(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setInView(true) },
+      { threshold }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return [ref, inView]
 }
 
-function AuthAwareLink() {
-  const { isAuthenticated, isLoadingAuth } = useAuth();
-  if (isLoadingAuth) {
-    return (
-      <div className="inline-flex items-center justify-center min-h-[44px] px-6">
-        <span className="w-6 h-6 border-2 border-[#10b981]/30 border-t-[#10b981] rounded-full animate-spin" aria-hidden />
-      </div>
-    );
-  }
-  if (isAuthenticated) {
-    return (
-      <Link
-        to={createPageUrl("Compare")}
-        className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
-      >
-        View My Saved Properties <ChevronRight size={16} />
-      </Link>
-    );
-  }
+function ProjectTile({ project, index }) {
+  const [ref, inView] = useInView(0.05)
+
   return (
     <Link
-      to="/login"
-      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#10b981] text-white text-sm font-semibold rounded-lg hover:bg-[#059669] transition-colors"
+      ref={ref}
+      to="/work"
+      className={`group relative block overflow-hidden bg-neutral-900 ${
+        project.wide ? 'md:col-span-2' : ''
+      } ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+      style={{ transition: `all 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${index * 80}ms` }}
     >
-      <LogIn size={14} />
-      Sign In to Save & Compare Properties
+      <div className={`relative ${project.wide ? 'aspect-[16/9]' : 'aspect-[4/5]'} overflow-hidden`}>
+        <img
+          src={project.image}
+          alt={project.title}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]"
+        />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-500" />
+      </div>
+
+      <div className="absolute inset-0 flex items-end p-6 md:p-8">
+        <div className="translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-300 mb-1">{project.client}</p>
+          <h3 className="font-display text-xl md:text-3xl font-bold tracking-tight">{project.title}</h3>
+        </div>
+      </div>
     </Link>
-  );
+  )
 }
 
-function PropertyCard({ property }) {
-  const fmt = (n) => n?.toLocaleString() ?? "—";
+function LogoTicker() {
+  const doubled = [...clients, ...clients]
+  return (
+    <section className="py-10 overflow-hidden border-t border-white/5">
+      <div className="flex animate-marquee" style={{ width: 'max-content' }}>
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex items-center gap-12 md:gap-16 px-6 md:px-8">
+            {doubled.map((name, i) => (
+              <span
+                key={`${copy}-${i}`}
+                className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600 whitespace-nowrap"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export default function Home() {
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => { setLoaded(true) }, [])
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      {/* Map placeholder */}
-      <div className="relative h-56 bg-slate-100 overflow-hidden">
-        <iframe
-          title="map"
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          style={{ border: 0 }}
-          src={`https://maps.google.com/maps?q=${encodeURIComponent(property.address + " " + property.city + " " + property.state)}&output=embed&z=15`}
-          allowFullScreen
-        />
-      </div>
-
-      <div className="p-8">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h2 className="text-2xl font-bold text-[#1a2234]">{property.address}</h2>
-              <ForSaleBadge onMarket={property.on_market} listingSource={property.listing_source} />
-            </div>
-            <p className="text-slate-500">{property.city}, {property.state} {property.zip}</p>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-[#10b981]">${fmt(property.price)}</div>
-            <div className="text-sm text-slate-400 flex items-center gap-1 justify-end">Est. List Price <span className="text-[#c9a84c] text-xs">✦</span></div>
-          </div>
+    <main>
+      {/* Hero — full viewport, minimal */}
+      <section className="relative h-screen flex items-end overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1920&h=1080&fit=crop"
+            alt="Gasworks Production"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-neutral-950/20" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: "Bedrooms", value: property.bedrooms },
-            { label: "Bathrooms", value: property.bathrooms },
-            { label: "Sq Ft", value: fmt(property.sqft) },
-            { label: "Year Built", value: property.year_built },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-slate-50 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-[#1a2234]">{value}</div>
-              <div className="text-xs text-slate-400 mt-1">{label}</div>
-            </div>
+        <div className="relative px-5 md:px-10 pb-16 md:pb-20 w-full">
+          <h1
+            className={`font-display text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[0.95] max-w-4xl opacity-0 ${
+              loaded ? 'animate-fade-in-up' : ''
+            }`}
+            style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}
+          >
+            You bring the vision.<br />We make it real.
+          </h1>
+          <p
+            className={`mt-5 text-neutral-400 text-base md:text-lg max-w-lg opacity-0 ${
+              loaded ? 'animate-fade-in-up' : ''
+            }`}
+            style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}
+          >
+            Gasworks is a full-service production company for brands, agencies, and creators worldwide.
+          </p>
+        </div>
+      </section>
+
+      {/* Featured Work — visual grid */}
+      <section className="pt-1 pb-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+          {featured.map((project, i) => (
+            <ProjectTile key={project.id} project={project} index={i} />
           ))}
         </div>
+      </section>
 
-        <p className="text-slate-600 leading-relaxed mb-6 text-sm">{property.description}</p>
+      <LogoTicker />
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          {[
-            { label: "🏥 Nearest Hospital", value: property.nearby_hospitals },
-            { label: "🛣️ Highway Access", value: property.nearby_highways },
-            { label: "🎓 Nearest School", value: property.nearby_schools },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-[#1a2234]/3 rounded-xl p-4">
-              <div className="text-xs font-semibold text-slate-400 mb-1">{label}</div>
-              <div className="text-sm font-medium text-[#1a2234]">{value || "—"}</div>
-            </div>
-          ))}
+      {/* Minimal about strip */}
+      <section className="py-20 md:py-28 px-5 md:px-10">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-12 md:gap-20">
+          <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] md:w-1/2 shrink-0">
+            You bring the idea.<br />We bring it to life.
+          </h2>
+          <div className="md:w-1/2 space-y-5">
+            <p className="text-neutral-400 leading-relaxed">
+              Gasworks exists so you never have to worry about the how. Whether you're a brand
+              with a campaign idea, an agency responding to an RFP, or a creator with a story to
+              tell — you come to us with the vision, and we handle every detail from start to finish.
+            </p>
+            <Link
+              to="/about"
+              className="inline-block text-[13px] uppercase tracking-[0.15em] text-white hover:text-neutral-400 transition-colors border-b border-white/30 pb-0.5"
+            >
+              Learn More
+            </Link>
+          </div>
         </div>
+      </section>
 
-        <PremiumGate featureName="AI Property Insights">
-          <AIPropertyInsights property={property} />
-        </PremiumGate>
-
-        <div className="mt-8 max-w-2xl mx-auto">
-          <AdSlot format="rectangle" className="min-h-[250px]" />
-        </div>
-
+      {/* CTA strip */}
+      <section className="border-t border-white/5 py-20 md:py-28 px-5 md:px-10 text-center">
+        <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight mb-6">
+          Have a project in mind?
+        </h2>
         <Link
-          to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
-          className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
+          to="/contact"
+          className="inline-block text-[13px] uppercase tracking-[0.15em] text-neutral-950 bg-white px-8 py-3.5 font-medium hover:bg-neutral-200 transition-colors"
         >
-          <Star size={18} />
-          Score This Property
+          Start a Project
         </Link>
-      </div>
-    </div>
-  );
+      </section>
+    </main>
+  )
 }

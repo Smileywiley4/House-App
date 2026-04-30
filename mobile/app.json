@@ -1,30 +1,33 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Property Pocket",
+    "slug": "property-pocket-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "proppocket",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#10b981"
     },
     "ios": {
-      "bundleIdentifier": "com.propertypulse.mobile",
-      "deploymentTarget": "18.0",
+      "bundleIdentifier": "com.proppocket.mobile",
+      "buildNumber": "1",
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Property Pulse uses the camera to capture in-person photos of homes you visit.",
-        "NSPhotoLibraryUsageDescription": "Property Pulse can read your photo library when you choose existing photos for visit notes.",
-        "NSPhotoLibraryAddUsageDescription": "Property Pulse saves visit photos you take to your photo library when you choose Save to Photos.",
-        "NSContactsUsageDescription": "Property Pulse uses your contacts to pick phone numbers when you send text message invites to join the app.",
-        "NSLocationWhenInUseUsageDescription": "Property Pulse uses your location to show where you are on the map and nearby homes."
+        "NSCameraUsageDescription": "Property Pocket uses the camera to capture in-person photos of homes you visit.",
+        "NSPhotoLibraryUsageDescription": "Property Pocket can read your photo library when you choose existing photos for visit notes.",
+        "NSPhotoLibraryAddUsageDescription": "Property Pocket saves visit photos you take to your photo library when you choose Save to Photos.",
+        "NSContactsUsageDescription": "Property Pocket uses your contacts to pick phone numbers when you send text message invites to join the app.",
+        "NSLocationWhenInUseUsageDescription": "Property Pocket uses your location to show where you are on the map and nearby homes.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.propertypulse.mobile",
+      "package": "com.proppocket.mobile",
+      "versionCode": 1,
       "permissions": [
         "READ_CONTACTS",
         "READ_MEDIA_IMAGES",
@@ -41,6 +44,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
     },
     "plugins": [
       [
@@ -74,8 +88,12 @@
           },
           "android": {
             "enabled": true,
-            "singleShareMimeTypes": ["image/*"],
-            "multipleShareMimeTypes": ["image/*"]
+            "singleShareMimeTypes": [
+              "image/*"
+            ],
+            "multipleShareMimeTypes": [
+              "image/*"
+            ]
           }
         }
       ],
@@ -83,32 +101,23 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Property Pulse to access your photos when you pick images for property visits.",
-          "savePhotosPermission": "Allow Property Pulse to save visit photos you capture to your library.",
+          "photosPermission": "Allow Property Pocket to access your photos when you pick images for property visits.",
+          "savePhotosPermission": "Allow Property Pocket to save visit photos you capture to your library.",
           "isAccessMediaLocationEnabled": false
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Property Pulse to use the camera for in-person property visit photos.",
+          "cameraPermission": "Allow Property Pocket to use the camera for in-person property visit photos.",
           "microphonePermission": false
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
-          "locationWhenInUsePermission": "Property Pulse uses your location to show where you are on the map and nearby homes.",
-          "isAndroidBackgroundLocationEnabled": false,
-          "isAndroidForegroundServiceEnabled": false
         }
       ],
       [
         "expo-maps",
         {
           "requestLocationPermission": true,
-          "locationPermission": "Property Pulse uses your location to show where you are on the map and nearby homes."
+          "locationPermission": "Property Pocket uses your location to show where you are on the map and nearby homes."
         }
       ]
     ]

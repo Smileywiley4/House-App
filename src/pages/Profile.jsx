@@ -422,7 +422,7 @@ function ProfileInner() {
           <div className="space-y-8">
             <div>
               <h2 className="text-lg font-bold text-foreground mb-1">Usage</h2>
-              <p className="text-slate-400 text-sm">How you&apos;re using Property Pulse.</p>
+              <p className="text-slate-400 text-sm">How you&apos;re using Property Pocket.</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[

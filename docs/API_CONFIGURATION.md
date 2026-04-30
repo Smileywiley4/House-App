@@ -25,6 +25,8 @@ Optional:
 | `VITE_GOOGLE_ADS_CLIENT_ID` | AdSense / display ads client slot setup |
 | `VITE_GOOGLE_ADS_SLOT_LEADERBOARD` / `VITE_GOOGLE_ADS_SLOT_INFEED` / optional `VITE_GOOGLE_ADS_SLOT_RECTANGLE` | Ad unit slots (or `VITE_GOOGLE_ADS_SLOT_1` / `_2`) |
 | `VITE_GOOGLE_ADS_DEMO` | Optional. `false` disables dev auto sample IDs. `true` forces sample test ads even outside dev (avoid in production). |
+| `VITE_SITE_URL` | Production origin **no trailing slash** — canonical URLs, JSON-LD, `postbuild` **sitemap.xml** |
+| `VITE_OG_IMAGE_URL` | Optional full **https** URL to a 1200×630 image for Open Graph / Twitter cards |
 | `VITE_BASE44_APP_ID` / `VITE_BASE44_BACKEND_URL` / `VITE_BASE44_APP_BASE_URL` / `VITE_BASE44_FUNCTIONS_VERSION` | Base44 platform (if used) |
 
 ---
@@ -35,16 +37,20 @@ Optional:
 |-----------------|----------|
 | `SUPABASE_*`, `SUPABASE_JWT_SECRET` | DB, JWT validation, user id for routes |
 | `STRIPE_*` | Checkout, webhooks, plans |
+| `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_*_ENTITLEMENT_ID` | iOS IAP entitlement sync webhook (`POST /api/webhooks/revenuecat`) |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | LLM (`ANTHROPIC` preferred if both set) |
+| `ANTHROPIC_MODEL` | Optional. Messages API model id (default `claude-sonnet-4-20250514` in `config.py`) |
+| `ANTHROPIC_PROMPT_CACHE_EPHEMERAL` | `true` (default): send `cache_control: {type: ephemeral}` on Anthropic requests — [prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching) |
 | `CORS_ORIGINS` | Allowed browser origins (comma-separated) |
-| `APP_PUBLIC_URL` | Invite links, emails |
+| `APP_PUBLIC_URL` | Invite links, Stripe checkout success/cancel & billing portal return URL |
+| `PLATFORM_ADMIN_USER_IDS` | Comma-separated Supabase user UUIDs — AdSense revenue sync & other platform-only tools (see `require_platform_admin`) |
 | `PORT` | Uvicorn port |
 
 ---
 
 ## Backend — Google (server-side keys & proxies)
 
-All integration routes are under **`/api/integrations`** unless noted. Most Google proxies require the user’s JWT and often **`admin` plan** — see `require_admin_plan` in each router.
+All integration routes are under **`/api/integrations`** unless noted. Most Google proxies require the user’s JWT and **`admin` plan** (or **`PLATFORM_ADMIN_USER_IDS`**) — see `require_admin_plan` in each router. Publisher revenue routes use **`require_platform_admin`** (same rules).
 
 ### API key (no SA file)
 

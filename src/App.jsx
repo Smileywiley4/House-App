@@ -1,77 +1,27 @@
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
-import NavigationTracker from '@/lib/NavigationTracker'
-import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { AppearanceProvider } from '@/lib/AppearanceProvider';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import Login from './pages/Login';
-
-const { Pages, Layout, mainPage } = pagesConfig;
-const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
-
-const LayoutWrapper = ({ children, currentPageName }) => Layout ?
-  <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
-
-const AppShell = () => {
-  const { isLoadingAuth } = useAuth();
-
-  if (isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  return (
-    <Routes>
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
-  );
-};
-
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import Home from './pages/Home'
+import Work from './pages/Work'
+import About from './pages/About'
+import Contact from './pages/Contact'
+import Contractors from './pages/Contractors'
 
 function App() {
-
   return (
-    <ErrorBoundary>
-      <AppearanceProvider>
-        <AuthProvider>
-          <QueryClientProvider client={queryClientInstance}>
-            <Router>
-              <NavigationTracker />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="*" element={<AppShell />} />
-              </Routes>
-            </Router>
-            <Toaster />
-          </QueryClientProvider>
-        </AuthProvider>
-      </AppearanceProvider>
-    </ErrorBoundary>
+    <Router>
+      <div className="min-h-screen bg-neutral-950 text-white">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/work" element={<Work />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/contractors" element={<Contractors />} />
+        </Routes>
+        <Footer />
+      </div>
+    </Router>
   )
 }
 

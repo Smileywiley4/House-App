@@ -24,6 +24,7 @@ function profileToUser(row) {
     realtor_license: row.realtor_license ?? '',
     brokerage: row.brokerage ?? '',
     state: row.state ?? '',
+    linked_realtor_id: row.linked_realtor_id ?? null,
   };
 }
 
@@ -70,6 +71,7 @@ export function createSupabaseAdapter() {
         if (profile.realtor_license !== undefined) updates.realtor_license = profile.realtor_license;
         if (profile.brokerage !== undefined) updates.brokerage = profile.brokerage;
         if (profile.state !== undefined) updates.state = profile.state;
+        if (profile.linked_realtor_id !== undefined) updates.linked_realtor_id = profile.linked_realtor_id;
         await supabase.from('profiles').update(updates).eq('id', user.id);
         return profileToUser({ ...user, ...updates });
       },

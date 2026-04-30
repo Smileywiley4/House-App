@@ -1,4 +1,9 @@
-# Property Pulse — Expo mobile
+# Property Pocket — Expo mobile
+
+## App Store release checklist
+
+See `IOS_APP_STORE_READINESS.md` for the end-to-end iOS submission process, account setup, EAS build/submit commands, and compliance tasks.
+For Apple subscription compliance details and RevenueCat wiring, see `IOS_IAP_COMPLIANCE.md`.
 
 ## Notifications (`expo-notifications`)
 
@@ -65,7 +70,7 @@ Rebuild native projects after changing plugin options (`npx expo prebuild` or EA
 - **`Sharing.shareAsync(uri, { mimeType, dialogTitle })`** — opens the OS share sheet for a **local file URI** (e.g. the visit photo from `expo-camera`). Used by the **Share** button after you capture a photo in **`App.js`**.
 - **Text-only invites** use React Native **`Share.share`** (invite flow) — that’s the right API for a message string; `expo-sharing` is aimed at sharing files.
 
-**Receiving shares** (other apps → Property Pulse):
+**Receiving shares** (other apps → Property Pocket):
 
 - **`utils/redirectSystemPath.js`** — export **`redirectSystemPath`** for **Expo Router** `unstable_settings`: if the system URL’s hostname is **`expo-sharing`**, it returns **`/handle-share`** so you can route to a screen that reads payloads with **`useIncomingShare()`** or **`getSharedPayloads()`** from `expo-sharing`.
 - **`App.js`** — **`IncomingShareBannerGate`** (native only) uses **`useIncomingShare()`** so images shared into the app can be opened as the visit photo without a router.

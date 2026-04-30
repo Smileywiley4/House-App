@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Home, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
 import { getSharedSupabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
+import { SeoHelmet } from "@/components/SeoHelmet";
 
 function getSupabase() {
   return getSharedSupabase();
@@ -216,6 +217,12 @@ export default function Login() {
   }
 
   return (
+    <>
+      <SeoHelmet
+        title="Sign in"
+        description="Sign in to Property Pocket to save property scores, comparisons, and your subscription."
+        noindex
+      />
     <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute inset-0">
         <img src="/banner-login.png" alt="" className="w-full h-full object-cover" />
@@ -224,13 +231,13 @@ export default function Login() {
       <div className="relative w-full max-w-md">
         <a href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8">
           <Home size={20} />
-          <span className="font-semibold">Property Pulse</span>
+          <span className="font-semibold">Property Pocket</span>
         </a>
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h1 className="text-xl font-bold text-[#1a2234] mb-2">Sign in</h1>
           <p className="text-slate-500 text-sm mb-2">Use your account to continue.</p>
           <p className="text-slate-400 text-xs mb-6 leading-relaxed">
-            You stay signed in on this browser until you sign out or clear site data for Property Pulse. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
+            You stay signed in on this browser until you sign out or clear site data for Property Pocket. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
           </p>
 
           {error && (
@@ -389,5 +396,6 @@ export default function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }

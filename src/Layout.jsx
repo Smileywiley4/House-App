@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
+import { LayoutSeo } from "@/components/SeoHelmet";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
 import {
@@ -19,7 +20,7 @@ const t = {
   accentLight: "rgba(16,185,129,0.12)",
   accentText: "#10b981",
   gold: "#c9a84c",
-  label: "Property Pulse",
+  label: "Prop Pocket",
 };
 
 export default function Layout({ children, currentPageName }) {
@@ -43,6 +44,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors">
+      <LayoutSeo currentPageName={currentPageName} />
       <style>{`
         :root {
           --accent: ${t.accent};

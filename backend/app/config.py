@@ -19,8 +19,16 @@ class Settings(BaseSettings):
     stripe_premium_annual_price_id: str = ""
     stripe_realtor_monthly_price_id: str = ""
     stripe_realtor_annual_price_id: str = ""
+    # RevenueCat webhook + entitlement sync (iOS IAP)
+    revenuecat_webhook_secret: str = ""
+    revenuecat_premium_entitlement_id: str = "property_pocket_pro"
+    revenuecat_realtor_entitlement_id: str = "realtor"
     openai_api_key: str = ""
     anthropic_api_key: str = ""
+    # Messages API model id — see https://docs.anthropic.com/en/docs/about-claude/models
+    anthropic_model: str = "claude-sonnet-4-20250514"
+    # Prompt caching (https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+    anthropic_prompt_cache_ephemeral: bool = True
     google_places_api_key: str = ""
     # Optional: dedicated key for AMP URL API; if empty, GOOGLE_PLACES_API_KEY is used (same GCP project must enable AMP URL API).
     google_amp_url_api_key: str = ""
@@ -97,7 +105,13 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     # Public web app URL for invite links (e.g. https://app.example.com)
     app_public_url: str = "http://localhost:5173"
+    # Comma-separated Supabase user UUIDs allowed to run publisher revenue sync etc. (in addition to profiles.plan=admin)
+    platform_admin_user_ids: str = ""
     port: int = 8000
+
+    @property
+    def platform_admin_id_set(self) -> frozenset[str]:
+        return frozenset(x.strip() for x in self.platform_admin_user_ids.split(",") if x.strip())
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

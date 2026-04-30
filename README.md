@@ -39,6 +39,8 @@ Compare properties with weighted scoring: search an address, score categories th
 
 **Hand-off package:** See [HANDOFF.md](HANDOFF.md) for artifact index, deployment checklist, ZIP/branch instructions, and [LEGAL_AND_OWNERSHIP.md](LEGAL_AND_OWNERSHIP.md) for ownership and legal guidance.
 
+**AdSense vs Google Ads + SEO:** [docs/GOOGLE_ADS_AND_SEO.md](docs/GOOGLE_ADS_AND_SEO.md) — publisher ads (`AdSlot` + env), Search Console, `VITE_SITE_URL`, sitemap postbuild.
+
 ## Quick start (Base44)
 
 1. Clone, then `npm install`
