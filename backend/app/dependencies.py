@@ -94,3 +94,62 @@ async def require_realtor_plan(user_id: str = Depends(get_current_user_id)) -> s
             detail="Realtor subscription required to view shared visits",
         )
     return user_id
+
+
+async def get_optional_user_id(
+    creds: HTTPAuthorizationCredentials | None = Depends(security),
+) -> str | None:
+    if not creds:
+        return None
+    token = creds.credentials
+    s = get_settings()
+    if not s.supabase_jwt_secret:
+        return None
+    try:
+        payload = jwt.decode(
+            token,
+            s.supabase_jwt_secret,
+            algorithms=["HS256"],
+            options={"verify_aud": False},
+        )
+        return payload.get("sub")
+    except JWTError:
+        return None
+
+
+def user_has_paid_plan(supabase, user_id: str) -> bool:
+    r = supabase.table("profiles").select("plan").eq("id", user_id).execute()
+    plan = (r.data[0] if r.data else {}).get("plan") or "free"
+    return plan in PAID_PLANS
+
+
+LLM_DAILY_LIMIT = 80
+
+
+async def require_paid_llm_access(user_id: str = Depends(require_paid_plan)) -> str:
+    """Paid subscribers only; enforces daily LLM rate limit."""
+    supabase = get_supabase_admin()
+    from datetime import datetime, timezone, timedelta
+
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    r = (
+        supabase.table("llm_usage_log")
+        .select("id", count="exact")
+        .eq("user_id", user_id)
+        .gte("created_at", since)
+        .execute()
+    )
+    count = r.count if r.count is not None else len(r.data or [])
+    if count >= LLM_DAILY_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Daily AI usage limit reached. Try again tomorrow or contact support.",
+        )
+    return user_id
+
+
+def log_llm_usage(supabase, user_id: str, feature: str) -> None:
+    try:
+        supabase.table("llm_usage_log").insert({"user_id": user_id, "feature": feature}).execute()
+    except Exception:
+        pass

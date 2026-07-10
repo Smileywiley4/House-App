@@ -1,10 +1,27 @@
 """LLM helpers: property search and generic invoke.
-Uses Anthropic Claude as primary provider, falls back to OpenAI if unavailable."""
+
+Provider strategy (when both keys are set):
+- **Claude (Anthropic)** — primary for buyer-facing prose, property extraction, preference insights
+- **gpt-4o-mini (OpenAI)** — economy tier for structured JSON / high-volume tasks; also fallback if Claude fails
+
+Set ANTHROPIC_API_KEY + OPENAI_API_KEY on Railway for best reliability."""
 import json
 import logging
+from typing import Literal
+
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+LlmTier = Literal["quality", "economy"]
+
+# Frontend feature ids routed to economy tier (OpenAI mini first when both keys set)
+ECONOMY_FEATURES = frozenset({
+    "ai_auto_score",
+    "visit_notes_to_scores",
+    "realtor_draft",
+    "invoke",  # generic invoke without a named feature
+})
 
 # ---------------------------------------------------------------------------
 # Provider clients
@@ -39,12 +56,25 @@ def has_llm_provider() -> bool:
 
 
 def active_provider() -> str:
+    """Primary configured provider (not necessarily last used for a call)."""
     s = get_settings()
     if s.anthropic_api_key:
         return "anthropic"
     if s.openai_api_key:
         return "openai"
     return "none"
+
+
+def llm_status() -> dict:
+    s = get_settings()
+    return {
+        "primary": active_provider(),
+        "anthropic_configured": bool(s.anthropic_api_key),
+        "openai_configured": bool(s.openai_api_key),
+        "anthropic_model": s.anthropic_model if s.anthropic_api_key else None,
+        "openai_model": s.openai_model if s.openai_api_key else None,
+        "prompt_cache": bool(s.anthropic_prompt_cache_ephemeral) if s.anthropic_api_key else False,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -84,57 +114,86 @@ STRICT RULES:
 
 
 # ---------------------------------------------------------------------------
-# Core LLM call: tries Claude first, then OpenAI
+# Core LLM call
 # ---------------------------------------------------------------------------
 
-def _call_llm(system: str, prompt: str, expect_json: bool = True) -> str | None:
-    """Send a prompt to the best available LLM provider. Returns raw text response."""
-
-    # Try Anthropic Claude first
+def _call_anthropic(system: str, prompt: str) -> str | None:
     client = _anthropic_client()
-    if client:
-        try:
-            s = get_settings()
-            kwargs: dict = {
-                "model": s.anthropic_model,
-                "max_tokens": 4096,
-                "system": system,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-            # Ephemeral prompt cache — see https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-            if s.anthropic_prompt_cache_ephemeral:
-                kwargs["cache_control"] = {"type": "ephemeral"}
-            resp = client.messages.create(**kwargs)
-            text = resp.content[0].text if resp.content else None
-            if text:
-                logger.info("LLM response from Anthropic Claude")
-                return text
-        except Exception as e:
-            logger.error("Anthropic API call failed: %s", e)
+    if not client:
+        return None
+    try:
+        s = get_settings()
+        kwargs: dict = {
+            "model": s.anthropic_model,
+            "max_tokens": 4096,
+            "system": system,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if s.anthropic_prompt_cache_ephemeral:
+            kwargs["cache_control"] = {"type": "ephemeral"}
+        resp = client.messages.create(**kwargs)
+        text = resp.content[0].text if resp.content else None
+        if text:
+            logger.info("LLM response from Anthropic (%s)", s.anthropic_model)
+            return text
+    except Exception as e:
+        logger.error("Anthropic API call failed: %s", e)
+    return None
 
-    # Fall back to OpenAI
+
+def _call_openai(system: str, prompt: str, expect_json: bool = True) -> str | None:
     oai = _openai_client()
-    if oai:
-        try:
-            kwargs = {}
-            if expect_json:
-                kwargs["response_format"] = {"type": "json_object"}
-            resp = oai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt},
-                ],
-                **kwargs,
-            )
-            text = resp.choices[0].message.content
-            if text:
-                logger.info("LLM response from OpenAI")
-                return text
-        except Exception as e:
-            logger.error("OpenAI API call failed: %s", e)
+    if not oai:
+        return None
+    try:
+        s = get_settings()
+        kwargs = {}
+        if expect_json:
+            kwargs["response_format"] = {"type": "json_object"}
+        resp = oai.chat.completions.create(
+            model=s.openai_model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            **kwargs,
+        )
+        text = resp.choices[0].message.content
+        if text:
+            logger.info("LLM response from OpenAI (%s)", s.openai_model)
+            return text
+    except Exception as e:
+        logger.error("OpenAI API call failed: %s", e)
+    return None
+
+
+def _call_llm(system: str, prompt: str, expect_json: bool = True, tier: LlmTier = "quality") -> str | None:
+    """Route by tier: quality → Claude first; economy → OpenAI mini first (when both keys set)."""
+    s = get_settings()
+    has_claude = bool(s.anthropic_api_key)
+    has_openai = bool(s.openai_api_key)
+
+    if tier == "economy" and has_openai:
+        text = _call_openai(system, prompt, expect_json)
+        if text:
+            return text
+        return _call_anthropic(system, prompt)
+
+    if has_claude:
+        text = _call_anthropic(system, prompt)
+        if text:
+            return text
+
+    if has_openai:
+        return _call_openai(system, prompt, expect_json)
 
     return None
+
+
+def tier_for_feature(feature: str | None) -> LlmTier:
+    if feature and feature in ECONOMY_FEATURES:
+        return "economy"
+    return "quality"
 
 
 def _parse_json(text: str) -> dict | list | None:
@@ -236,7 +295,7 @@ async def get_property_by_address_llm(
             f'Set any field to null if you are not confident in the value.'
         )
 
-    text = _call_llm(system, prompt, expect_json=True)
+    text = _call_llm(system, prompt, expect_json=True, tier="quality")
     result = _parse_json(text)
 
     if not isinstance(result, dict):
@@ -297,10 +356,10 @@ async def search_properties_by_criteria_llm(filters: dict) -> list:
     prompt = (
         f"Find 5-8 residential properties that could realistically be for sale in {city}{budget}{beds}{baths}{sqft}.\n"
         f"Use real street names that exist in that city. Prices must reflect actual {city} market conditions.\n"
-        f"Return a JSON object with a \"properties\" key containing an array of objects."
+        f'Return a JSON object with a "properties" key containing an array of objects.'
     )
 
-    text = _call_llm(CRITERIA_SYSTEM, prompt, expect_json=True)
+    text = _call_llm(CRITERIA_SYSTEM, prompt, expect_json=True, tier="economy")
     parsed = _parse_json(text)
 
     if isinstance(parsed, list):
@@ -317,15 +376,20 @@ async def search_properties_by_criteria_llm(filters: dict) -> list:
 # Generic invoke (used by frontend AI features)
 # ---------------------------------------------------------------------------
 
-async def invoke_llm(prompt: str, response_json_schema: dict | None = None) -> dict | None:
+async def invoke_llm(
+    prompt: str,
+    response_json_schema: dict | None = None,
+    feature: str | None = None,
+) -> dict | None:
     if not has_llm_provider():
         return None
 
+    tier = tier_for_feature(feature)
     system = "You are a helpful assistant. Follow instructions precisely and return accurate information."
     if response_json_schema:
         system += " Return your response as valid JSON only, with no additional text."
 
-    text = _call_llm(system, prompt, expect_json=bool(response_json_schema))
+    text = _call_llm(system, prompt, expect_json=bool(response_json_schema), tier=tier)
     if not text:
         return None
 

@@ -13,7 +13,7 @@ import stripe
 from app.config import get_settings
 from app.stripe_billing import plan_from_subscription_price_ids, stripe_customer_id
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, revenue, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.include_router(private_listings.router, prefix="/api/entities")
 app.include_router(presets.router, prefix="/api/entities")
 app.include_router(property.router, prefix="/api")
 app.include_router(llm.router, prefix="/api/integrations")
+app.include_router(preferences.router, prefix="/api")
 app.include_router(google_amp.router, prefix="/api/integrations")
 app.include_router(google_workspace_datatransfer.router, prefix="/api/integrations")
 app.include_router(google_adsense.router, prefix="/api/integrations")
@@ -128,17 +129,18 @@ async def stripe_webhook(request: Request):
 
 @app.get("/health")
 def health():
-    from app.llm import active_provider
+    from app.llm import llm_status
     s = get_settings()
+    status = llm_status()
     return {
         "status": "ok",
-        "llm_provider": active_provider(),
-        "anthropic_key_set": bool(s.anthropic_api_key),
+        **status,
+        "llm_provider": status["primary"],
+        "anthropic_key_set": status["anthropic_configured"],
         "anthropic_key_prefix": s.anthropic_api_key[:12] + "..." if s.anthropic_api_key else None,
-        "openai_key_set": bool(s.openai_api_key),
-        "anthropic_model": s.anthropic_model if s.anthropic_api_key else None,
-        "anthropic_prompt_cache_ephemeral": bool(s.anthropic_prompt_cache_ephemeral) if s.anthropic_api_key else None,
+        "openai_key_set": status["openai_configured"],
         "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
+        "anthropic_prompt_cache_ephemeral": status["prompt_cache"],
         "google_places_key_set": bool(s.google_places_api_key),
         "google_amp_url_key_set": bool(s.google_amp_url_api_key or s.google_places_api_key),
         "google_workspace_datatransfer_configured": bool(

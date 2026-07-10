@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     revenuecat_premium_entitlement_id: str = "property_pocket_pro"
     revenuecat_realtor_entitlement_id: str = "realtor"
     openai_api_key: str = ""
+    # OpenAI fallback / economy tier — gpt-4o-mini is cost-effective for structured JSON tasks
+    openai_model: str = "gpt-4o-mini"
     anthropic_api_key: str = ""
     # Messages API model id — see https://docs.anthropic.com/en/docs/about-claude/models
     anthropic_model: str = "claude-sonnet-4-20250514"
