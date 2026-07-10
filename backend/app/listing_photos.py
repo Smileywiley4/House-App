@@ -14,6 +14,27 @@ USER_AGENT = (
 MAX_HTML_BYTES = 2_000_000
 MAX_IMAGES = 12
 BLOCKED_HOSTS = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})
+LISTING_HOST_SUFFIXES = (
+    "zillow.com",
+    "redfin.com",
+    "realtor.com",
+    "trulia.com",
+    "homes.com",
+)
+
+
+def is_supported_listing_url(url: str) -> bool:
+    """Only fetch established public listing sites, never arbitrary user URLs."""
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+    except Exception:
+        return False
+    return (
+        parsed.scheme == "https"
+        and bool(host)
+        and any(host == suffix or host.endswith(f".{suffix}") for suffix in LISTING_HOST_SUFFIXES)
+    )
 
 
 def _is_image_url(url: str) -> bool:
@@ -100,14 +121,13 @@ def extract_listing_image_urls(page_url: str, html: str) -> list[str]:
 
 async def fetch_listing_html(page_url: str) -> str:
     parsed = urlparse(page_url)
-    if parsed.scheme not in ("http", "https"):
-        raise ValueError("Only http(s) URLs are allowed")
-    if parsed.hostname and parsed.hostname.lower() in BLOCKED_HOSTS:
-        raise ValueError("URL host is not allowed")
+    if not is_supported_listing_url(page_url):
+        raise ValueError("Only HTTPS URLs from supported public listing sites are allowed")
 
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(20.0),
-        follow_redirects=True,
+        # Redirects could turn a trusted listing URL into a private-network request.
+        follow_redirects=False,
         headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"},
     ) as client:
         r = await client.get(page_url)

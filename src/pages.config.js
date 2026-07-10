@@ -47,10 +47,14 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import About from './pages/About';
 import Compare from './pages/Compare';
 import Evaluate from './pages/Evaluate';
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
+import Privacy from './pages/Privacy';
+import Support from './pages/Support';
+import Terms from './pages/Terms';
 import Profile from './pages/Profile';
 import PropertyVisits from './pages/PropertyVisits';
 import QuickCompare from './pages/QuickCompare';
@@ -62,10 +66,14 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "About": About,
     "Compare": Compare,
     "Evaluate": Evaluate,
     "Home": Home,
     "Pricing": Pricing,
+    "Privacy": Privacy,
+    "Support": Support,
+    "Terms": Terms,
     "Profile": Profile,
     "PropertyVisits": PropertyVisits,
     "QuickCompare": QuickCompare,

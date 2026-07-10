@@ -13,7 +13,7 @@ import stripe
 from app.config import get_settings
 from app.stripe_billing import plan_from_subscription_price_ids, stripe_customer_id
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, realtor_assignments, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook, marketing
 
 
 @asynccontextmanager
@@ -39,6 +39,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(marketing.router, prefix="/api")
 app.include_router(property_scores.router, prefix="/api/entities")
 app.include_router(clients.router, prefix="/api/entities")
 app.include_router(private_listings.router, prefix="/api/entities")
@@ -70,6 +71,7 @@ app.include_router(subscription.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(user_library.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
+app.include_router(realtor_assignments.router, prefix="/api")
 app.include_router(revenuecat_webhook.router, prefix="/api")
 
 
@@ -77,13 +79,14 @@ app.include_router(revenuecat_webhook.router, prefix="/api")
 async def stripe_webhook(request: Request):
     """Stripe webhook: subscription created/updated → set profile.plan and stripe_customer_id."""
     s = get_settings()
-    if s.stripe_secret_key:
-        stripe.api_key = s.stripe_secret_key
+    if not s.stripe_secret_key:
+        raise HTTPException(status_code=503, detail="Stripe billing is not configured")
+    stripe.api_key = s.stripe_secret_key
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
     secret = s.stripe_webhook_secret
     if not secret:
-        raise HTTPException(status_code=500, detail="Webhook secret not set")
+        raise HTTPException(status_code=503, detail="Stripe webhook is not configured")
     try:
         event = stripe.Webhook.construct_event(payload, sig, secret)
     except ValueError:
@@ -116,6 +119,12 @@ async def stripe_webhook(request: Request):
             if plan_id:
                 supabase = get_supabase_admin()
                 supabase.table("profiles").update({"plan": plan_id}).eq("stripe_customer_id", customer_id).execute()
+        elif customer_id:
+            # A subscription can become incomplete, unpaid, or incomplete_expired
+            # without emitting customer.subscription.deleted. Do not retain paid
+            # access after Stripe has made it non-entitled.
+            supabase = get_supabase_admin()
+            supabase.table("profiles").update({"plan": "free"}).eq("stripe_customer_id", customer_id).execute()
 
     if event["type"] == "customer.subscription.deleted":
         sub = event["data"]["object"]
@@ -129,51 +138,5 @@ async def stripe_webhook(request: Request):
 
 @app.get("/health")
 def health():
-    from app.llm import llm_status
-    s = get_settings()
-    status = llm_status()
-    return {
-        "status": "ok",
-        **status,
-        "llm_provider": status["primary"],
-        "anthropic_key_set": status["anthropic_configured"],
-        "anthropic_key_prefix": s.anthropic_api_key[:12] + "..." if s.anthropic_api_key else None,
-        "openai_key_set": status["openai_configured"],
-        "openai_key_prefix": s.openai_api_key[:8] + "..." if s.openai_api_key else None,
-        "anthropic_prompt_cache_ephemeral": status["prompt_cache"],
-        "google_places_key_set": bool(s.google_places_api_key),
-        "google_amp_url_key_set": bool(s.google_amp_url_api_key or s.google_places_api_key),
-        "google_workspace_datatransfer_configured": bool(
-            s.google_workspace_sa_json_path.strip()
-            and s.google_workspace_delegated_admin_email.strip()
-        ),
-        "google_adsense_configured": bool(
-            s.google_adsense_client_id.strip()
-            and s.google_adsense_client_secret.strip()
-            and s.google_adsense_refresh_token.strip()
-        ),
-        "google_doubleclicksearch_configured": bool(
-            s.google_doubleclicksearch_client_id.strip()
-            and s.google_doubleclicksearch_client_secret.strip()
-            and s.google_doubleclicksearch_refresh_token.strip()
-        ),
-        "google_analytics_hub_configured": bool(s.google_analytics_hub_sa_json_path.strip()),
-        "google_android_management_configured": bool(s.google_android_management_sa_json_path.strip()),
-        "google_chat_configured": bool(s.google_chat_sa_json_path.strip()),
-        "google_chrome_webstore_configured": bool(s.google_chrome_webstore_sa_json_path.strip()),
-        "google_data_fusion_configured": bool(s.google_data_fusion_sa_json_path.strip()),
-        "google_filestore_configured": bool(s.google_filestore_sa_json_path.strip()),
-        "google_oslogin_configured": bool(s.google_oslogin_sa_json_path.strip()),
-        "google_translate_configured": bool(s.google_translate_sa_json_path.strip()),
-        "google_datamanager_configured": bool(s.google_datamanager_sa_json_path.strip()),
-        "google_drive_configured": bool(s.google_drive_sa_json_path.strip()),
-        "google_policyanalyzer_configured": bool(s.google_policyanalyzer_sa_json_path.strip()),
-        "google_policysimulator_configured": bool(s.google_policysimulator_sa_json_path.strip()),
-        "google_saasservicemgmt_configured": bool(s.google_saasservicemgmt_sa_json_path.strip()),
-        "google_servicenetworking_configured": bool(s.google_servicenetworking_sa_json_path.strip()),
-        "google_cse_id_set": bool(s.google_cse_id),
-        "supabase_url_set": bool(s.supabase_url),
-        "supabase_service_key_set": bool(s.supabase_service_role_key),
-        "platform_admin_user_ids_set": bool(s.platform_admin_user_ids.strip()),
-        "revenuecat_webhook_configured": bool(s.revenuecat_webhook_secret.strip()),
-    }
+    """Public liveness probe; operational configuration stays private."""
+    return {"status": "ok"}

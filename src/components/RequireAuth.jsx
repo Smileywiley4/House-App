@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { LogIn } from "lucide-react";
 
 export default function RequireAuth({ children, message = "Sign in to access this feature" }) {
   const { isAuthenticated, isLoadingAuth } = useAuth();
+  const location = useLocation();
+  const loginHref = `/login?redirect=${encodeURIComponent(location.pathname + location.search)}`;
 
   if (isLoadingAuth) {
     return (
@@ -24,7 +26,7 @@ export default function RequireAuth({ children, message = "Sign in to access thi
         <h2 className="text-xl font-bold text-white mb-2">Sign in required</h2>
         <p className="text-slate-400 mb-6">{message}</p>
         <Link
-          to="/login"
+          to={loginHref}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#10b981] text-white font-semibold hover:bg-[#059669] transition-colors"
         >
           <LogIn size={16} />

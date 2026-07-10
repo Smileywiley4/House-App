@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import TapFeedback from '@/components/TapFeedback';
 import Login from './pages/Login';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -67,6 +68,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
+          <TapFeedback />
           <Router>
             <NavigationTracker />
             <Routes>

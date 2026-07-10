@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { api } from "@/api";
-import { Sparkles, RefreshCw, Star, TrendingUp, MapPin } from "lucide-react";
+import { Sparkles, RefreshCw, Star, TrendingUp, MapPin, Eye } from "lucide-react";
 
 /**
- * Analyzes scored properties, identifies what the user values most,
- * then uses AI to find matching properties from the user's saved pool
- * and surface smart recommendations with reasoning.
+ * AI recommendations from learned preferences (gamified questionnaire) + saved scores.
  */
 export default function RecommendationEngine({ scores, weights }) {
   const [recs, setRecs] = useState(null);
@@ -17,12 +15,38 @@ export default function RecommendationEngine({ scores, weights }) {
     .slice(0, 5);
 
   const generateRecs = async () => {
-    if (scores.length === 0) return;
     setLoading(true);
     setError(null);
     setRecs(null);
 
-    // Build a profile summary from top-scored properties + weights
+    try {
+      if (api.preferences?.getInsights) {
+        const learned = await api.preferences.getInsights();
+        if (learned?.insight) {
+          setRecs({
+            insight: learned.insight,
+            hidden_preferences: learned.hidden_preferences || [],
+            suggestions: learned.suggestions || [],
+            recommendations: topScores.slice(0, 3).map((s) => ({
+              address: s.property_address,
+              reason: "Matches your learned preference profile from walk-throughs.",
+              match_label: "Learned match",
+            })),
+          });
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {
+      /* fall through to score-based LLM */
+    }
+
+    if (scores.length === 0) {
+      setLoading(false);
+      setError("Complete a gamified walk-through or score properties to get recommendations.");
+      return;
+    }
+
     const weightSummary = Object.entries(weights || {})
       .filter(([, v]) => v > 0)
       .sort((a, b) => b[1] - a[1])
@@ -50,6 +74,7 @@ export default function RecommendationEngine({ scores, weights }) {
 
     try {
       const result = await api.integrations.invokeLLM({
+        feature: "recommendations",
         prompt: `You are a real estate recommendation assistant. Based on a user's scoring history and preferences, identify which of their saved properties are the best match and explain why.
 
 USER'S TOP IMPORTANCE WEIGHTS (0-10 scale):
@@ -61,10 +86,8 @@ ${propSummary}
 ALL SAVED PROPERTIES (${allProps.length} total):
 ${JSON.stringify(allProps, null, 2)}
 
-Analyze the patterns: what types of properties score highest for this user? What categories matter most?
-Then return 3 recommended properties from the saved list (can include or exclude top scored ones if reasoning is strong).
-For each recommendation, give a short compelling reason (1-2 sentences max) — do NOT mention scores, percentages, or math formulas. Focus on what makes the property a great match for this person's lifestyle and priorities.
-Also include a brief "What you value most" insight summary (2-3 sentences) about this user's preferences.`,
+Analyze patterns and return 3 recommendations from the saved list with compelling reasons (no raw math).
+Include a "What you value most" insight (2-3 sentences).`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -91,28 +114,27 @@ Also include a brief "What you value most" insight summary (2-3 sentences) about
   };
 
   useEffect(() => {
-    if (scores.length >= 2) generateRecs();
+    generateRecs();
   }, []);
 
   const scoreColor = (pct) => pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
 
-  if (scores.length < 2) {
+  if (scores.length < 1 && !api.preferences?.getInsights) {
     return (
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center">
         <Sparkles size={32} className="mx-auto mb-3 text-slate-200" />
         <p className="font-semibold text-[#1a2234] mb-1">Not enough data yet</p>
-        <p className="text-sm text-slate-400">Score at least 2 properties to get personalized recommendations.</p>
+        <p className="text-sm text-slate-400">Score a property or complete a walk-through from your realtor.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-[#1a2234]">For You</h2>
-          <p className="text-slate-400 text-sm">AI-powered picks based on your scoring patterns</p>
+          <p className="text-slate-400 text-sm">Learned preferences + AI picks</p>
         </div>
         <button
           onClick={generateRecs}
@@ -124,23 +146,19 @@ Also include a brief "What you value most" insight summary (2-3 sentences) about
         </button>
       </div>
 
-      {/* Loading */}
       {loading && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
           <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-500 text-sm">Analyzing your preferences and scoring history…</p>
+          <p className="text-slate-500 text-sm">Analyzing your preferences…</p>
         </div>
       )}
 
-      {/* Error */}
       {error && !loading && (
         <div className="bg-red-50 border border-red-100 rounded-2xl p-5 text-sm text-red-500">{error}</div>
       )}
 
-      {/* Results */}
       {recs && !loading && (
         <>
-          {/* Insight card */}
           <div className="bg-gradient-to-br from-[#1a2234] to-[#243050] rounded-2xl p-6">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 flex items-center justify-center shrink-0">
@@ -153,7 +171,32 @@ Also include a brief "What you value most" insight summary (2-3 sentences) about
             </div>
           </div>
 
-          {/* Recommendations */}
+          {recs.hidden_preferences?.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 space-y-3">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Eye size={14} /> You might not realize you value
+              </p>
+              {recs.hidden_preferences.map((h, i) => (
+                <div key={i} className="text-sm">
+                  <p className="font-semibold text-[#1a2234]">{h.category}</p>
+                  <p className="text-slate-500 text-xs mt-0.5">{h.why_surprising}</p>
+                  {h.tip && <p className="text-[#10b981] text-xs mt-1">{h.tip}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {recs.suggestions?.length > 0 && (
+            <div className="grid gap-2">
+              {recs.suggestions.map((s, i) => (
+                <div key={i} className="bg-[#10b981]/5 border border-[#10b981]/15 rounded-xl px-4 py-3 text-sm">
+                  <p className="font-semibold text-[#1a2234]">{s.title}</p>
+                  <p className="text-slate-500 text-xs mt-1">{s.reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="grid gap-3">
             {recs.recommendations?.map((rec, i) => {
               const match = scores.find(s => s.property_address === rec.address);

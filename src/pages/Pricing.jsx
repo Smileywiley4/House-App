@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Zap, Lock, Star, Users, Map, Building2, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
+import { APP_NAME } from "@/core/constants";
+import { SUPPORT_EMAIL } from "@/core/companyConfig";
 
 const PLANS = [
   {
@@ -73,21 +75,32 @@ const COMING_SOON = [
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
   const { isAuthenticated } = useAuth();
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [searchParams] = useSearchParams();
+  const [highlightPlan, setHighlightPlan] = useState(null);
+  const planRefs = useRef({});
 
   const interval = annual ? "annual" : "monthly";
-  // Update this whenever you change the on-screen terms content.
-  const termsVersion = "2026-02";
+
+  useEffect(() => {
+    const planParam = searchParams.get("plan");
+    if (planParam !== "premium" && planParam !== "realtor") return;
+    setHighlightPlan(planParam);
+    const el = planRefs.current[planParam];
+    if (el) {
+      const timer = setTimeout(
+        () => el.scrollIntoView({ behavior: "smooth", block: "center" }),
+        150
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-16 text-center">
-        <div className="absolute inset-0">
-          <img src="/banner-pricing.png" alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/70" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a2234]/70" />
         <div className="relative max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-[#10b981]/15 text-[#10b981] text-xs font-bold px-4 py-2 rounded-full mb-6 border border-[#10b981]/20">
             <Zap size={12} /> Simple, transparent pricing
@@ -115,67 +128,11 @@ export default function Pricing() {
 
       {/* Plans */}
       <div className="max-w-5xl mx-auto px-6 py-16">
-        <div className="max-w-3xl mx-auto mb-10">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={termsAccepted}
-                onChange={(e) => {
-                  setCheckoutError("");
-                  setTermsAccepted(e.target.checked);
-                }}
-                className="mt-1 h-4 w-4 accent-[#10b981]"
-                aria-label="Accept Terms and Conditions"
-              />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-[#1a2234]">
-                  I agree to the Terms & Conditions and authorize recurring billing
-                </p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  By selecting <span className="font-semibold">{interval === "annual" ? "Annual" : "Monthly"}</span>{" "}
-                  billing for your Premium/Realtor plan, you authorize PropertyPulse to charge the payment method you provide{" "}
-                  on a {interval === "annual" ? "yearly" : "monthly"} basis. Your subscription automatically renews unless you cancel.
-                  If you cancel, your billing stops after your current billing period ends.
-                </p>
-                <details className="mt-3">
-                  <summary className="text-xs font-semibold text-[#1a2234] cursor-pointer">
-                    Terms & Conditions (template)
-                  </summary>
-                  <div className="mt-3 text-[11px] text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-52 overflow-y-auto">
-                    <p className="mb-2">
-                      1) Service. PropertyPulse provides subscription features for property scoring, comparison, and related tools.
-                    </p>
-                    <p className="mb-2">
-                      2) Payment Authorization. You authorize recurring charges via Stripe for the selected plan and billing interval.
-                      Charges may be processed by Stripe and shown on your statement under the merchant descriptor used by Stripe.
-                    </p>
-                    <p className="mb-2">
-                      3) Auto-Renewal. Subscriptions renew automatically for the selected interval unless cancelled in your account.
-                    </p>
-                    <p className="mb-2">
-                      4) Cancellation. If you cancel, you will keep access through the end of your current billing period; no further charges will be made after the period ends.
-                    </p>
-                    <p className="mb-2">
-                      5) Refunds. Refunds (if any) are handled in accordance with our refund policy as described in the full Terms & Conditions.
-                    </p>
-                    <p className="mb-2">
-                      6) Legal & Compliance. You agree to comply with applicable laws, and you consent to processing of your payment details by Stripe as required to complete billing.
-                    </p>
-                    <p className="mb-0">
-                      Replace this template with your final Terms & Conditions drafted/approved by legal counsel. This UI is a technical implementation only.
-                    </p>
-                  </div>
-                </details>
-              </div>
-            </div>
-            {checkoutError && (
-              <p className="text-xs text-red-600 mt-3 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                {checkoutError}
-              </p>
-            )}
-          </div>
-        </div>
+        {checkoutError && (
+          <p className="max-w-3xl mx-auto mb-8 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-center">
+            {checkoutError}
+          </p>
+        )}
 
         <div className="grid md:grid-cols-3 gap-6">
           {PLANS.map(plan => (
@@ -184,13 +141,21 @@ export default function Pricing() {
               plan={plan}
               annual={annual}
               interval={interval}
-              acceptedTerms={termsAccepted}
               isAuthenticated={isAuthenticated}
-              termsVersion={termsVersion}
               onSetError={setCheckoutError}
+              highlighted={highlightPlan === plan.id}
+              cardRef={(el) => { planRefs.current[plan.id] = el; }}
             />
           ))}
         </div>
+
+        <p className="text-center text-xs text-slate-400 mt-8 max-w-2xl mx-auto leading-relaxed">
+          Paid plans open secure Stripe checkout. You&apos;ll review payment details first, then accept our{' '}
+          <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms of Service</Link>
+          {' '}and{' '}
+          <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy Policy</Link>
+          {' '}before completing your purchase.
+        </p>
 
         {/* Coming Soon */}
         <div className="mt-16">
@@ -220,9 +185,9 @@ export default function Pricing() {
           <div className="absolute top-0 right-0 w-48 h-48 bg-[#10b981] opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <Building2 size={32} className="text-[#10b981] mx-auto mb-4" />
           <div className="text-[#10b981] text-xs font-bold uppercase tracking-widest mb-2">For Real Estate Professionals</div>
-          <h3 className="text-2xl font-bold text-white mb-3">Use HomeScore with your clients</h3>
+          <h3 className="text-2xl font-bold text-white mb-3">Use {APP_NAME} with your clients</h3>
           <p className="text-slate-400 max-w-xl mx-auto text-sm mb-6">
-            Access private listing tools, manage client scorecards, and use HomeScore as your professional edge — including with off-market and pre-MLS properties.
+            Access private listing tools, manage client scorecards, and use {APP_NAME} as your professional edge — including with off-market and pre-MLS properties.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to={createPageUrl("RealtorPortal")}
@@ -238,27 +203,24 @@ export default function Pricing() {
                     window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing`)}`;
                     return;
                   }
-                  if (!termsAccepted) {
-                    setCheckoutError("Please accept the Terms & Conditions to continue with checkout.");
-                    return;
-                  }
                   const base = typeof window !== "undefined" ? window.location.origin : "";
                   const { url } = await api.subscription.createCheckoutSession({
                     planId: "realtor",
                     interval,
-                    terms_accepted: termsAccepted,
-                    terms_version: termsVersion,
-                    successUrl: `${base}/Profile?upgraded=1`,
+                    successUrl: `${base}/Profile?upgraded=1&tab=billing`,
                     cancelUrl: `${base}/Pricing`,
                   });
-                  if (url) window.location.href = url;
+                  if (!url) {
+                    setCheckoutError("Checkout is unavailable. Billing may not be configured on the server.");
+                    return;
+                  }
+                  window.location.href = url;
                 } catch (err) {
                   console.error(err);
                   setCheckoutError(err?.message || "Could not start checkout. Try again or contact support.");
                 }
               }}
-              disabled={!termsAccepted}
-              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl text-sm hover:bg-white/5 transition disabled:opacity-60">
+              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl text-sm hover:bg-white/5 transition">
               Upgrade to Realtor — ${annual ? "199.99/yr" : "19.99/mo"}
             </button>
           </div>
@@ -266,14 +228,17 @@ export default function Pricing() {
 
         {/* FAQ note */}
         <p className="text-center text-xs text-slate-400 mt-10">
-          All plans include a 14-day free trial. Cancel anytime. Questions? Contact us at hello@homescore.app
+          Cancel anytime from your account. Questions?{' '}
+          <Link to={createPageUrl("Support")} className="text-[#10b981] hover:underline">Contact support</Link>
+          {' '}or email{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">{SUPPORT_EMAIL}</a>
         </p>
       </div>
     </div>
   );
 }
 
-function PlanCard({ plan, annual, interval, acceptedTerms, isAuthenticated, termsVersion, onSetError }) {
+function PlanCard({ plan, annual, interval, isAuthenticated, onSetError, highlighted, cardRef }) {
   const [loading, setLoading] = useState(false);
   const price = annual && plan.annual > 0
     ? plan.annual
@@ -287,7 +252,12 @@ function PlanCard({ plan, annual, interval, acceptedTerms, isAuthenticated, term
     : "bg-white border-slate-200";
 
   return (
-    <div className={`rounded-2xl border p-7 shadow-sm relative overflow-hidden flex flex-col ${base}`}>
+    <div
+      ref={cardRef}
+      className={`rounded-2xl border p-7 shadow-sm relative overflow-hidden flex flex-col transition-shadow ${
+        highlighted ? "ring-2 ring-[#10b981] ring-offset-2 shadow-lg" : ""
+      } ${base}`}
+    >
       {plan.accent && (
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#10b981] opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" />
       )}
@@ -325,22 +295,20 @@ function PlanCard({ plan, annual, interval, acceptedTerms, isAuthenticated, term
               window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing`)}`;
               return;
             }
-            if (!acceptedTerms) {
-              onSetError?.("Please accept the Terms & Conditions to continue with checkout.");
-              return;
-            }
             setLoading(true);
             try {
               const base = typeof window !== "undefined" ? window.location.origin : "";
               const { url } = await api.subscription.createCheckoutSession({
                 planId: plan.id,
                 interval,
-                terms_accepted: acceptedTerms,
-                terms_version: termsVersion,
-                successUrl: `${base}/Profile?upgraded=1`,
+                successUrl: `${base}/Profile?upgraded=1&tab=billing`,
                 cancelUrl: `${base}/Pricing`,
               });
-              if (url) window.location.href = url;
+              if (!url) {
+                onSetError?.("Checkout is unavailable. Billing may not be configured on the server.");
+                return;
+              }
+              window.location.href = url;
             } catch (err) {
               console.error(err);
               onSetError?.(err?.message || "Could not start checkout. Try again or contact support.");
@@ -348,7 +316,7 @@ function PlanCard({ plan, annual, interval, acceptedTerms, isAuthenticated, term
               setLoading(false);
             }
           }}
-          disabled={loading || (!acceptedTerms && plan.id !== "free")}
+          disabled={loading}
           className={`w-full py-3 rounded-xl font-bold text-sm transition mb-7 flex items-center justify-center gap-2 ${
             plan.accent
               ? "bg-[#10b981] hover:bg-[#059669] text-white"

@@ -15,7 +15,7 @@ from app.dependencies import (
     require_realtor_plan,
     log_llm_usage,
 )
-from app.llm import invoke_llm
+from app.llm import has_llm_provider, invoke_llm
 from app.preference_learning import (
     GAMIFIED_QUESTIONS,
     apply_response_to_preferences,
@@ -27,6 +27,11 @@ from app.preference_learning import (
 
 router = APIRouter(prefix="/preferences", tags=["preferences"])
 logger = logging.getLogger(__name__)
+
+
+def _require_llm_provider() -> None:
+    if not has_llm_provider():
+        raise HTTPException(status_code=503, detail="AI service is not configured")
 
 
 class StartQuestionnaireBody(BaseModel):
@@ -148,6 +153,7 @@ async def questionnaire_respond(body: RespondBody, user_id: str = Depends(requir
 
 @router.get("/insights")
 async def preference_insights(user_id: str = Depends(require_paid_llm_access)):
+    _require_llm_provider()
     supabase = get_supabase_admin()
     learned = get_learned_profile(supabase, user_id)
     weights = get_learned_weights(supabase, user_id)
@@ -226,6 +232,7 @@ Write JSON:
 
 @router.post("/explain-score")
 async def explain_score(body: ExplainScoreBody, user_id: str = Depends(require_paid_llm_access)):
+    _require_llm_provider()
     supabase = get_supabase_admin()
     cats = json.dumps(body.categories[:40], indent=2)
     log_llm_usage(supabase, user_id, "explain_score")
@@ -257,6 +264,7 @@ Rules: Only interpret the numbers provided. Do not invent property facts. Return
 
 @router.post("/visit-notes-to-scores")
 async def visit_notes_to_scores(body: VisitNotesBody, user_id: str = Depends(require_paid_llm_access)):
+    _require_llm_provider()
     supabase = get_supabase_admin()
     cat_hint = json.dumps(body.categories or [], indent=2)
     log_llm_usage(supabase, user_id, "visit_notes_to_scores")
@@ -294,7 +302,12 @@ Only score categories mentioned or strongly implied. Be conservative.""",
 
 
 @router.post("/realtor-draft")
-async def realtor_draft(body: RealtorDraftBody, user_id: str = Depends(require_realtor_plan)):
+async def realtor_draft(
+    body: RealtorDraftBody,
+    user_id: str = Depends(require_realtor_plan),
+    _llm_user_id: str = Depends(require_paid_llm_access),
+):
+    _require_llm_provider()
     supabase = get_supabase_admin()
     log_llm_usage(supabase, user_id, "realtor_draft")
     props = json.dumps(body.properties[:10], indent=2)

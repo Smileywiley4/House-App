@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "proppocket",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#10b981"
-    },
     "ios": {
       "bundleIdentifier": "com.proppocket.mobile",
       "buildNumber": "1",
@@ -20,7 +15,6 @@
         "NSCameraUsageDescription": "Property Pocket uses the camera to capture in-person photos of homes you visit.",
         "NSPhotoLibraryUsageDescription": "Property Pocket can read your photo library when you choose existing photos for visit notes.",
         "NSPhotoLibraryAddUsageDescription": "Property Pocket saves visit photos you take to your photo library when you choose Save to Photos.",
-        "NSContactsUsageDescription": "Property Pocket uses your contacts to pick phone numbers when you send text message invites to join the app.",
         "NSLocationWhenInUseUsageDescription": "Property Pocket uses your location to show where you are on the map and nearby homes.",
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -29,7 +23,6 @@
       "package": "com.proppocket.mobile",
       "versionCode": 1,
       "permissions": [
-        "READ_CONTACTS",
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VIDEO",
         "ACCESS_COARSE_LOCATION",
@@ -57,6 +50,15 @@
       }
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#10b981",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
       [
         "expo-notifications",
         {
@@ -97,7 +99,6 @@
           }
         }
       ],
-      "expo-contacts",
       [
         "expo-media-library",
         {

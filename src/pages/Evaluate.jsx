@@ -6,7 +6,10 @@ import { api } from "@/api";
 import CategorySlider from "@/components/evaluate/CategorySlider.jsx";
 import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker.jsx";
 import AIAutoScore from "@/components/ai/AIAutoScore.jsx";
+import ExplainScore from "@/components/ai/ExplainScore.jsx";
+import GamifiedWalkthrough from "@/components/ai/GamifiedWalkthrough.jsx";
 import GoogleAutoScore from "@/components/evaluate/GoogleAutoScore.jsx";
+import PropertyLocationMap from "@/components/PropertyLocationMap";
 import { PremiumGate } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
@@ -34,6 +37,8 @@ export default function Evaluate() {
     baths: readParam("baths"),
     sqft: readParam("sqft"),
     year: readParam("year"),
+    lat: readParam("lat") ? Number(readParam("lat")) : null,
+    lng: readParam("lng") ? Number(readParam("lng")) : null,
   };
 
   const [activeCategories, setActiveCategories] = useState(() => {
@@ -44,6 +49,7 @@ export default function Evaluate() {
   const [showPicker, setShowPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -109,30 +115,33 @@ export default function Evaluate() {
 
   const saveScore = async () => {
     setSaving(true);
-    await api.entities.PropertyScore.create({
-      property_address: `${property.address}, ${property.city}, ${property.state}`,
-      scores: activeCategories.map(c => ({
-        category_id: c.id,
-        category_label: c.label,
-        importance: c.importance,
-        score: c.score
-      })),
-      weighted_total: weightedTotal,
-      max_possible: maxPossible,
-      percentage
-    });
-    setSaving(false);
-    setSaved(true);
+    setSaveError("");
+    try {
+      await api.entities.PropertyScore.create({
+        property_address: `${property.address}, ${property.city}, ${property.state}`,
+        scores: activeCategories.map(c => ({
+          category_id: c.id,
+          category_label: c.label,
+          importance: c.importance,
+          score: c.score
+        })),
+        weighted_total: weightedTotal,
+        max_possible: maxPossible,
+        percentage
+      });
+      setSaved(true);
+    } catch (error) {
+      setSaveError(error?.message || "Could not save this score. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6">
-        <div className="absolute inset-0">
-          <img src="/banner-evaluate.png" alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/75" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a2234]/75" />
         <div className="relative max-w-4xl mx-auto">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
             <ChevronLeft size={16} /> Back to Search
@@ -226,6 +235,13 @@ export default function Evaluate() {
               </Link>
             )}
           </div>
+          {saveError && <p className="w-full text-sm text-red-600 font-medium">{saveError}</p>}
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 pt-6">
+        <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+          <PropertyLocationMap property={property} className="h-52 md:h-64" />
         </div>
       </div>
 
@@ -241,6 +257,20 @@ export default function Evaluate() {
             }));
           }}
         />
+      </div>
+
+      {/* Gamified walk-through + explain score (Premium) */}
+      <div className="max-w-4xl mx-auto px-6 pt-4 space-y-4">
+        <PremiumGate featureName="Gamified walk-through">
+          <GamifiedWalkthrough propertyAddress={property.address} />
+        </PremiumGate>
+        <PremiumGate featureName="Explain my score">
+          <ExplainScore
+            propertyAddress={property.address}
+            percentage={percentage}
+            categories={activeCategories}
+          />
+        </PremiumGate>
       </div>
 
       {/* AI Auto-Score (Premium) */}

@@ -22,6 +22,17 @@ Apply migrations in order (oldest → newest) in **SQL Editor**:
 | 1 | `supabase/migrations/20250222000000_propertypulse_schema.sql` | profiles, property_scores, clients, private_listings |
 | 2 | `supabase/migrations/20250222100000_property_cache_and_stripe.sql` | property_cache, stripe_customer_id |
 | 3 | `supabase/migrations/20250226000000_user_presets.sql` | user_presets (presets feature) |
+| 4 | `supabase/migrations/20250227000000_custom_categories.sql` | custom scoring categories |
+| 5 | `supabase/migrations/20250228000000_user_property_library.sql` | saved properties, folders, private photo storage |
+| 6 | `supabase/migrations/20250229000000_peer_sharing_and_invites.sql` | peer sharing and email invitations |
+| 7 | `supabase/migrations/20250301000000_mobile_device_snapshots.sql` | opted-in mobile device analytics |
+| 8 | `supabase/migrations/20260222000000_publisher_revenue_snapshots.sql` | private publisher revenue snapshots |
+| 9 | `supabase/migrations/20260223120000_custom_categories_rls.sql` | lock custom categories to service role |
+| 10 | `supabase/migrations/20260430110000_iap_events.sql` | private RevenueCat webhook audit log |
+| 11 | `supabase/migrations/20260709120000_preferences_questionnaire.sql` | preference questionnaire and realtor assignments |
+| 12 | `supabase/migrations/20260709130000_profiles_marketing_fields.sql` | marketing consent fields |
+| 13 | `supabase/migrations/20260709140000_oauth_profile_names.sql` | Google OAuth display names |
+| 14 | `supabase/migrations/20260709150000_restrict_profile_sensitive_updates.sql` | prevent client-side plan, role, and billing changes |
 
 **Steps:**
 
@@ -111,6 +122,16 @@ CORS_ORIGINS=http://localhost:5173,https://your-vercel-app.vercel.app
 3. Add **Redirect URLs**:
    - `http://localhost:5173/**`
    - `https://your-vercel-app.vercel.app/**` (for production)
+
+### Google OAuth (Continue with Google)
+
+1. Supabase Dashboard → **Authentication** → **Providers** → **Google**
+2. Enable Google and paste your **Google Cloud OAuth client ID + secret** (Web application type).
+3. In [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials** → your OAuth client:
+   - **Authorized JavaScript origins:** `http://localhost:5173`, `https://your-vercel-app.vercel.app`
+   - **Authorized redirect URIs:** copy the callback URL shown in Supabase (usually `https://<project-ref>.supabase.co/auth/v1/callback`)
+4. The app uses **PKCE** (`flowType: 'pkce'`). After Google redirects back, `/login` exchanges the `?code=` for a session — works for **new sign-ups and returning users** with the same button.
+5. Apply migration `20260709140000_oauth_profile_names.sql` so Google display names populate `profiles.full_name` on first sign-in.
 
 ---
 

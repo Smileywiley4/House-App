@@ -27,7 +27,7 @@ Use this to ship a minimum viable product on a full-stack host like **Vercel** (
 
 Vercel does not run long-lived Python servers. Run the FastAPI backend elsewhere:
 
-- **Railway:** New Project → Deploy from GitHub (select `backend/` or repo root and set root to `backend`). Add env: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PREMIUM_PRICE_ID`, `STRIPE_REALTOR_PRICE_ID`, `OPENAI_API_KEY`, `CORS_ORIGINS` (include your Vercel URL, e.g. `https://your-project.vercel.app`). Set start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- **Railway:** New Project → Deploy from GitHub. Set **Root Directory** to `backend`, then add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, the selected `STRIPE_*_PRICE_ID` values, one LLM key (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`), `APP_PUBLIC_URL`, and `CORS_ORIGINS`. Include only exact Vercel production/custom-domain origins in CORS. The included Dockerfile binds to Railway’s assigned `$PORT`; configure Railway’s health check as `/health`.
 - **Render:** New Web Service → connect repo, Root Directory `backend`, Build `pip install -r requirements.txt`, Start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Add same env vars; set CORS to your Vercel domain.
 
 Use the deployed backend URL as `VITE_API_BASE_URL` in Vercel.
@@ -47,7 +47,7 @@ Use the deployed backend URL as `VITE_API_BASE_URL` in Vercel.
 
 - Create products/prices in Stripe for Premium and Realtor.
 - Put **Price IDs** and **Secret key** in backend env.
-- Webhook: Stripe Dashboard → Developers → Webhooks → Add endpoint: `https://your-backend-url/api/webhooks/stripe`, events `checkout.session.completed`, `customer.subscription.deleted`. Copy **Signing secret** into backend `STRIPE_WEBHOOK_SECRET`.
+- Webhook: Stripe Dashboard → Developers → Webhooks → Add endpoint: `https://your-backend-url/api/webhooks/stripe`, events `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`. Copy the endpoint’s **Signing secret** into backend `STRIPE_WEBHOOK_SECRET`, then send a test event and confirm the associated profile updates.
 
 ---
 
@@ -59,6 +59,8 @@ Use the deployed backend URL as `VITE_API_BASE_URL` in Vercel.
 - [ ] User can open `/login`, sign up or sign in (email or Google if enabled), and land back on the app.
 - [ ] User can search a property, see result, and (if logged in) score and save.
 - [ ] Env vars set in Vercel (frontend) and in backend host; `VITE_API_BASE_URL` points at live backend.
+- [ ] `CORS_ORIGINS` contains the exact Vercel production/custom-domain origins, and `APP_PUBLIC_URL` is the same public app origin.
+- [ ] `/health` is publicly reachable but does not expose secret values; confirm only boolean configuration flags are returned.
 - [ ] (Optional) Stripe webhook configured so upgrades set `profiles.plan`.
 
 ---

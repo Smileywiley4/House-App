@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, Zap } from "lucide-react";
 import { api } from "@/api";
+import AiDisclaimer from "@/components/trust/AiDisclaimer";
 
 /**
  * AIAutoScore - given property info, suggests scores for each active category.
@@ -21,6 +22,7 @@ export default function AIAutoScore({ property, categories, onApplyScores }) {
     const categoryList = categories.map(c => `${c.id}: ${c.label}`).join("\n");
 
     const data = await api.integrations.invokeLLM({
+      feature: "ai_auto_score",
       prompt: `You are a real estate expert evaluating a home for a buyer.
 
 Property: ${addressStr}
@@ -84,6 +86,7 @@ Return results as a JSON array.`,
       </div>
 
       <div className="p-5">
+        <AiDisclaimer className="mb-4" />
         {!suggested && !loading && (
           <div className="flex items-start gap-3">
             <div className="flex-1">

@@ -3,11 +3,11 @@ import hashlib
 import logging
 from fastapi import APIRouter, Body, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from app.dependencies import get_supabase_admin, get_current_user_id
-from app.llm import get_property_by_address_llm, search_properties_by_criteria_llm, has_llm_provider, active_provider
+from pydantic import BaseModel, Field
+from app.dependencies import get_supabase_admin, get_current_user_id, user_has_paid_plan, require_paid_plan
+from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
 from app.google_places import get_property_via_google, get_autoscore_data, places_v1_search_nearby
-from app.web_search import search_property_listings, format_search_context
+from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
 logger = logging.getLogger(__name__)
@@ -92,8 +92,50 @@ def _cache_key(addr: str) -> str:
     return hashlib.sha256(_normalize_address(addr).encode()).hexdigest()
 
 
+def _build_basic_property_response(
+    address: str,
+    google_data: dict | None,
+    listing_hints: dict,
+) -> dict:
+    """Google-verified location plus listing fields parsed from public search snippets."""
+    gd = google_data or {}
+    has_listing = any(
+        listing_hints.get(k) is not None for k in ("price", "bedrooms", "bathrooms", "sqft", "year_built")
+    )
+    formatted = gd.get("formatted_address") or address
+    if has_listing:
+        description = "Listing details from public property sites."
+    elif gd:
+        description = f"Location verified for {formatted}."
+    else:
+        description = f"Limited data available for {address}."
+
+    return {
+        "address": gd.get("address") or address,
+        "city": gd.get("city", ""),
+        "state": gd.get("state", ""),
+        "zip": gd.get("zip", ""),
+        "lat": gd.get("lat"),
+        "lng": gd.get("lng"),
+        "nearby_hospitals": gd.get("nearby_hospitals"),
+        "nearby_schools": gd.get("nearby_schools"),
+        "nearby_highways": gd.get("nearby_highways"),
+        "price": listing_hints.get("price"),
+        "bedrooms": listing_hints.get("bedrooms"),
+        "bathrooms": listing_hints.get("bathrooms"),
+        "sqft": listing_hints.get("sqft"),
+        "year_built": listing_hints.get("year_built"),
+        "description": description,
+        "walk_score": None,
+        "school_rating": None,
+        "on_market": bool(listing_hints.get("on_market") or listing_hints.get("price")),
+        "listing_source": listing_hints.get("listing_source"),
+        "data_source": "public_listings" if has_listing else ("google_maps" if gd else None),
+    }
+
+
 class SearchBody(BaseModel):
-    address: str
+    address: str = Field(..., min_length=3, max_length=300)
 
 
 @router.post("/places/search-nearby")
@@ -117,16 +159,24 @@ async def places_search_nearby(
 
 
 @router.post("/search")
-async def search(body: SearchBody):
+async def search(body: SearchBody, user_id: str = Depends(get_current_user_id)):
     address = (body.address or "").strip()
     if not address:
-        return {"error": "Address is required"}
+        raise HTTPException(status_code=400, detail="Address is required")
     key = _cache_key(address)
 
+    supabase = get_supabase_admin()
+    is_paid = user_has_paid_plan(supabase, user_id)
+
+    # The cache contains full listing details. Authorize before reading it so
+    # a paid result cannot be replayed to a free or anonymous caller.
     try:
-        supabase = get_supabase_admin()
-        r = supabase.table("property_cache").select("data").eq("address_hash", key).execute()
-        if r.data and len(r.data) > 0:
+        r = (
+            supabase.table("property_cache").select("data").eq("address_hash", key).execute()
+            if is_paid
+            else None
+        )
+        if r and r.data and len(r.data) > 0:
             row = r.data[0]
             return row.get("data") or {}
     except Exception:
@@ -138,43 +188,63 @@ async def search(body: SearchBody):
 
     search_addr = google_data.get("formatted_address") or address if google_data else address
     web_results = await search_property_listings(search_addr)
+    listing_hints = extract_listing_hints(web_results)
     web_context = format_search_context(web_results)
     if web_context:
         sources = set(r.get("source") for r in web_results if r.get("source") != "Web")
         logger.info("Web search found %d results from: %s", len(web_results), ", ".join(sources) or "web")
+    if listing_hints.get("price"):
+        logger.info("Parsed listing hints: price=%s beds=%s", listing_hints.get("price"), listing_hints.get("bedrooms"))
 
-    if not has_llm_provider():
-        if google_data:
-            data = {
-                "address": google_data.get("address") or address,
-                "city": google_data.get("city", ""),
-                "state": google_data.get("state", ""),
-                "zip": google_data.get("zip", ""),
-                "lat": google_data.get("lat"),
-                "lng": google_data.get("lng"),
-                "nearby_hospitals": google_data.get("nearby_hospitals"),
-                "nearby_schools": google_data.get("nearby_schools"),
-                "nearby_highways": google_data.get("nearby_highways"),
-                "price": None, "bedrooms": None, "bathrooms": None, "sqft": None,
-                "year_built": None, "description": "Property details from Google Maps.",
-                "walk_score": None, "school_rating": None,
-                "on_market": False, "listing_source": None,
-            }
+    if is_paid and has_llm_provider():
+        logger.info("Using LLM provider: %s", active_provider())
+        data = await get_property_by_address_llm(
+            address,
+            google_data=google_data,
+            web_search_context=web_context or None,
+        )
+        if data:
+            # Keep explicitly parsed listing facts when an LLM omits a field.
+            # Paid users must not receive less complete address/price data than
+            # the non-LLM fallback from the same verified search results.
+            basic_data = _build_basic_property_response(address, google_data, listing_hints)
+            for field in (
+                "address",
+                "city",
+                "state",
+                "zip",
+                "price",
+                "bedrooms",
+                "bathrooms",
+                "sqft",
+                "year_built",
+                "listing_source",
+            ):
+                if data.get(field) in (None, "") and basic_data.get(field) not in (None, ""):
+                    data[field] = basic_data[field]
             _save_cache(key, data)
             return data
-        raise HTTPException(status_code=503, detail="No LLM provider configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.")
+        logger.warning("LLM property lookup failed; falling back to basic listing data")
 
-    logger.info("Using LLM provider: %s", active_provider())
-    data = await get_property_by_address_llm(
-        address,
-        google_data=google_data,
-        web_search_context=web_context or None,
+    if google_data or listing_hints:
+        data = _build_basic_property_response(address, google_data, listing_hints)
+        if is_paid:
+            _save_cache(key, data)
+        return data
+
+    if not has_llm_provider():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Property search is not fully configured. Set GOOGLE_PLACES_API_KEY for address lookup "
+                "and GOOGLE_CSE_ID for listing prices, or configure ANTHROPIC_API_KEY / OPENAI_API_KEY."
+            ),
+        )
+
+    raise HTTPException(
+        status_code=404,
+        detail="Could not find this address. Try adding city and state (e.g. Gilbert, AZ).",
     )
-    if not data:
-        raise HTTPException(status_code=502, detail="Property lookup failed. Check Railway logs for details.")
-
-    _save_cache(key, data)
-    return data
 
 
 def _save_cache(key: str, data: dict):
@@ -195,7 +265,7 @@ class SearchByCriteriaBody(BaseModel):
 
 @router.post("/search-by-criteria")
 async def search_by_criteria(
-    body: SearchByCriteriaBody, user_id: str = Depends(get_current_user_id)
+    body: SearchByCriteriaBody, user_id: str = Depends(require_paid_plan)
 ):
     """Search properties by preset filters. Public: LLM-suggested listings. Private: realtor's private_listings."""
     f = body.filters or {}
@@ -234,9 +304,15 @@ async def search_by_criteria(
             "properties": [_listing_to_property(x) for x in rows],
         }
 
-    # Public: use LLM to suggest matching properties
-    props = await search_properties_by_criteria_llm(f)
-    return {"source": "public", "properties": props or []}
+    # Do not present generated addresses or prices as market inventory. Enable
+    # this only after wiring a licensed listing provider with a query endpoint.
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "Public criteria search is temporarily unavailable until a verified "
+            "listing-data provider is configured. Private listings remain available."
+        ),
+    )
 
 
 def _listing_to_property(row: dict) -> dict:
@@ -262,11 +338,11 @@ def _listing_to_property(row: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 class AutoScoreBody(BaseModel):
-    address: str
+    address: str = Field(..., min_length=3, max_length=300)
 
 
 @router.post("/autoscore")
-async def autoscore(body: AutoScoreBody):
+async def autoscore(body: AutoScoreBody, _user_id: str = Depends(get_current_user_id)):
     """
     Return deterministic scores for categories that can be scored from Google data.
     Results are cached so the same address always returns the same scores.

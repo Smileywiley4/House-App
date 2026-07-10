@@ -1,38 +1,20 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Star, BarChart3, ChevronRight, Home as HomeIcon } from "lucide-react";
-import { getPropertyByAddress } from "@/core/propertyService";
+import { Star, BarChart3, ChevronRight, Home as HomeIcon, Info, Search } from "lucide-react";
+import { DEMO_PROPERTY } from "@/core/demoProperty";
 import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
+import PropertyLocationMap from "@/components/PropertyLocationMap";
+import PropertyAddressSearchForm from "@/components/PropertyAddressSearchForm";
 import { ForSaleBadge } from "@/components/ForSaleBadge";
 import { AdSlot } from "@/components/AdSlot";
 import { PremiumGate } from "@/components/PremiumGate";
+import TrustBadges from "@/components/trust/TrustBadges";
+import { PRODUCT_DISCLAIMER } from "@/core/companyConfig";
 
 export default function Home() {
-  const [address, setAddress] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!address.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getPropertyByAddress(address);
-      setResult(data);
-    } catch (err) {
-      setError(err.message || "Could not load property. Try again.");
-      setResult(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-20 text-center">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-16 md:py-20 text-center">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 30% 50%, #10b981 0%, transparent 60%), radial-gradient(circle at 70% 20%, #10b981 0%, transparent 50%)" }} />
         <div className="relative max-w-2xl mx-auto">
@@ -45,100 +27,91 @@ export default function Home() {
             Find Your Dream Home.<br />
             <span className="text-[#10b981]">Score It Mathematically.</span>
           </h1>
-          <p className="text-slate-400 text-lg mb-10">
+          <p className="text-slate-400 text-lg mb-8 md:mb-10">
             Search any property, rate what matters to you, and compare homes with a weighted score — not just a gut feeling.
           </p>
-          <form onSubmit={handleSearch} className="flex gap-3 max-w-xl mx-auto">
-            <div className="flex-1 relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter a property address..."
-                className="w-full pl-11 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-[#c9a84c] focus:bg-white/15 transition-all text-base"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Search size={18} />
-              )}
-              {loading ? "Searching..." : "Search"}
-            </button>
-          </form>
+          <PropertyAddressSearchForm variant="hero" className="max-w-xl mx-auto" />
         </div>
       </div>
+
+      <TrustBadges />
 
       <div className="max-w-5xl mx-auto px-6 py-4">
         <AdSlot format="leaderboard" className="min-h-[90px]" />
       </div>
 
-      {error && (
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <p className="text-center text-red-600 text-sm bg-red-50 rounded-xl py-3 px-4">{error}</p>
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#10b981] mb-2">Live preview</p>
+            <h2 className="text-2xl font-bold text-[#1a2234]">See how scoring works</h2>
+            <p className="text-slate-500 text-sm mt-1 max-w-xl">
+              Example listing below — search a real address on the home page or with the header bar on any other page.
+            </p>
+          </div>
+          <Link
+            to={createPageUrl("About")}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#10b981] hover:text-[#059669] shrink-0"
+          >
+            Full methodology <ChevronRight size={16} />
+          </Link>
         </div>
-      )}
-      {result && (
-        <div className="max-w-5xl mx-auto px-6 py-12">
-          <PropertyCard property={result} />
-        </div>
-      )}
+        <PropertyCard property={DEMO_PROPERTY} isDemo demoScore={DEMO_PROPERTY.demoScore} demoScoreLabel={DEMO_PROPERTY.demoScoreLabel} />
+      </div>
 
-      {!result && (
-        <div className="max-w-5xl mx-auto px-6 py-16">
-          <h2 className="text-center text-2xl font-bold text-[#1a2234] mb-12">How It Works</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { icon: Search, title: "Search Any Property", desc: "Enter any address to instantly pull up property details, location data, and proximity to key amenities." },
-              { icon: Star, title: "Score What Matters", desc: "Set importance weights for 30+ categories — from roof quality to school ratings — then score the property." },
-              { icon: BarChart3, title: "Compare Mathematically", desc: "Get a weighted score for each property and compare them side-by-side to make confident decisions." }
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center mb-5">
-                  <Icon className="text-[#10b981]" size={22} />
-                </div>
-                <h3 className="font-bold text-[#1a2234] text-lg mb-2">{title}</h3>
-                <p className="text-slate-500 leading-relaxed text-sm">{desc}</p>
+      <div className="max-w-5xl mx-auto px-6 py-16">
+        <h2 className="text-center text-2xl font-bold text-[#1a2234] mb-12">How It Works</h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            { icon: Search, title: "Search Any Property", desc: "Enter an address on the home page or use the sticky header search on every other page to pull up details and amenities." },
+            { icon: Star, title: "Score What Matters", desc: "Set importance weights for 30+ categories — from roof quality to school ratings — then score the property." },
+            { icon: BarChart3, title: "Compare Mathematically", desc: "Get a weighted score for each property and compare them side-by-side to make confident decisions." }
+          ].map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center mb-5">
+                <Icon className="text-[#10b981]" size={22} />
               </div>
-            ))}
-          </div>
-
-          <div className="mt-10 text-center">
-            <Link
-              to={createPageUrl("Compare")}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
-            >
-              View My Saved Properties <ChevronRight size={16} />
-            </Link>
-          </div>
+              <h3 className="font-bold text-[#1a2234] text-lg mb-2">{title}</h3>
+              <p className="text-slate-500 leading-relaxed text-sm">{desc}</p>
+            </div>
+          ))}
         </div>
-      )}
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            to={createPageUrl("QuickCompare")}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] text-white font-semibold rounded-xl hover:bg-[#059669] transition-colors"
+          >
+            Try Quick Compare <ChevronRight size={16} />
+          </Link>
+          <Link
+            to={createPageUrl("Compare")}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
+          >
+            View My Saved Properties <ChevronRight size={16} />
+          </Link>
+        </div>
+
+        <p className="mt-10 text-center text-xs text-slate-400 max-w-2xl mx-auto leading-relaxed flex items-start justify-center gap-2">
+          <Info size={14} className="shrink-0 mt-0.5" aria-hidden />
+          {PRODUCT_DISCLAIMER}
+        </p>
+      </div>
     </div>
   );
 }
 
-function PropertyCard({ property }) {
+function PropertyCard({ property, isDemo = false, demoScore, demoScoreLabel }) {
   const fmt = (n) => n?.toLocaleString() ?? "—";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="relative h-56 bg-slate-100 overflow-hidden">
-        <iframe
-          title="map"
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          style={{ border: 0 }}
-          src={`https://maps.google.com/maps?q=${encodeURIComponent(property.address + " " + property.city + " " + property.state)}&output=embed&z=15`}
-          allowFullScreen
-        />
-      </div>
+      {isDemo && (
+        <div className="bg-[#c9a84c]/10 border-b border-[#c9a84c]/20 px-5 py-2.5 text-center">
+          <span className="text-xs font-semibold text-[#8a6d2b]">Example listing for demonstration — not a live MLS feed</span>
+        </div>
+      )}
+      <PropertyLocationMap property={property} />
 
       <div className="p-8">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
@@ -151,7 +124,15 @@ function PropertyCard({ property }) {
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-[#10b981]">${fmt(property.price)}</div>
-            <div className="text-sm text-slate-400 flex items-center gap-1 justify-end">Est. List Price <span className="text-[#c9a84c] text-xs">✦</span></div>
+            <div className="text-sm text-slate-400 flex items-center gap-1 justify-end">
+              {isDemo ? "Example price" : "Est. List Price"} <span className="text-[#c9a84c] text-xs">✦</span>
+            </div>
+            {demoScore != null && (
+              <div className="mt-2 inline-flex flex-col items-end">
+                <span className="text-2xl font-bold text-[#1a2234]">{demoScore}</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wide">{demoScoreLabel || "Example score"}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -184,16 +165,18 @@ function PropertyCard({ property }) {
           ))}
         </div>
 
-        <PremiumGate featureName="AI Property Insights">
-          <AIPropertyInsights property={property} />
-        </PremiumGate>
+        {!isDemo && (
+          <PremiumGate featureName="AI Property Insights">
+            <AIPropertyInsights property={property} />
+          </PremiumGate>
+        )}
 
         <Link
           to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
           className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
         >
           <Star size={18} />
-          Score This Property
+          {isDemo ? "Try scoring this example" : "Score This Property"}
         </Link>
       </div>
     </div>

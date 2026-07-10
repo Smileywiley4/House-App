@@ -80,10 +80,7 @@ function RealtorPortalInner() {
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0">
-          <img src="/banner-compare.png" alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/75" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a2234]/75" />
         <div className="relative max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-[#10b981]/20 flex items-center justify-center">
@@ -542,6 +539,49 @@ function ClientPresetForm({ client, onSave, onClose }) {
   );
 }
 
+function SendToClientButton({ listing, client }) {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const send = async () => {
+    if (!api.realtor?.assignProperty) {
+      setStatus("Requires Python backend.");
+      return;
+    }
+    setLoading(true);
+    setStatus(null);
+    try {
+      await api.realtor.assignProperty({
+        client_id: client.id,
+        client_email: client.email,
+        property_address: listing.address,
+        property_snapshot: listing,
+        message: `Your realtor shared this home for a guided walk-through: ${listing.address}`,
+      });
+      setStatus("Sent — client will see it in Profile → For You.");
+    } catch (e) {
+      setStatus(e?.message || "Could not send. Client needs a linked app account.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mb-2">
+      <button
+        type="button"
+        onClick={send}
+        disabled={loading}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1a2234] hover:bg-[#243050] px-3 py-2 rounded-lg disabled:opacity-60"
+      >
+        <Share2 size={12} />
+        {loading ? "Sending…" : "Send to client for walk-through"}
+      </button>
+      {status && <p className="text-[10px] text-slate-500 mt-1">{status}</p>}
+    </div>
+  );
+}
+
 function ListingCard({ listing, clients, onDelete }) {
   const client = clients.find(c => c.id === listing.client_id);
   const statusColors = { off_market: "bg-purple-50 text-purple-600", coming_soon: "bg-yellow-50 text-yellow-600", active: "bg-[#10b981]/10 text-[#10b981]", pending: "bg-blue-50 text-blue-600", sold: "bg-slate-100 text-slate-500" };
@@ -567,6 +607,9 @@ function ListingCard({ listing, clients, onDelete }) {
         ) : null)}
       </div>
       {client && <div className="text-xs text-slate-400 flex items-center gap-1 mb-1"><Users size={11} /> For: <span className="font-semibold text-[#1a2234]">{client.name}</span></div>}
+      {client && (
+        <SendToClientButton listing={listing} client={client} />
+      )}
       <AIListingDescription listing={listing} />
       <AIPropertyInsights property={listing} />
       <Link to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(listing.address)}&city=${encodeURIComponent(listing.city || "")}&state=${encodeURIComponent(listing.state || "")}&price=${listing.price || ""}`}

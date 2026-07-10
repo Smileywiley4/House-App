@@ -47,10 +47,7 @@ function CompareInner() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0">
-          <img src="/banner-compare-aerial.png" alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/75" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a2234]/75" />
         <div className="relative max-w-5xl mx-auto">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
             <ChevronLeft size={16} /> Back to Search

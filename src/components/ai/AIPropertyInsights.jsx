@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "@/api";
+import AiDisclaimer from "@/components/trust/AiDisclaimer";
 
 export default function AIPropertyInsights({ property }) {
   const [insights, setInsights] = useState(null);
@@ -13,6 +14,7 @@ export default function AIPropertyInsights({ property }) {
   const generate = async () => {
     setLoading(true);
     const data = await api.integrations.invokeLLM({
+      feature: "ai_property_insights",
       prompt: `You are a real estate intelligence assistant. Analyze the property at "${addressStr}" and provide detailed, buyer-focused insights.
 
 Property details:
@@ -116,6 +118,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
       {/* Generate button */}
       {!insights && !loading && (
         <div className="bg-white px-5 py-6 text-center">
+          <AiDisclaimer className="mb-4 text-left" />
           <p className="text-slate-500 text-sm mb-4">
             Get AI-powered neighborhood analysis, proximity scores, and an engaging buyer description for this property.
           </p>
@@ -208,8 +211,12 @@ Be specific with real place names when possible. Write descriptions in second-pe
             </div>
           )}
 
+          <div className="px-5 py-4">
+            <AiDisclaimer />
+          </div>
+
           {/* Regenerate */}
-          <div className="px-5 py-3">
+          <div className="px-5 py-3 border-t border-slate-100">
             <button onClick={generate} className="text-xs text-slate-400 hover:text-[#10b981] transition flex items-center gap-1">
               <Sparkles size={11} /> Regenerate insights
             </button>

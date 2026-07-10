@@ -57,6 +57,22 @@ export const SEO_BY_PAGE = {
     title: 'Shared comparison',
     description: 'A comparison shared with you in Property Pocket.',
   },
+  About: {
+    title: 'About us',
+    description: 'Learn how Property Pocket helps home buyers compare properties with transparent, weighted scoring.',
+  },
+  Privacy: {
+    title: 'Privacy policy',
+    description: 'How Property Pocket collects, uses, and protects your personal information.',
+  },
+  Terms: {
+    title: 'Terms of service',
+    description: 'Terms governing your use of Property Pocket and related subscriptions.',
+  },
+  Support: {
+    title: 'Help & support',
+    description: 'Contact Property Pocket for account, billing, and product help.',
+  },
 };
 
 export const SITE_NAME = APP_NAME;

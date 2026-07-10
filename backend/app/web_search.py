@@ -1,5 +1,6 @@
 """Google Custom Search for real property data from Zillow, Redfin, Realtor.com, etc."""
 import logging
+import re
 import httpx
 from app.config import get_settings
 
@@ -79,3 +80,68 @@ def format_search_context(results: list[dict]) -> str:
             lines.append(f"  URL: {r['link']}")
         lines.append("")
     return "\n".join(lines)
+
+
+def extract_listing_hints(results: list[dict]) -> dict:
+    """
+    Parse price, beds, baths, and sqft from listing-site search snippets.
+    Used for free-tier search so users get real listing numbers without LLM.
+    """
+    if not results:
+        return {}
+
+    text = "\n".join(
+        f"{r.get('title', '')} {r.get('snippet', '')}".strip()
+        for r in results[:8]
+        if r.get("title") or r.get("snippet")
+    )
+    if not text.strip():
+        return {}
+
+    hints: dict = {}
+
+    prices: list[int] = []
+    for match in re.finditer(r"\$\s*([\d,]+(?:\.\d{2})?)", text):
+        try:
+            value = int(float(match.group(1).replace(",", "")))
+        except (ValueError, TypeError):
+            continue
+        if 10_000 <= value <= 50_000_000:
+            prices.append(value)
+    if prices:
+        hints["price"] = prices[0]
+
+    bed_match = re.search(r"(\d+)\s*(?:bd|bed|bedroom)s?\b", text, re.I)
+    if bed_match:
+        hints["bedrooms"] = int(bed_match.group(1))
+
+    bath_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:ba|bath|bathroom)s?\b", text, re.I)
+    if bath_match:
+        hints["bathrooms"] = float(bath_match.group(1))
+
+    sqft_match = re.search(r"([\d,]+)\s*(?:sq\.?\s*ft|sqft|SF)\b", text, re.I)
+    if sqft_match:
+        try:
+            sqft = int(sqft_match.group(1).replace(",", ""))
+            if 100 <= sqft <= 100_000:
+                hints["sqft"] = sqft
+        except (ValueError, TypeError):
+            pass
+
+    year_match = re.search(r"\bb(?:uilt|lt)\s*(?:in\s*)?(\d{4})\b", text, re.I)
+    if year_match:
+        year = int(year_match.group(1))
+        if 1800 <= year <= 2100:
+            hints["year_built"] = year
+
+    for row in results:
+        source = row.get("source")
+        if source and source != "Web":
+            hints["listing_source"] = source
+            hints["on_market"] = True
+            break
+
+    if hints.get("price") and not hints.get("on_market"):
+        hints["on_market"] = True
+
+    return hints

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { api } from "@/api";
+import AiDisclaimer from "@/components/trust/AiDisclaimer";
 
 /**
  * Generates an AI description for a private listing or scored property.
@@ -15,6 +16,7 @@ export default function AIListingDescription({ listing }) {
   const generate = async () => {
     setLoading(true);
     const data = await api.integrations.invokeLLM({
+      feature: "ai_listing_description",
       prompt: `Write an engaging, buyer-focused property description for a real estate listing.
 
 Property details:
@@ -73,8 +75,14 @@ Keep it professional, vivid, and buyer-focused. Use "you'll" and second-person l
         </div>
       </div>
       {description && (
-        <div className="px-4 py-3 bg-white">
+        <div className="px-4 py-3 bg-white space-y-3">
           <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
+          <AiDisclaimer />
+        </div>
+      )}
+      {!description && !loading && (
+        <div className="px-4 py-3 bg-white">
+          <AiDisclaimer />
         </div>
       )}
     </div>

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     stripe_realtor_annual_price_id: str = ""
     # RevenueCat webhook + entitlement sync (iOS IAP)
     revenuecat_webhook_secret: str = ""
-    revenuecat_premium_entitlement_id: str = "property_pocket_pro"
+    revenuecat_premium_entitlement_id: str = "Property Pocket Pro"
     revenuecat_realtor_entitlement_id: str = "realtor"
     openai_api_key: str = ""
     # OpenAI fallback / economy tier — gpt-4o-mini is cost-effective for structured JSON tasks
@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # Optional: dedicated key for AMP URL API; if empty, GOOGLE_PLACES_API_KEY is used (same GCP project must enable AMP URL API).
     google_amp_url_api_key: str = ""
     google_cse_id: str = ""
+    # Google Sheets — marketing signup CRM (service account JSON string + spreadsheet id)
+    google_marketing_sheet_id: str = ""
+    google_sheets_sa_json: str = ""
     # Google Workspace Admin SDK — Data Transfer API (OAuth service account + domain-wide delegation)
     google_workspace_sa_json_path: str = ""
     google_workspace_delegated_admin_email: str = ""

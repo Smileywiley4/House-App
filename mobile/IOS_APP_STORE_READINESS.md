@@ -99,9 +99,9 @@ Apple reviewers need a clean flow:
 
 ## Important follow-up recommendation
 
-This mobile app currently uses **Expo SDK canary** versions (`56.0.0-canary...`) in `package.json`.
+This mobile app uses **Expo SDK 57** (stable). Run `npm run doctor` before each release build; all checks should pass.
 
-For best App Store stability and smoother acceptance, migrate to the latest **stable** Expo SDK line before final submission (using `expo install --fix` after choosing the stable SDK). Canary builds are not forbidden, but they increase operational risk.
+See **`APP_STORE_LAUNCH_CHECKLIST.md`** for the full step-by-step launch tracker.
 
 ## IAP compliance path
 

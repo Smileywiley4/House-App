@@ -77,6 +77,23 @@ Rules:
 
 Return JSON with: address, city, state, zip, price (number USD), bedrooms, bathrooms, sqft, year_built, description (2-3 sentence neighborhood/summary), lat, lng, walk_score (0-100), school_rating (e.g. "8/10"), nearby_hospitals, nearby_highways, nearby_schools, on_market (boolean), listing_source (string or null).`;
 
+/** Map API / network failures to user-friendly search errors. */
+export function formatPropertySearchError(err) {
+  if (!err) return 'Could not load property. Try again.';
+  if (err.isNetworkError) return err.message;
+  const status = err.status;
+  if (status === 404) {
+    return err.message || 'Address not found. Try adding city and state.';
+  }
+  if (status === 503) {
+    return err.message || 'Property search is temporarily unavailable.';
+  }
+  if (status === 403) {
+    return err.message || 'This search requires a Premium subscription.';
+  }
+  return err.message || 'Could not load property. Try again.';
+}
+
 /**
  * Fetch property details by address. Uses cache for consistency; same address returns same result within TTL.
  * @param {string} address - Full or partial address
@@ -87,8 +104,16 @@ export async function getPropertyByAddress(address) {
   if (!normalized) throw new Error('Address is required');
 
   if (api.property?.search) {
-    const data = await api.property.search(normalized);
-    return { ...data, on_market: !!data?.on_market, listing_source: data?.listing_source || null };
+    try {
+      const data = await api.property.search(normalized);
+      return { ...data, on_market: !!data?.on_market, listing_source: data?.listing_source || null };
+    } catch (err) {
+      const friendly = formatPropertySearchError(err);
+      const wrapped = new Error(friendly);
+      wrapped.status = err?.status;
+      wrapped.isNetworkError = err?.isNetworkError;
+      throw wrapped;
+    }
   }
 
   const cached = getCached(normalized);

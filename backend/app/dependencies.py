@@ -16,16 +16,16 @@ async def get_current_user_id(
     token = creds.credentials
     s = get_settings()
     if not s.supabase_jwt_secret:
-        raise HTTPException(status_code=500, detail="JWT secret not configured")
+        raise HTTPException(status_code=503, detail="Authentication is not configured")
     try:
         payload = jwt.decode(
             token,
             s.supabase_jwt_secret,
             algorithms=["HS256"],
-            options={"verify_aud": False},
+            audience="authenticated",
         )
         sub = payload.get("sub")
-        if not sub:
+        if not sub or payload.get("role") != "authenticated":
             raise HTTPException(status_code=401, detail="Invalid token")
         return sub
     except JWTError:
@@ -110,9 +110,9 @@ async def get_optional_user_id(
             token,
             s.supabase_jwt_secret,
             algorithms=["HS256"],
-            options={"verify_aud": False},
+            audience="authenticated",
         )
-        return payload.get("sub")
+        return payload.get("sub") if payload.get("role") == "authenticated" else None
     except JWTError:
         return None
 

@@ -87,10 +87,7 @@ export default function QuickCompare() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-12 text-center">
-        <div className="absolute inset-0">
-          <img src="/banner-compare.png" alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/70" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a2234]/70" />
         <div className="relative">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
             <BarChart3 className="inline mr-2 text-[#10b981]" size={28} />

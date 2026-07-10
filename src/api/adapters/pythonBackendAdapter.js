@@ -27,6 +27,43 @@ function requireApiBase() {
   }
 }
 
+function parseApiErrorBody(text, fallback) {
+  if (!text) return fallback;
+  try {
+    const j = JSON.parse(text);
+    const d = j.detail;
+    if (typeof d === 'string') return d;
+    if (Array.isArray(d)) {
+      return d.map((x) => (typeof x === 'string' ? x : x?.msg || JSON.stringify(x))).join('. ');
+    }
+    if (typeof j.message === 'string') return j.message;
+    return text;
+  } catch {
+    return text || fallback;
+  }
+}
+
+function wrapNetworkError(err, path) {
+  const raw = err?.message || String(err);
+  const isNetwork =
+    raw === 'Failed to fetch' ||
+    raw === 'NetworkError when attempting to fetch resource.' ||
+    raw.includes('Network request failed') ||
+    err?.name === 'TypeError';
+  if (!isNetwork) return err;
+  const hint = baseUrl
+    ? ` (${baseUrl.replace(/^https?:\/\//, '')})`
+    : '';
+  const message =
+    `Property search is temporarily unavailable${hint}. ` +
+    'The server may be down or misconfigured — try again in a few minutes.';
+  const wrapped = new Error(message);
+  wrapped.isNetworkError = true;
+  wrapped.cause = err;
+  wrapped.path = path;
+  return wrapped;
+}
+
 async function request(method, path, body = undefined, extraHeaders = undefined) {
   requireApiBase();
   const token = await getToken();
@@ -35,9 +72,20 @@ async function request(method, path, body = undefined, extraHeaders = undefined)
   if (extraHeaders && typeof extraHeaders === 'object') {
     Object.assign(headers, extraHeaders);
   }
-  const res = await fetch(`${baseUrl}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
+  let res;
+  try {
+    res = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include',
+    });
+  } catch (err) {
+    throw wrapNetworkError(err, path);
+  }
   if (!res.ok) {
-    const err = new Error(await res.text() || res.statusText);
+    const text = await res.text();
+    const err = new Error(parseApiErrorBody(text, res.statusText));
     err.status = res.status;
     throw err;
   }
@@ -47,8 +95,13 @@ async function request(method, path, body = undefined, extraHeaders = undefined)
 
 async function publicGet(path) {
   requireApiBase();
-  const res = await fetch(`${baseUrl}${path}`, { credentials: 'include' });
-  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  let res;
+  try {
+    res = await fetch(`${baseUrl}${path}`, { credentials: 'include' });
+  } catch (err) {
+    throw wrapNetworkError(err, path);
+  }
+  if (!res.ok) throw new Error(parseApiErrorBody(await res.text(), res.statusText));
   return res.json();
 }
 
@@ -57,7 +110,12 @@ async function requestBlob(method, path) {
   const token = await getToken();
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${baseUrl}${path}`, { method, headers, credentials: 'include' });
+  let res;
+  try {
+    res = await fetch(`${baseUrl}${path}`, { method, headers, credentials: 'include' });
+  } catch (err) {
+    throw wrapNetworkError(err, path);
+  }
   if (!res.ok) {
     const err = new Error(await res.text() || res.statusText);
     err.status = res.status;
@@ -142,23 +200,21 @@ async function uploadVisitPhoto(savedId, file, caption) {
 }
 
 export function createPythonBackendAdapter() {
-  const supabase = getSupabase();
-
   return {
     auth: {
       me: () => request('GET', '/api/auth/me'),
       updateMe: (profile) => request('PATCH', '/api/auth/me', profile),
       updateEmail: async (email) => {
         // Supabase client updates auth email; backend /api/auth/me only stores profile fields.
-        const { error } = await supabase.auth.updateUser({ email });
+        const { error } = await getSupabase().auth.updateUser({ email });
         if (error) throw error;
       },
       updatePassword: async (password) => {
-        const { error } = await supabase.auth.updateUser({ password });
+        const { error } = await getSupabase().auth.updateUser({ password });
         if (error) throw error;
       },
       logout: async (returnUrl) => {
-        await supabase.auth.signOut({ scope: 'local' });
+        await getSupabase().auth.signOut({ scope: 'local' });
         if (typeof window !== 'undefined' && returnUrl) window.location.href = returnUrl;
       },
       redirectToLogin: (returnUrl) => {
@@ -209,6 +265,7 @@ export function createPythonBackendAdapter() {
       invokeLLM: (options) => request('POST', '/api/integrations/llm/invoke', {
         prompt: options.prompt,
         response_json_schema: options.response_json_schema,
+        feature: options.feature || 'invoke',
       }),
       /**
        * Google AMP URL API (batch). Response: { ampUrls: AmpUrl[], urlErrors: AmpUrlError[] }
@@ -2069,6 +2126,21 @@ export function createPythonBackendAdapter() {
       validateToken: (token) => publicGet(`/api/invitations/validate?token=${encodeURIComponent(token)}`),
       accept: (token) => request('POST', '/api/invitations/accept', { token }),
       listSent: () => request('GET', '/api/invitations/sent'),
+    },
+    preferences: {
+      getLearned: () => request('GET', '/api/preferences/learned'),
+      getInsights: () => request('GET', '/api/preferences/insights'),
+      startQuestionnaire: (body) => request('POST', '/api/preferences/questionnaire/start', body),
+      respondQuestionnaire: (body) => request('POST', '/api/preferences/questionnaire/respond', body),
+      explainScore: (body) => request('POST', '/api/preferences/explain-score', body),
+      visitNotesToScores: (body) => request('POST', '/api/preferences/visit-notes-to-scores', body),
+      realtorDraft: (body) => request('POST', '/api/preferences/realtor-draft', body),
+    },
+    realtor: {
+      assignProperty: (body) => request('POST', '/api/realtor/assignments', body),
+      listSentAssignments: () => request('GET', '/api/realtor/assignments/sent'),
+      clientInbox: () => request('GET', '/api/realtor/assignments/inbox'),
+      markAssignmentRead: (id) => request('PATCH', `/api/realtor/assignments/${encodeURIComponent(id)}/read`),
     },
   };
 }

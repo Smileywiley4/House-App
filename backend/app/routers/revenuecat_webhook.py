@@ -23,7 +23,7 @@ def _plan_from_entitlements(entitlement_ids: list[str]) -> str | None:
 async def revenuecat_webhook(request: Request):
     s = get_settings()
     if not s.revenuecat_webhook_secret:
-        raise HTTPException(status_code=500, detail="REVENUECAT_WEBHOOK_SECRET not set")
+        raise HTTPException(status_code=503, detail="RevenueCat webhook is not configured")
 
     auth = request.headers.get("authorization", "")
     if auth != f"Bearer {s.revenuecat_webhook_secret}":

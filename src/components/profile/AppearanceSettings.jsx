@@ -60,7 +60,7 @@ export default function AppearanceSettings() {
         <h2 className="text-lg font-bold text-foreground mb-1">Display brightness</h2>
         <p className="text-sm text-muted-foreground mb-5">
           Dims or brightens the whole app in your browser. This does not change your monitor or phone hardware
-          brightness — only how Property Pulse is drawn.
+          brightness — only how Property Pocket is drawn.
         </p>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-4">

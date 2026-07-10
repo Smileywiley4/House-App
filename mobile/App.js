@@ -18,7 +18,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 // expo-sharing: file/image URIs → shareAsync. Plain-text invites use react-native Share.
 import * as Sharing from 'expo-sharing';
 import * as SMS from 'expo-sms';
-import * as Contacts from 'expo-contacts';
 import * as MediaLibrary from 'expo-media-library';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -34,6 +33,7 @@ import {
   getOfferings,
   hasActiveEntitlement,
   isIapAvailableOnThisBuild,
+  loginIapUser,
   purchase,
   restorePurchases,
 } from './services/iap';
@@ -116,7 +116,11 @@ export default function App() {
         if (!ok || cancelled) return;
         iapConfiguredRef.current = true;
         setIapReady(true);
-        const [offerings, customerInfo] = await Promise.all([getOfferings(), getCustomerInfo()]);
+        const debugUserId = process.env.EXPO_PUBLIC_IAP_DEBUG_USER_ID;
+        const customerInfoPromise = debugUserId
+          ? loginIapUser(debugUserId)
+          : getCustomerInfo();
+        const [offerings, customerInfo] = await Promise.all([getOfferings(), customerInfoPromise]);
         if (cancelled) return;
         const current = offerings?.current?.availablePackages || [];
         setPackages(current);
@@ -164,15 +168,19 @@ export default function App() {
   /** Share visit JPEG via expo-sharing (works with camera `file://` URIs on device). */
   const sharePhoto = async () => {
     if (!photoUri) return;
-    const can = await Sharing.isAvailableAsync();
-    if (!can) {
-      Alert.alert('Sharing', 'Sharing is not available on this device.');
-      return;
+    try {
+      const can = await Sharing.isAvailableAsync();
+      if (!can) {
+        Alert.alert('Sharing', 'Sharing is not available on this device.');
+        return;
+      }
+      await Sharing.shareAsync(photoUri, {
+        mimeType: 'image/jpeg',
+        dialogTitle: 'Share visit photo',
+      });
+    } catch (e) {
+      Alert.alert('Sharing', e?.message || 'Could not share this photo.');
     }
-    await Sharing.shareAsync(photoUri, {
-      mimeType: 'image/jpeg',
-      dialogTitle: 'Share visit photo',
-    });
   };
 
   /** Save-only permission (add to library) when supported; falls back to full request. */
@@ -198,33 +206,14 @@ export default function App() {
   };
 
   const inviteFromContacts = async () => {
-    const { status } = await Contacts.requestPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Contacts', 'Allow access to find email addresses to invite.');
-      return;
-    }
-    const { data } = await Contacts.getContactsAsync({
-      fields: [Contacts.Fields.Emails, Contacts.Fields.Name],
-    });
-    const emails = [];
-    (data || []).forEach((c) => {
-      (c.emails || []).forEach((e) => {
-        if (e?.email && e.email.includes('@')) emails.push(e.email.trim());
-      });
-    });
-    const unique = [...new Set(emails)].slice(0, 12);
-    const msg = getInviteMessage();
-    const body =
-      unique.length > 0
-        ? `Found ${unique.length} email(s) in contacts. Use the system share sheet to send the link, or Profile → Invite on the web for tracked invites.`
-        : 'No emails found in contacts.';
-    Alert.alert('Invite friends', body);
     try {
-      await Share.share({ message: msg, title: 'Property Pocket' });
-    } catch (_) {}
+      await Share.share({ message: getInviteMessage(), title: 'Property Pocket' });
+    } catch (e) {
+      Alert.alert('Invite friends', e?.message || 'Could not open the share sheet.');
+    }
   };
 
-  /** Prefills SMS with invite link; adds up to 12 phone numbers from contacts when permission granted. */
+  /** Opens the native SMS composer with the invite link; recipients are chosen by the user. */
   const inviteViaSms = async () => {
     if (Platform.OS === 'web') {
       Alert.alert('SMS', 'SMS is not available on web.');
@@ -239,31 +228,8 @@ export default function App() {
       return;
     }
     const msg = getInviteMessage();
-    let recipients = [];
     try {
-      const { status } = await Contacts.requestPermissionsAsync();
-      if (status === 'granted') {
-        const { data } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.PhoneNumbers],
-        });
-        const seen = new Set();
-        (data || []).forEach((c) => {
-          (c.phoneNumbers || []).forEach((p) => {
-            const raw = p?.number?.trim();
-            if (raw && raw.replace(/\D/g, '').length >= 7 && !seen.has(raw)) {
-              seen.add(raw);
-              recipients.push(raw);
-            }
-          });
-        });
-        recipients = recipients.slice(0, 12);
-      }
-    } catch (_) {
-      /* compose still opens without prefilled recipients */
-    }
-
-    try {
-      await SMS.sendSMSAsync(recipients.length ? recipients : [], msg);
+      await SMS.sendSMSAsync([], msg);
     } catch (e) {
       try {
         const body = encodeURIComponent(msg);
@@ -377,7 +343,7 @@ export default function App() {
       )}
 
       <TouchableOpacity style={styles.inviteBtn} onPress={inviteFromContacts}>
-        <Text style={styles.inviteBtnText}>Invite friends (contacts)</Text>
+        <Text style={styles.inviteBtnText}>Invite friends</Text>
       </TouchableOpacity>
       {Platform.OS !== 'web' && (
         <TouchableOpacity style={styles.inviteSmsBtn} onPress={inviteViaSms}>
@@ -385,12 +351,12 @@ export default function App() {
         </TouchableOpacity>
       )}
       <Text style={styles.inviteHint}>
-        Email invite uses the share sheet. SMS uses expo-sms (Messages) and can prefill numbers from contacts. Set
-        EXPO_PUBLIC_APP_URL for your web app.
+        Email invite uses the share sheet. SMS opens your device's message composer. Set EXPO_PUBLIC_APP_URL for your
+        web app.
       </Text>
       <Text style={styles.mediaHint}>
         expo-media-library: after you capture a shot, use Save to Photos to store it in your gallery (upload to Property
-        Pulse from the web app when signed in).
+        Pocket from the web app when signed in).
       </Text>
 
       {Platform.OS === 'ios' && (

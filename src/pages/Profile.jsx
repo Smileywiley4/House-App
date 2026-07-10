@@ -28,6 +28,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getSharedSupabase } from "@/lib/supabase";
 import { MANDATORY_CATEGORIES, OPTIONAL_CATEGORIES, NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import RecommendationEngine from "@/components/profile/RecommendationEngine";
+import ClientAssignmentsInbox from "@/components/realtor/ClientAssignmentsInbox";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { PremiumGate } from "@/components/PremiumGate";
 import RequireAuth from "@/components/RequireAuth";
@@ -61,9 +62,10 @@ export default function Profile() {
 
 function ProfileInner() {
   const { plan, isPremium } = usePlan();
-  const { logout } = useAuth();
+  const { logout, refreshUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState("overview");
+  const [upgradeBanner, setUpgradeBanner] = useState(false);
 
   const selectTab = (id) => {
     setTab(id);
@@ -81,6 +83,32 @@ function ProfileInner() {
     const q = searchParams.get("tab");
     if (q && VALID_PROFILE_TAB_IDS.has(q)) setTab(q);
   }, [searchParams]);
+
+  /** After Stripe checkout success — refresh plan (webhook may lag a few seconds). */
+  useEffect(() => {
+    if (searchParams.get("upgraded") !== "1") return;
+    setUpgradeBanner(true);
+    selectTab("billing");
+    let cancelled = false;
+    let attempts = 0;
+    const poll = async () => {
+      if (cancelled) return;
+      await refreshUser();
+      attempts += 1;
+      if (attempts < 5) setTimeout(poll, 2000);
+    };
+    poll();
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("upgraded");
+        next.set("tab", "billing");
+        return next;
+      },
+      { replace: true }
+    );
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on return from Stripe
   const [user, setUser] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [scores, setScores] = useState([]);
@@ -234,10 +262,7 @@ function ProfileInner() {
     <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
       <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0">
-          <img src="/banner-evaluate.png" alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-[#1a2234]/75" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a2234]/75" />
         <div className="relative max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-[#10b981]/20 flex items-center justify-center">
@@ -518,6 +543,13 @@ function ProfileInner() {
               <h2 className="text-lg font-bold text-foreground mb-1">Billing &amp; payment</h2>
               <p className="text-slate-400 text-sm">Your plan and Stripe customer portal.</p>
             </div>
+            {upgradeBanner && (
+              <div className="bg-[#10b981]/10 border border-[#10b981]/25 text-[#059669] text-sm rounded-xl px-4 py-3">
+                {isPremium
+                  ? "Thank you! Your subscription is active."
+                  : "Payment received — your plan should update in a few seconds. Refresh if it still shows Free."}
+              </div>
+            )}
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1.5">Current plan</label>
@@ -548,9 +580,17 @@ function ProfileInner() {
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  You&apos;re on the free plan. Upgrade from the app when you&apos;re ready for premium features.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    You&apos;re on the free plan. Upgrade anytime for premium features.
+                  </p>
+                  <Link
+                    to={createPageUrl("Pricing")}
+                    className="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl font-bold text-sm bg-[#10b981] hover:bg-[#059669] text-white"
+                  >
+                    View plans &amp; upgrade
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -684,7 +724,10 @@ function ProfileInner() {
         {/* ─── FOR YOU TAB ─── */}
         {tab === "foryou" && (
           <PremiumGate featureName="For You recommendations">
-            <RecommendationEngine scores={scores} weights={weights} />
+            <div className="space-y-8">
+              <ClientAssignmentsInbox />
+              <RecommendationEngine scores={scores} weights={weights} />
+            </div>
           </PremiumGate>
         )}
 

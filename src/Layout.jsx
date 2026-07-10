@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut } from "lucide-react";
-import { AdSlot } from "@/components/AdSlot";
 import { LayoutSeo } from "@/components/SeoHelmet";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
+import SiteFooter from "@/components/trust/SiteFooter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -194,23 +194,18 @@ export default function Layout({ children, currentPageName }) {
           })}
         </nav>
 
-        <div className="mt-2">
-          <SearchBarTop />
-        </div>
+        {currentPageName !== "Home" && (
+          <div className="mt-2">
+            <SearchBarTop />
+          </div>
+        )}
       </header>
 
       <main className="flex-1">
         {children}
       </main>
 
-      <footer className="bg-[#1a2234] border-t border-white/5 px-6 py-4">
-        <div className="max-w-5xl mx-auto mb-4">
-          <AdSlot format="leaderboard" className="min-h-[90px]" />
-        </div>
-        <p className="text-slate-500 text-xs text-center">
-          Property Pulse — Compare properties with weighted scoring
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

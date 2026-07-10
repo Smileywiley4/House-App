@@ -2,7 +2,7 @@
 
 ## App Store release checklist
 
-See `IOS_APP_STORE_READINESS.md` for the end-to-end iOS submission process, account setup, EAS build/submit commands, and compliance tasks.
+See `APP_STORE_LAUNCH_CHECKLIST.md` for the end-to-end iOS submission process, account setup, EAS build/submit commands, and compliance tasks.
 For Apple subscription compliance details and RevenueCat wiring, see `IOS_IAP_COMPLIANCE.md`.
 
 ## Notifications (`expo-notifications`)
