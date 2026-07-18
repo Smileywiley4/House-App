@@ -191,8 +191,15 @@ async def search(
         _enforce_public_search_limit(request)
     key = _cache_key(address)
 
-    supabase = get_supabase_admin()
-    is_paid = bool(user_id and user_has_paid_plan(supabase, user_id))
+    supabase = None
+    is_paid = False
+    try:
+        supabase = get_supabase_admin()
+        is_paid = bool(user_id and user_has_paid_plan(supabase, user_id))
+    except Exception:
+        # Basic public lookup must remain available even if profile/cache
+        # persistence is temporarily unavailable.
+        logger.warning("Supabase unavailable during property lookup", exc_info=True)
     result_cache_key = key if is_paid else f"public_{key}"
 
     # Paid and public results use separate keys so AI-enriched paid data cannot
@@ -203,6 +210,8 @@ async def search(
             .select("data")
             .eq("address_hash", result_cache_key)
             .execute()
+            if supabase
+            else None
         )
         if r and r.data and len(r.data) > 0:
             row = r.data[0]
