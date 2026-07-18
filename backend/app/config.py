@@ -122,7 +122,11 @@ class Settings(BaseSettings):
 
     @property
     def cors_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        origins = [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
+        public_origin = self.app_public_url.strip().rstrip("/")
+        if public_origin and public_origin not in origins:
+            origins.append(public_origin)
+        return origins
 
 
 @lru_cache
