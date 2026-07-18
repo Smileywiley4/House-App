@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { getPropertyByAddress } from "@/core/propertyService";
-import { useAuth } from "@/lib/AuthContext";
-
-const PENDING_SEARCH_KEY = "pp_pending_address_search";
 
 /**
  * Shared address search — used in the Home hero and the global header bar.
@@ -13,13 +10,16 @@ const PENDING_SEARCH_KEY = "pp_pending_address_search";
  */
 export default function PropertyAddressSearchForm({ variant = "header", className = "" }) {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoadingAuth } = useAuth();
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const isHero = variant === "hero";
 
-  const searchAddress = useCallback(async (value) => {
+  const submit = async (e) => {
+    e.preventDefault();
+    const value = (address || "").trim();
+    if (!value) return;
+
     setError(null);
     setLoading(true);
     try {
@@ -39,42 +39,10 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
 
       navigate(`${createPageUrl("Evaluate")}?${qp.toString()}`);
     } catch (err) {
-      if (err?.status === 401) {
-        sessionStorage.setItem(PENDING_SEARCH_KEY, value);
-        navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-        return;
-      }
       setError(err?.message || "Could not load property. Try again.");
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
-
-  useEffect(() => {
-    if (isLoadingAuth || !isAuthenticated) return;
-    const pendingAddress = sessionStorage.getItem(PENDING_SEARCH_KEY)?.trim();
-    if (!pendingAddress) return;
-    sessionStorage.removeItem(PENDING_SEARCH_KEY);
-    setAddress(pendingAddress);
-    searchAddress(pendingAddress);
-  }, [isAuthenticated, isLoadingAuth, searchAddress]);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    const value = (address || "").trim();
-    if (!value) return;
-
-    if (isLoadingAuth) {
-      setError("Checking your session. Please try again.");
-      return;
-    }
-    if (!isAuthenticated) {
-      sessionStorage.setItem(PENDING_SEARCH_KEY, value);
-      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-      return;
-    }
-
-    await searchAddress(value);
   };
 
   const inputClass = isHero

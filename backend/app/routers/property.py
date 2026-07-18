@@ -1,16 +1,36 @@
 """Property search by address. Google for verified location, web search for real listing data, LLM to structure."""
+from collections import deque
 import hashlib
 import logging
-from fastapi import APIRouter, Body, Depends, Header, HTTPException
+from time import monotonic
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from app.dependencies import get_supabase_admin, get_current_user_id, user_has_paid_plan, require_paid_plan
+from app.dependencies import get_supabase_admin, get_current_user_id, get_optional_user_id, user_has_paid_plan, require_paid_plan
 from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
 from app.google_places import get_property_via_google, get_autoscore_data, places_v1_search_nearby
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
 logger = logging.getLogger(__name__)
+PUBLIC_SEARCH_LIMIT = 30
+PUBLIC_SEARCH_WINDOW_SECONDS = 60 * 60
+_public_search_hits: dict[str, deque[float]] = {}
+
+
+def _enforce_public_search_limit(request: Request) -> None:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded.split(",", 1)[0].strip() or (request.client.host if request.client else "unknown")
+    now = monotonic()
+    hits = _public_search_hits.setdefault(client_ip, deque())
+    while hits and now - hits[0] >= PUBLIC_SEARCH_WINDOW_SECONDS:
+        hits.popleft()
+    if len(hits) >= PUBLIC_SEARCH_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail="Free address-search limit reached. Try again later or sign in for continued access.",
+        )
+    hits.append(now)
 
 
 # ---------------------------------------------------------------------------
@@ -159,22 +179,30 @@ async def places_search_nearby(
 
 
 @router.post("/search")
-async def search(body: SearchBody, user_id: str = Depends(get_current_user_id)):
+async def search(
+    body: SearchBody,
+    request: Request,
+    user_id: str | None = Depends(get_optional_user_id),
+):
     address = (body.address or "").strip()
     if not address:
         raise HTTPException(status_code=400, detail="Address is required")
+    if user_id is None:
+        _enforce_public_search_limit(request)
     key = _cache_key(address)
 
     supabase = get_supabase_admin()
-    is_paid = user_has_paid_plan(supabase, user_id)
+    is_paid = bool(user_id and user_has_paid_plan(supabase, user_id))
+    result_cache_key = key if is_paid else f"public_{key}"
 
-    # The cache contains full listing details. Authorize before reading it so
-    # a paid result cannot be replayed to a free or anonymous caller.
+    # Paid and public results use separate keys so AI-enriched paid data cannot
+    # be replayed to a free or anonymous caller.
     try:
         r = (
-            supabase.table("property_cache").select("data").eq("address_hash", key).execute()
-            if is_paid
-            else None
+            supabase.table("property_cache")
+            .select("data")
+            .eq("address_hash", result_cache_key)
+            .execute()
         )
         if r and r.data and len(r.data) > 0:
             row = r.data[0]
@@ -228,8 +256,7 @@ async def search(body: SearchBody, user_id: str = Depends(get_current_user_id)):
 
     if google_data or listing_hints:
         data = _build_basic_property_response(address, google_data, listing_hints)
-        if is_paid:
-            _save_cache(key, data)
+        _save_cache(result_cache_key, data)
         return data
 
     if not has_llm_provider():
