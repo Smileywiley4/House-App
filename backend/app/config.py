@@ -123,9 +123,11 @@ class Settings(BaseSettings):
     @property
     def cors_list(self) -> list[str]:
         origins = [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
-        public_origin = self.app_public_url.strip().rstrip("/")
-        if public_origin and public_origin not in origins:
-            origins.append(public_origin)
+        trusted_origins = {
+            self.app_public_url.strip().rstrip("/"),
+            "https://house-app-rho.vercel.app",
+        }
+        origins.extend(origin for origin in trusted_origins if origin and origin not in origins)
         return origins
 
 
