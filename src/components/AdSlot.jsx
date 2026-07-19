@@ -107,13 +107,13 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
   useEffect(() => {
     if (!showAds || !CLIENT_ID) return;
     const slotId = slotForFormat(format);
-    if (!slotId) return;
 
     let cancelled = false;
 
     ensureAdsenseScript(CLIENT_ID)
       .then(() => {
         if (cancelled) return;
+        if (!slotId) return;
         const el = insRef.current;
         if (!el || el.dataset.adsensePushed === "1") return;
         try {
