@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Loader2, Check, RotateCw } from "lucide-react";
+import { MapPin, Loader2, Check, RotateCw, Sparkles } from "lucide-react";
 import { api } from "@/api";
 
 const SCOREABLE_IDS = new Set([
@@ -208,13 +208,26 @@ export default function GoogleAutoScore({ address, property, categories, onApply
         )}
 
         {applied && (
-          <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold py-1">
-            <Check size={16} /> Auto-scores applied!
+          <div className="rounded-xl border border-[#10b981]/20 bg-gradient-to-r from-[#10b981]/8 to-[#c9a84c]/8 p-4">
+            <div className="mb-3 flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#10b981] text-white shadow-sm">
+                <Check size={18} strokeWidth={3} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-[#1a2234]">Auto-scores applied</p>
+                <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                  Added another supported category? Re-run Auto-Score to calculate and apply its score.
+                </p>
+              </div>
+            </div>
             <button
-              onClick={() => { setResult(null); setApplied(false); }}
-              className="ml-auto text-xs text-slate-400 hover:text-slate-600 font-normal"
+              type="button"
+              onClick={run}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a2234] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#243050] hover:shadow-md"
             >
-              Re-run
+              <RotateCw size={17} className="text-[#c9a84c]" />
+              Re-run Auto-Score
+              <Sparkles size={15} className="text-[#10b981]" />
             </button>
           </div>
         )}
