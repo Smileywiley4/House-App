@@ -1,11 +1,12 @@
 import { X } from "lucide-react";
 
-export default function CategorySlider({ category, onImportanceChange, onScoreChange, onRemove }) {
+export default function CategorySlider({ category, evidence, onImportanceChange, onScoreChange, onRemove }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="font-semibold text-[#1a2234] text-sm">{category.label}</h3>
+          {evidence && <p className="mt-1 text-xs text-slate-500">{evidence}</p>}
           {category.custom && (
             <span className="text-[10px] font-semibold text-[#8b5cf6] px-2 py-0.5 rounded-full mt-1 inline-block border border-[#8b5cf6]/30">
               CUSTOM

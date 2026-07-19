@@ -51,11 +51,48 @@ export default function Evaluate() {
     property.sqft != null ? `${Number(property.sqft).toLocaleString()} sqft` : null,
     property.year != null ? `Built ${property.year}` : null,
   ].filter(Boolean).join(" · ");
+  const propertyFactCategories = [
+    property.beds != null ? { id: "bedroom_count", label: "Bedroom Count" } : null,
+    property.baths != null ? { id: "bathroom_count", label: "Bathroom Count" } : null,
+    property.sqft != null ? { id: "overall_living_space", label: "Overall Living Space" } : null,
+    property.annual_taxes != null && property.tax_assessment != null
+      ? { id: "property_tax_cost", label: "Property Tax Cost" }
+      : null,
+    property.hoa_fee != null ? { id: "hoa_cost", label: "HOA Cost" } : null,
+    property.features?.garage != null ? { id: "garage_storage", label: "Garage / Storage" } : null,
+    property.features?.fireplace != null ? { id: "fireplace", label: "Fireplace" } : null,
+  ].filter(Boolean);
+  const saleCount = property.sale_history?.length || 0;
+  const propertyEvidence = {
+    bedroom_count: property.beds != null ? `${property.beds} recorded bedroom${Number(property.beds) === 1 ? "" : "s"}` : null,
+    bathroom_count: property.baths != null ? `${property.baths} recorded bathroom${Number(property.baths) === 1 ? "" : "s"}` : null,
+    overall_living_space: property.sqft != null ? `${Number(property.sqft).toLocaleString()} sq ft total living area` : null,
+    property_tax_cost: property.annual_taxes != null
+      ? `$${Number(property.annual_taxes).toLocaleString()} annual taxes${property.tax_assessment != null ? ` on a $${Number(property.tax_assessment).toLocaleString()} assessment` : ""}`
+      : null,
+    hoa_cost: property.hoa_fee != null ? `$${Number(property.hoa_fee).toLocaleString()} recorded monthly HOA fee` : null,
+    garage_storage: property.features?.garage != null
+      ? property.features.garage
+        ? `Garage recorded${property.features.garageSpaces ? ` · ${property.features.garageSpaces} spaces` : ""}`
+        : "No garage recorded"
+      : null,
+    parking: property.features?.garage ? `Garage recorded${property.features.garageSpaces ? ` · ${property.features.garageSpaces} spaces` : ""}` : null,
+    fireplace: property.features?.fireplace != null ? (property.features.fireplace ? "Fireplace recorded" : "No fireplace recorded") : null,
+    hvac: property.features?.heatingType || property.features?.coolingType
+      ? [property.features.heatingType, property.features.coolingType].filter(Boolean).join(" · ")
+      : null,
+    roof_quality: property.features?.roofType ? `${property.features.roofType} roof recorded; condition requires inspection` : null,
+    home_construction_stability: property.year != null ? `Built ${property.year}; age alone does not establish condition` : null,
+    outdoor_entertainment: property.features?.pool ? "Pool recorded in property data" : null,
+    location_investment: saleCount >= 2 ? `${saleCount} recorded sales available for trend scoring` : null,
+    longterm_neighborhood_value: saleCount >= 2 ? `${saleCount} recorded sales available as one value signal` : null,
+  };
 
   const [activeCategories, setActiveCategories] = useState(() => {
     const mandatory = MANDATORY_CATEGORIES.map(c => ({ ...c, importance: 5, score: 5 }));
     const neighborhood = NEIGHBORHOOD_CATEGORIES.map(c => ({ ...c, importance: 5, score: 5 }));
-    return [...mandatory, ...neighborhood];
+    const propertyFacts = propertyFactCategories.map(c => ({ ...c, importance: 5, score: 5 }));
+    return [...mandatory, ...neighborhood, ...propertyFacts];
   });
   const [showPicker, setShowPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -109,6 +146,13 @@ export default function Evaluate() {
         bathrooms: property.baths,
         sqft: property.sqft,
         year_built: property.year,
+        lot_size: property.lot_size,
+        annual_taxes: property.annual_taxes,
+        tax_assessment: property.tax_assessment,
+        hoa_fee: property.hoa_fee,
+        listing_status: property.listing_status,
+        features: property.features || {},
+        sale_history: property.sale_history || [],
       },
       categories: activeCategories.map(c => ({
         id: c.id,
@@ -262,6 +306,7 @@ export default function Evaluate() {
       <div className="max-w-4xl mx-auto px-6 pt-6">
         <GoogleAutoScore
           address={`${property.address}, ${property.city}, ${property.state}`}
+          property={property}
           categories={activeCategories}
           onApplyScores={(scores) => {
             setActiveCategories(prev => prev.map(cat => {
@@ -317,6 +362,7 @@ export default function Evaluate() {
               <CategorySlider
                 key={cat.id}
                 category={cat}
+                evidence={propertyEvidence[cat.id]}
                 onImportanceChange={updateImportance}
                 onScoreChange={updateScore}
                 onRemove={removeCategory}
@@ -334,6 +380,7 @@ export default function Evaluate() {
               <CategorySlider
                 key={cat.id}
                 category={cat}
+                evidence={propertyEvidence[cat.id]}
                 onImportanceChange={updateImportance}
                 onScoreChange={updateScore}
                 onRemove={removeCategory}

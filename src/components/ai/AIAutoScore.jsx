@@ -31,8 +31,15 @@ Bedrooms: ${property.beds || property.bedrooms || "unknown"}
 Bathrooms: ${property.baths || property.bathrooms || "unknown"}
 Sq Ft: ${property.sqft || "unknown"}
 Year Built: ${property.year || property.year_built || "unknown"}
+Lot Size: ${property.lot_size ? Number(property.lot_size).toLocaleString() + " sq ft" : "unknown"}
+Annual Property Taxes: ${property.annual_taxes != null ? "$" + Number(property.annual_taxes).toLocaleString() : "unknown"}
+Tax Assessment: ${property.tax_assessment != null ? "$" + Number(property.tax_assessment).toLocaleString() : "unknown"}
+Monthly HOA: ${property.hoa_fee != null ? "$" + Number(property.hoa_fee).toLocaleString() : "unknown"}
+Listing Status: ${property.listing_status || "unknown"}
+Recorded Features: ${JSON.stringify(property.features || {})}
+Sale History: ${JSON.stringify(property.sale_history || [])}
 
-Research this property and neighborhood using real data. Then score the following evaluation categories from 1-10, where 10 is excellent. Be realistic and data-driven.
+Use the supplied verified facts first, then research the neighborhood. Score the following evaluation categories from 1-10, where 10 is excellent. Do not infer property condition, layout quality, or affordability from age, square footage, or price alone. If evidence is unavailable, use a neutral 5 and say why.
 
 Categories to score:
 ${categoryList}

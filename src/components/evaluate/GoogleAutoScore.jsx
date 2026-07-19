@@ -9,6 +9,15 @@ const SCOREABLE_IDS = new Set([
   "neighborhood_safety",
   "public_transportation",
   "location_lifestyle",
+  "location_investment",
+  "longterm_neighborhood_value",
+  "bedroom_count",
+  "bathroom_count",
+  "overall_living_space",
+  "property_tax_cost",
+  "hoa_cost",
+  "garage_storage",
+  "fireplace",
 ]);
 
 const CATEGORY_DETAIL = {
@@ -18,9 +27,18 @@ const CATEGORY_DETAIL = {
   neighborhood_safety: "Emergency services",
   public_transportation: "Transit access",
   location_lifestyle: "Walkability & amenities",
+  location_investment: "Recorded sale-price trend",
+  longterm_neighborhood_value: "Recorded sale-price trend",
+  bedroom_count: "Recorded bedroom count",
+  bathroom_count: "Recorded bathroom count",
+  overall_living_space: "Recorded total living area",
+  property_tax_cost: "Taxes relative to assessed value",
+  hoa_cost: "Recorded monthly HOA fee",
+  garage_storage: "Recorded garage availability",
+  fireplace: "Recorded fireplace availability",
 };
 
-export default function GoogleAutoScore({ address, categories, onApplyScores }) {
+export default function GoogleAutoScore({ address, property, categories, onApplyScores }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [applied, setApplied] = useState(false);
@@ -35,7 +53,7 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
     setResult(null);
     setApplied(false);
     try {
-      const data = await api.property.autoscore(address);
+      const data = await api.property.autoscore(address, property);
       setResult(data);
     } catch (e) {
       let msg = e?.message || (typeof e === "string" ? e : "") || "Could not auto-score.";
@@ -84,7 +102,7 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <p className="text-sm text-slate-600 mb-1">
-                Automatically score <strong>{eligible.length} categories</strong> using verified Google Maps data — distances to schools, hospitals, transit, and more.
+                Automatically score <strong>{eligible.length} categories</strong> using verified property records and location data.
               </p>
               <p className="text-xs text-slate-400 mb-3">
                 Scores are based on real distances and never change between searches.
@@ -93,7 +111,7 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
                 onClick={run}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition"
               >
-                <MapPin size={14} /> Auto-Score with Google
+                <MapPin size={14} /> Auto-Score Property
               </button>
             </div>
           </div>
@@ -102,7 +120,7 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
         {loading && (
           <div className="flex items-center gap-3 py-2">
             <Loader2 size={18} className="text-blue-500 animate-spin shrink-0" />
-            <span className="text-sm text-slate-500">Measuring real distances from Google Maps...</span>
+            <span className="text-sm text-slate-500">Analyzing property facts and nearby services...</span>
           </div>
         )}
 
@@ -115,7 +133,7 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
 
         {result && !applied && (
           <div>
-            <p className="text-xs text-slate-400 mb-3">Scores based on verified Google Maps distances:</p>
+            <p className="text-xs text-slate-400 mb-3">Suggested scores based on available verified facts:</p>
             <div className="space-y-2 mb-4 max-h-60 overflow-y-auto pr-1">
               {eligible.map(cat => {
                 const score = result.scores?.[cat.id];
@@ -129,9 +147,10 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
                   highway_access: "transit_mi",
                 }[cat.id];
                 const rawVal = rawKey ? result.raw?.[rawKey] : null;
-                const detail = rawVal !== null && rawVal !== undefined
+                const factDetail = result.facts?.[cat.id]?.value;
+                const detail = factDetail || (rawVal !== null && rawVal !== undefined
                   ? rawLabel(rawKey, rawVal)
-                  : null;
+                  : null);
 
                 return (
                   <div key={cat.id} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
@@ -169,7 +188,7 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
 
         {applied && (
           <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold py-1">
-            <Check size={16} /> Google scores applied!
+            <Check size={16} /> Auto-scores applied!
             <button
               onClick={() => { setResult(null); setApplied(false); }}
               className="ml-auto text-xs text-slate-400 hover:text-slate-600 font-normal"

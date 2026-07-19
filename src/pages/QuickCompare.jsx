@@ -165,7 +165,7 @@ function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearc
     setAutoApplied(false);
     try {
       const addr = [panel.property.address, panel.property.city, panel.property.state].filter(Boolean).join(", ");
-      const data = await api.property.autoscore(addr);
+      const data = await api.property.autoscore(addr, panel.property);
       if (data?.scores) {
         const updates = Object.entries(data.scores).map(([id, s]) => ({ id, score: s }));
         onAutoScoreApply(updates);

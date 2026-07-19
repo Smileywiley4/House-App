@@ -18,6 +18,9 @@ export const NEIGHBORHOOD_CATEGORIES = [
 export const OPTIONAL_CATEGORIES = [
   { id: "bedroom_count", label: "Bedroom Count" },
   { id: "bathroom_count", label: "Bathroom Count" },
+  { id: "overall_living_space", label: "Overall Living Space" },
+  { id: "property_tax_cost", label: "Property Tax Cost" },
+  { id: "hoa_cost", label: "HOA Cost" },
   { id: "front_yard", label: "Front Yard" },
   { id: "back_yard", label: "Back Yard" },
   { id: "garage_storage", label: "Garage / Storage" },

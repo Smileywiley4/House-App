@@ -251,7 +251,7 @@ export function createPythonBackendAdapter() {
       search: (address) => request('POST', '/api/property/search', { address }),
       searchByCriteria: (filters, source = 'public') =>
         request('POST', '/api/property/search-by-criteria', { filters, source }),
-      autoscore: (address) => request('POST', '/api/property/autoscore', { address }),
+      autoscore: (address, property) => request('POST', '/api/property/autoscore', { address, property }),
       /** Google Places API (New) searchNearby; optional `fieldMask` e.g. `places.displayName` */
       placesSearchNearby: (body, fieldMask) =>
         request(

@@ -1,6 +1,7 @@
 """Property search by address. Google for verified location, web search for real listing data, LLM to structure."""
 import asyncio
 from collections import deque
+from datetime import datetime
 import hashlib
 import logging
 from time import monotonic
@@ -111,6 +112,108 @@ def _compute_autoscores(raw: dict) -> dict:
     scores["highway_access"] = highway_score
 
     return scores
+
+
+def _property_fact_scores(property_data: dict | None) -> tuple[dict, dict]:
+    """Score explicit property facts only; do not infer condition or affordability."""
+    data = property_data or {}
+    scores: dict[str, int] = {}
+    facts: dict[str, dict] = {}
+
+    bedrooms = data.get("bedrooms", data.get("beds"))
+    if isinstance(bedrooms, (int, float)):
+        scores["bedroom_count"] = 10 if bedrooms >= 5 else 9 if bedrooms >= 4 else 8 if bedrooms >= 3 else 6 if bedrooms >= 2 else 3
+        facts["bedroom_count"] = {
+            "value": f"{bedrooms:g} bedroom{'s' if bedrooms != 1 else ''}",
+            "note": "Review against your household needs.",
+        }
+
+    bathrooms = data.get("bathrooms", data.get("baths"))
+    if isinstance(bathrooms, (int, float)):
+        scores["bathroom_count"] = 10 if bathrooms >= 3 else 9 if bathrooms >= 2.5 else 8 if bathrooms >= 2 else 6 if bathrooms >= 1.5 else 4
+        facts["bathroom_count"] = {
+            "value": f"{bathrooms:g} bathroom{'s' if bathrooms != 1 else ''}",
+            "note": "Review against your household needs.",
+        }
+
+    sqft = data.get("sqft")
+    if isinstance(sqft, (int, float)) and sqft > 0:
+        scores["overall_living_space"] = 10 if sqft >= 3000 else 9 if sqft >= 2400 else 8 if sqft >= 1800 else 7 if sqft >= 1400 else 5 if sqft >= 1000 else 3
+        facts["overall_living_space"] = {
+            "value": f"{sqft:,.0f} sq ft",
+            "note": "Higher scores indicate more total living space, not layout quality.",
+        }
+
+    annual_taxes = data.get("annual_taxes")
+    assessment = data.get("tax_assessment")
+    if (
+        isinstance(annual_taxes, (int, float))
+        and isinstance(assessment, (int, float))
+        and annual_taxes >= 0
+        and assessment > 0
+    ):
+        effective_rate = annual_taxes / assessment * 100
+        scores["property_tax_cost"] = (
+            10 if effective_rate <= 0.5 else 9 if effective_rate <= 1.0 else 7
+            if effective_rate <= 1.5 else 5 if effective_rate <= 2.0 else 3 if effective_rate <= 2.5 else 1
+        )
+        facts["property_tax_cost"] = {
+            "value": f"${annual_taxes:,.0f}/yr · {effective_rate:.2f}% of assessment",
+            "note": "Lower effective tax rates score higher; verify current tax treatment.",
+        }
+
+    hoa_fee = data.get("hoa_fee")
+    if isinstance(hoa_fee, (int, float)) and hoa_fee >= 0:
+        scores["hoa_cost"] = 10 if hoa_fee == 0 else 9 if hoa_fee <= 75 else 8 if hoa_fee <= 150 else 6 if hoa_fee <= 300 else 4 if hoa_fee <= 500 else 2
+        facts["hoa_cost"] = {
+            "value": f"${hoa_fee:,.0f}/mo",
+            "note": "Lower fees score higher; included services and amenities are not evaluated.",
+        }
+
+    features = data.get("features") if isinstance(data.get("features"), dict) else {}
+    if "garage" in features:
+        garage = bool(features.get("garage"))
+        spaces = features.get("garageSpaces")
+        scores["garage_storage"] = min(10, 7 + int(spaces or 0)) if garage else 3
+        facts["garage_storage"] = {
+            "value": f"Garage · {spaces:g} spaces" if garage and isinstance(spaces, (int, float)) else ("Garage" if garage else "No garage recorded"),
+            "note": "Based on recorded garage availability.",
+        }
+    if "fireplace" in features:
+        fireplace = bool(features.get("fireplace"))
+        scores["fireplace"] = 9 if fireplace else 3
+        facts["fireplace"] = {
+            "value": "Fireplace recorded" if fireplace else "No fireplace recorded",
+            "note": "Based on the property record, not an inspection.",
+        }
+
+    history = data.get("sale_history") if isinstance(data.get("sale_history"), list) else []
+    sales = []
+    for row in history:
+        try:
+            price = float(row.get("price"))
+            sold_at = datetime.fromisoformat(str(row.get("date", "")).replace("Z", "+00:00")).timestamp()
+            if price > 0:
+                sales.append((sold_at, price))
+        except (TypeError, ValueError):
+            continue
+    sales.sort(key=lambda item: item[0])
+    if len(sales) >= 2:
+        first_date, first_price = sales[0]
+        last_date, last_price = sales[-1]
+        years = max((last_date - first_date) / (365.25 * 24 * 60 * 60), 0)
+        if years >= 1:
+            annual_growth = (last_price / first_price) ** (1 / years) - 1
+            growth_percent = annual_growth * 100
+            growth_score = 10 if growth_percent >= 8 else 9 if growth_percent >= 6 else 7 if growth_percent >= 4 else 5 if growth_percent >= 2 else 3 if growth_percent >= 0 else 1
+            for category_id in ("location_investment", "longterm_neighborhood_value"):
+                scores[category_id] = growth_score
+                facts[category_id] = {
+                    "value": f"{growth_percent:.1f}% annualized property sale-price change",
+                    "note": "Property history is one signal and does not prove future neighborhood appreciation.",
+                }
+
+    return scores, facts
 
 
 def _normalize_address(addr: str) -> str:
@@ -478,11 +581,12 @@ def _listing_to_property(row: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Auto-score endpoint: deterministic, Google-data-only, cached forever
+# Auto-score endpoint: deterministic location data plus supplied property facts
 # ---------------------------------------------------------------------------
 
 class AutoScoreBody(BaseModel):
     address: str = Field(..., min_length=3, max_length=300)
+    property: dict | None = None
 
 
 @router.post("/autoscore")
@@ -492,8 +596,8 @@ async def autoscore(
     user_id: str | None = Depends(get_optional_user_id),
 ):
     """
-    Return deterministic scores for categories that can be scored from Google data.
-    Results are cached so the same address always returns the same scores.
+    Return deterministic scores from location data and explicit property facts.
+    Location measurements are cached; property-record scores are recomputed.
     """
     address = (body.address or "").strip()
     if not address:
@@ -507,52 +611,58 @@ async def autoscore(
 
     cache_key = "autoscore_" + _cache_key(address)
 
+    google_result = None
     try:
         supabase = get_supabase_admin()
         r = supabase.table("property_cache").select("data").eq("address_hash", cache_key).execute()
         if r.data and len(r.data) > 0:
             cached = r.data[0].get("data")
             if cached:
-                return cached
+                google_result = cached
     except Exception:
         pass
 
-    raw = await get_autoscore_data(address)
-    if not raw:
+    if not google_result:
+        raw = await get_autoscore_data(address)
+        if raw:
+            google_result = {
+                "address": raw.get("formatted_address") or address,
+                "scores": _compute_autoscores(raw),
+                "raw": {
+                    "hospital_mi": raw.get("hospital_mi"),
+                    "school_mi": raw.get("school_mi"),
+                    "transit_mi": raw.get("transit_mi"),
+                    "grocery_mi": raw.get("grocery_mi"),
+                    "park_mi": raw.get("park_mi"),
+                    "police_mi": raw.get("police_mi"),
+                    "fire_mi": raw.get("fire_mi"),
+                    "restaurants_nearby": raw.get("restaurants_count"),
+                    "stores_nearby": raw.get("stores_count"),
+                },
+            }
+            try:
+                supabase = get_supabase_admin()
+                supabase.table("property_cache").upsert(
+                    [{"address_hash": cache_key, "data": google_result}],
+                    on_conflict="address_hash",
+                ).execute()
+            except Exception:
+                pass
+
+    fact_scores, facts = _property_fact_scores(body.property)
+    if not google_result and not fact_scores:
         raise HTTPException(
             status_code=503,
             detail=(
-                "Could not geocode this address. Set GOOGLE_PLACES_API_KEY on the backend and enable "
-                "**Geocoding API** and **Places API** (Nearby Search) for that key's GCP project. "
-                "See docs/API_CONFIGURATION.md → Google Auto-Score."
+                "Could not auto-score this property because verified location and property facts are unavailable."
             ),
         )
 
-    scores = _compute_autoscores(raw)
-
     result = {
-        "address": raw.get("formatted_address") or address,
-        "scores": scores,
-        "raw": {
-            "hospital_mi": raw.get("hospital_mi"),
-            "school_mi": raw.get("school_mi"),
-            "transit_mi": raw.get("transit_mi"),
-            "grocery_mi": raw.get("grocery_mi"),
-            "park_mi": raw.get("park_mi"),
-            "police_mi": raw.get("police_mi"),
-            "fire_mi": raw.get("fire_mi"),
-            "restaurants_nearby": raw.get("restaurants_count"),
-            "stores_nearby": raw.get("stores_count"),
-        },
+        "address": (google_result or {}).get("address") or address,
+        "scores": {**(google_result or {}).get("scores", {}), **fact_scores},
+        "raw": (google_result or {}).get("raw", {}),
+        "facts": facts,
     }
-
-    try:
-        supabase = get_supabase_admin()
-        supabase.table("property_cache").upsert(
-            [{"address_hash": cache_key, "data": result}],
-            on_conflict="address_hash",
-        ).execute()
-    except Exception:
-        pass
 
     return result
