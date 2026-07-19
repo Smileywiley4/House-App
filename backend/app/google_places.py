@@ -4,11 +4,9 @@ Google Maps / Places integration for verified property data and **Google Auto-Sc
 Auto-score (`get_autoscore_data` → `/api/property/autoscore`) requires **one browser/server API key**:
 
 - **Geocoding API** — `maps.googleapis.com/maps/api/geocode/json`
-- **Places API** (legacy **Nearby Search**) — `maps.googleapis.com/maps/api/place/nearbysearch/json`
+- **Places API (New)** — `places.googleapis.com/v1/places:searchNearby`
 
 Enable both on the same Google Cloud project as `GOOGLE_PLACES_API_KEY`. Restrict the key to these APIs.
-
-Other features may use **Places API (New)** (`places.googleapis.com`) — enable that separately if you use `places_v1_search_nearby`.
 """
 import math
 import logging
@@ -18,7 +16,6 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
-NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 # Places API (New) — https://developers.google.com/maps/documentation/places/web-service/nearby-search
 PLACES_V1_SEARCH_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
 DEFAULT_SEARCH_NEARBY_FIELD_MASK = (
@@ -126,31 +123,52 @@ async def geocode_address(address: str) -> dict | None:
         return None
 
 
+_NEW_PLACE_TYPES = {
+    "grocery_or_supermarket": "supermarket",
+}
+
+
+async def _search_nearby_new(lat: float, lng: float, place_type: str, radius: int) -> list[dict]:
+    mapped_type = _NEW_PLACE_TYPES.get(place_type, place_type)
+    data, status, _ = await places_v1_search_nearby(
+        {
+            "includedTypes": [mapped_type],
+            "maxResultCount": 20,
+            "locationRestriction": {
+                "circle": {
+                    "center": {"latitude": lat, "longitude": lng},
+                    "radius": float(radius),
+                }
+            },
+        },
+        field_mask="places.displayName,places.location",
+    )
+    if status >= 400 or not isinstance(data, dict):
+        return []
+    return data.get("places") or []
+
+
+def _place_distance_km(lat: float, lng: float, place: dict) -> float:
+    location = place.get("location") or {}
+    return _haversine(
+        lat,
+        lng,
+        float(location.get("latitude", 0)),
+        float(location.get("longitude", 0)),
+    )
+
+
 async def find_nearby(lat: float, lng: float, place_type: str, radius: int = 5000) -> str | None:
     """Find nearest place of a given type and return its name + distance description."""
-    key = _api_key()
-    if not key:
-        return None
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(NEARBY_URL, params={
-                "location": f"{lat},{lng}",
-                "radius": radius,
-                "type": place_type,
-                "key": key,
-            })
-            data = resp.json()
-        results = data.get("results", [])
+        results = await _search_nearby_new(lat, lng, place_type, radius)
         if not results:
             return None
-        nearest = results[0]
-        name = nearest.get("name", "")
-        n_loc = nearest.get("geometry", {}).get("location", {})
-        if n_loc and lat and lng:
-            dist_km = _haversine(lat, lng, n_loc.get("lat", 0), n_loc.get("lng", 0))
-            dist_mi = dist_km * 0.621371
-            return f"{name} ({dist_mi:.1f} mi)"
-        return name
+        nearest = min(results, key=lambda place: _place_distance_km(lat, lng, place))
+        display_name = nearest.get("displayName") or {}
+        name = display_name.get("text") or "Nearby place"
+        dist_mi = _place_distance_km(lat, lng, nearest) * 0.621371
+        return f"{name} ({dist_mi:.1f} mi)"
     except Exception as e:
         logger.error("Nearby search error (%s): %s", place_type, e)
         return None
@@ -158,26 +176,12 @@ async def find_nearby(lat: float, lng: float, place_type: str, radius: int = 500
 
 async def find_nearest_distance_mi(lat: float, lng: float, place_type: str, radius: int = 16000) -> float | None:
     """Return distance in miles to the nearest place of a given type, or None."""
-    key = _api_key()
-    if not key:
-        return None
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(NEARBY_URL, params={
-                "location": f"{lat},{lng}",
-                "radius": radius,
-                "type": place_type,
-                "key": key,
-            })
-            data = resp.json()
-        results = data.get("results", [])
+        results = await _search_nearby_new(lat, lng, place_type, radius)
         if not results:
             return None
-        nearest = results[0]
-        n_loc = nearest.get("geometry", {}).get("location", {})
-        if not n_loc:
-            return None
-        dist_km = _haversine(lat, lng, n_loc["lat"], n_loc["lng"])
+        nearest = min(results, key=lambda place: _place_distance_km(lat, lng, place))
+        dist_km = _place_distance_km(lat, lng, nearest)
         return round(dist_km * 0.621371, 2)
     except Exception as e:
         logger.error("Nearest distance error (%s): %s", place_type, e)
@@ -186,19 +190,8 @@ async def find_nearest_distance_mi(lat: float, lng: float, place_type: str, radi
 
 async def count_nearby(lat: float, lng: float, place_type: str, radius: int = 3000) -> int:
     """Count the number of places of a given type within radius."""
-    key = _api_key()
-    if not key:
-        return 0
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(NEARBY_URL, params={
-                "location": f"{lat},{lng}",
-                "radius": radius,
-                "type": place_type,
-                "key": key,
-            })
-            data = resp.json()
-        return len(data.get("results", []))
+        return len(await _search_nearby_new(lat, lng, place_type, radius))
     except Exception as e:
         logger.error("Count nearby error (%s): %s", place_type, e)
         return 0
