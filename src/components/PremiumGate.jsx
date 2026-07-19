@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePlan } from "@/core/hooks/usePlan";
 import PaywallModal from "@/components/PaywallModal";
-import { Lock } from "lucide-react";
+import { Lock, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -36,6 +36,44 @@ export function PremiumGate({ children, featureName = "This feature", planId = "
         </p>
       </div>
       <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} featureName={featureName} planId={planId} />
+    </>
+  );
+}
+
+export function PremiumFeatureGroup({ children }) {
+  const { canUseAIFeatures } = usePlan();
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  if (canUseAIFeatures) return children;
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 rounded-xl border border-[#c9a84c]/25 bg-gradient-to-r from-[#1a2234] to-[#243050] px-4 py-4 shadow-sm sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c9a84c]/15 text-[#c9a84c]">
+            <Sparkles size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-white">Unlock your complete scoring toolkit</p>
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              Guided walk-through, AI Auto-Score, personalized score explanations, larger comparisons, and no ads.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowPaywall(true)}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#10b981] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#059669]"
+        >
+          <Lock size={14} /> Unlock Premium
+        </button>
+      </div>
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        featureName="Premium scoring toolkit"
+        planId="premium"
+      />
     </>
   );
 }

@@ -11,7 +11,7 @@ import GamifiedWalkthrough from "@/components/ai/GamifiedWalkthrough.jsx";
 import GoogleAutoScore from "@/components/evaluate/GoogleAutoScore.jsx";
 import PropertyLocationMap from "@/components/PropertyLocationMap";
 import PropertyOverview from "@/components/property/PropertyOverview";
-import { PremiumGate } from "@/components/PremiumGate";
+import { PremiumFeatureGroup } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
 import { useAuth } from "@/lib/AuthContext";
@@ -317,23 +317,16 @@ export default function Evaluate() {
         />
       </div>
 
-      {/* Gamified walk-through + explain score (Premium) */}
-      <div className="max-w-4xl mx-auto px-6 pt-4 space-y-4">
-        <PremiumGate featureName="Gamified walk-through">
+      {/* Premium scoring toolkit */}
+      <div className="max-w-4xl mx-auto px-6 pt-4">
+        <PremiumFeatureGroup>
+          <div className="space-y-4">
           <GamifiedWalkthrough propertyAddress={property.address} />
-        </PremiumGate>
-        <PremiumGate featureName="Explain my score">
           <ExplainScore
             propertyAddress={property.address}
             percentage={percentage}
             categories={activeCategories}
           />
-        </PremiumGate>
-      </div>
-
-      {/* AI Auto-Score (Premium) */}
-      <div className="max-w-4xl mx-auto px-6 pt-4">
-        <PremiumGate featureName="AI Auto-Score">
           <AIAutoScore
             property={property}
             categories={activeCategories}
@@ -344,7 +337,8 @@ export default function Evaluate() {
               }));
             }}
           />
-        </PremiumGate>
+          </div>
+        </PremiumFeatureGroup>
       </div>
 
       {/* Categories */}
