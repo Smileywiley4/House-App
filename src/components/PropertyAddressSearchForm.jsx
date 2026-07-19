@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Loader2 } from "lucide-react";
-import { createPageUrl } from "@/utils";
 import { getPropertyByAddress } from "@/core/propertyService";
-import { saveCurrentProperty } from "@/core/currentProperty";
+import PropertySearchPreviewDialog from "@/components/property/PropertySearchPreviewDialog";
 
 /**
  * Shared address search — used in the Home hero and the global header bar.
  * @param {"hero"|"header"} variant
  */
 export default function PropertyAddressSearchForm({ variant = "header", className = "" }) {
-  const navigate = useNavigate();
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [property, setProperty] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const isHero = variant === "hero";
 
   const submit = async (e) => {
@@ -25,21 +24,8 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
     setLoading(true);
     try {
       const data = await getPropertyByAddress(value);
-      saveCurrentProperty(data);
-
-      const qp = new URLSearchParams();
-      qp.set("address", data?.address ?? value);
-      if (data?.city) qp.set("city", data.city);
-      if (data?.state) qp.set("state", data.state);
-      if (data?.price !== null && data?.price !== undefined) qp.set("price", String(data.price));
-      if (data?.bedrooms !== null && data?.bedrooms !== undefined) qp.set("beds", String(data.bedrooms));
-      if (data?.bathrooms !== null && data?.bathrooms !== undefined) qp.set("baths", String(data.bathrooms));
-      if (data?.sqft !== null && data?.sqft !== undefined) qp.set("sqft", String(data.sqft));
-      if (data?.year_built !== null && data?.year_built !== undefined) qp.set("year", String(data.year_built));
-      if (data?.lat != null) qp.set("lat", String(data.lat));
-      if (data?.lng != null) qp.set("lng", String(data.lng));
-
-      navigate(`${createPageUrl("Evaluate")}?${qp.toString()}`);
+      setProperty(data);
+      setPreviewOpen(true);
     } catch (err) {
       setError(err?.message || "Could not load property. Try again.");
     } finally {
@@ -85,6 +71,12 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
           {error}
         </p>
       )}
+      <PropertySearchPreviewDialog
+        key={property?.rentcast_id || property?.formatted_address || property?.address || "empty"}
+        property={property}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, MapPin, X, Trophy, ChevronDown, ChevronUp, BarChart3, Loader2, Check } from "lucide-react";
 import { getPropertyByAddress } from "@/core/propertyService";
 import { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker";
@@ -20,7 +20,6 @@ function loadIncomingProperty() {
   try {
     const raw = sessionStorage.getItem("compareProperty");
     if (!raw) return null;
-    sessionStorage.removeItem("compareProperty");
     return JSON.parse(raw);
   } catch {
     return null;
@@ -47,6 +46,9 @@ export default function QuickCompare() {
       { id: 2, address: "", property: null, loading: false, error: null, categories: DEFAULT_CATEGORIES(), expanded: true },
     ];
   });
+  useEffect(() => {
+    sessionStorage.removeItem("compareProperty");
+  }, []);
 
   const updatePanel = (id, updates) => {
     setPanels(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
@@ -252,7 +254,7 @@ function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearc
               className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition disabled:opacity-60"
             >
               {autoLoading ? <Loader2 size={13} className="animate-spin" /> : <MapPin size={13} />}
-              {autoLoading ? "Scoring..." : autoApplied ? <><Check size={13} /> Scored — Run Again</> : "Auto-Score with Google"}
+              {autoLoading ? "Scoring..." : autoApplied ? <><Check size={13} /> Scored — Run Again</> : "Auto-Score Property"}
             </button>
           </div>
 
