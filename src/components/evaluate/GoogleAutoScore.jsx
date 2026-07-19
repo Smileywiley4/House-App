@@ -77,9 +77,6 @@ export default function GoogleAutoScore({ address, categories, onApplyScores }) 
       <div className="bg-gradient-to-r from-[#1a2234] to-[#1e3a5f] px-5 py-3.5 flex items-center gap-2">
         <MapPin size={15} className="text-blue-400" />
         <span className="text-white font-semibold text-sm">Auto-Score</span>
-        <span className="text-[10px] text-blue-300 font-bold bg-blue-500/20 border border-blue-400/30 px-2 py-0.5 rounded-full ml-1">
-          Google Data
-        </span>
       </div>
 
       <div className="p-5">

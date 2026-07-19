@@ -19,6 +19,7 @@ router = APIRouter(prefix="/property", tags=["property"])
 logger = logging.getLogger(__name__)
 PUBLIC_SEARCH_LIMIT = 30
 PUBLIC_STREET_VIEW_LIMIT = 60
+PUBLIC_AUTOSCORE_LIMIT = 10
 PUBLIC_SEARCH_WINDOW_SECONDS = 60 * 60
 _public_search_hits: dict[str, deque[float]] = {}
 
@@ -485,7 +486,11 @@ class AutoScoreBody(BaseModel):
 
 
 @router.post("/autoscore")
-async def autoscore(body: AutoScoreBody, _user_id: str = Depends(get_current_user_id)):
+async def autoscore(
+    body: AutoScoreBody,
+    request: Request,
+    user_id: str | None = Depends(get_optional_user_id),
+):
     """
     Return deterministic scores for categories that can be scored from Google data.
     Results are cached so the same address always returns the same scores.
@@ -493,6 +498,12 @@ async def autoscore(body: AutoScoreBody, _user_id: str = Depends(get_current_use
     address = (body.address or "").strip()
     if not address:
         raise HTTPException(status_code=400, detail="Address is required")
+    if user_id is None:
+        _enforce_public_search_limit(
+            request,
+            namespace="autoscore",
+            limit=PUBLIC_AUTOSCORE_LIMIT,
+        )
 
     cache_key = "autoscore_" + _cache_key(address)
 
