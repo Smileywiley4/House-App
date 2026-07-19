@@ -58,7 +58,7 @@ Exact-address search uses Google for location verification and RentCast for lice
 | `RENTCAST_BASE_URL` | Optional; defaults to `https://api.rentcast.io/v1`. |
 | `GOOGLE_STREET_VIEW_API_KEY` | Optional dedicated server key for exterior imagery. Enable **Street View Static API**. If blank, the Places key is used. |
 
-The frontend never receives either key. `GET /api/property/street-view` proxies and caches Street View images. Property-owner data returned by RentCast is intentionally excluded from public responses. Listing-site photo scraping is disabled; users can upload photos they own, and licensed MLS/IDX media can be added later.
+The frontend never receives either key. `GET /api/property/street-view` proxies Street View images without storing or caching them. Property-owner data returned by RentCast is intentionally excluded from public responses. Listing-site photo scraping is disabled; users can upload photos they own, and licensed MLS/IDX media can be added later.
 
 ---
 

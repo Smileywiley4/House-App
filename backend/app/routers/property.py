@@ -245,7 +245,7 @@ async def street_view_image(
     return Response(
         content=upstream.content,
         media_type=upstream.headers.get("content-type", "image/jpeg"),
-        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"},
+        headers={"Cache-Control": "no-store, max-age=0"},
     )
 
 
