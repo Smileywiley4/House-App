@@ -32,9 +32,14 @@ class Settings(BaseSettings):
     # Prompt caching (https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
     anthropic_prompt_cache_ephemeral: bool = True
     google_places_api_key: str = ""
+    # Optional separate server-side key for the Street View Static API.
+    # Falls back to google_places_api_key when omitted.
+    google_street_view_api_key: str = ""
     # Optional: dedicated key for AMP URL API; if empty, GOOGLE_PLACES_API_KEY is used (same GCP project must enable AMP URL API).
     google_amp_url_api_key: str = ""
     google_cse_id: str = ""
+    rentcast_api_key: str = ""
+    rentcast_base_url: str = "https://api.rentcast.io/v1"
     # Google Sheets — marketing signup CRM (service account JSON string + spreadsheet id)
     google_marketing_sheet_id: str = ""
     google_sheets_sa_json: str = ""

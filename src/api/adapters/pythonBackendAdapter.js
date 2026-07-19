@@ -2101,10 +2101,6 @@ export function createPythonBackendAdapter() {
       uploadPhoto: (savedId, file, caption) => uploadVisitPhoto(savedId, file, caption),
       deletePhoto: (savedId, photoId) =>
         request('DELETE', `/api/library/saved-properties/${encodeURIComponent(savedId)}/photos/${encodeURIComponent(photoId)}`),
-      importListingPhotos: (savedId, listingUrl) =>
-        request('POST', `/api/library/saved-properties/${encodeURIComponent(savedId)}/import-listing-photos`, {
-          listing_url: listingUrl,
-        }),
       shareWithRealtor: (savedId, body) =>
         request('POST', `/api/library/saved-properties/${encodeURIComponent(savedId)}/share`, body),
       listFolders: () => request('GET', '/api/library/folders'),

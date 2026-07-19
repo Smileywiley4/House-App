@@ -48,6 +48,20 @@ Optional:
 
 ---
 
+## Backend — property records and exterior imagery
+
+Exact-address search uses Google for location verification and RentCast for licensed US property and active sale-listing facts.
+
+| Env var | Purpose |
+|---------|---------|
+| `RENTCAST_API_KEY` | Property records, taxes, sale history, attributes, and active listing price/status. Create at [RentCast API](https://app.rentcast.io/app/api). |
+| `RENTCAST_BASE_URL` | Optional; defaults to `https://api.rentcast.io/v1`. |
+| `GOOGLE_STREET_VIEW_API_KEY` | Optional dedicated server key for exterior imagery. Enable **Street View Static API**. If blank, the Places key is used. |
+
+The frontend never receives either key. `GET /api/property/street-view` proxies and caches Street View images. Property-owner data returned by RentCast is intentionally excluded from public responses. Listing-site photo scraping is disabled; users can upload photos they own, and licensed MLS/IDX media can be added later.
+
+---
+
 ## Backend — Google (server-side keys & proxies)
 
 All integration routes are under **`/api/integrations`** unless noted. Most Google proxies require the user’s JWT and **`admin` plan** (or **`PLATFORM_ADMIN_USER_IDS`**) — see `require_admin_plan` in each router. Publisher revenue routes use **`require_platform_admin`** (same rules).

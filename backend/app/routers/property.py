@@ -1,34 +1,44 @@
 """Property search by address. Google for verified location, web search for real listing data, LLM to structure."""
+import asyncio
 from collections import deque
 import hashlib
 import logging
 from time import monotonic
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request
-from fastapi.responses import JSONResponse
+import httpx
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
+from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id, get_optional_user_id, user_has_paid_plan, require_paid_plan
 from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
 from app.google_places import get_property_via_google, get_autoscore_data, places_v1_search_nearby
+from app.rentcast import get_rentcast_property
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
 logger = logging.getLogger(__name__)
 PUBLIC_SEARCH_LIMIT = 30
+PUBLIC_STREET_VIEW_LIMIT = 60
 PUBLIC_SEARCH_WINDOW_SECONDS = 60 * 60
 _public_search_hits: dict[str, deque[float]] = {}
 
 
-def _enforce_public_search_limit(request: Request) -> None:
+def _enforce_public_search_limit(
+    request: Request,
+    *,
+    namespace: str = "search",
+    limit: int = PUBLIC_SEARCH_LIMIT,
+) -> None:
     forwarded = request.headers.get("x-forwarded-for", "")
     client_ip = forwarded.split(",", 1)[0].strip() or (request.client.host if request.client else "unknown")
     now = monotonic()
-    hits = _public_search_hits.setdefault(client_ip, deque())
+    hits = _public_search_hits.setdefault(f"{namespace}:{client_ip}", deque())
     while hits and now - hits[0] >= PUBLIC_SEARCH_WINDOW_SECONDS:
         hits.popleft()
-    if len(hits) >= PUBLIC_SEARCH_LIMIT:
+    if len(hits) >= limit:
         raise HTTPException(
             status_code=429,
-            detail="Free address-search limit reached. Try again later or sign in for continued access.",
+            detail="Public lookup limit reached. Try again later.",
         )
     hits.append(now)
 
@@ -116,14 +126,19 @@ def _build_basic_property_response(
     address: str,
     google_data: dict | None,
     listing_hints: dict,
+    rentcast_data: dict | None = None,
 ) -> dict:
-    """Google-verified location plus listing fields parsed from public search snippets."""
+    """Merge verified location with licensed property and listing facts."""
     gd = google_data or {}
+    rc = rentcast_data or {}
     has_listing = any(
-        listing_hints.get(k) is not None for k in ("price", "bedrooms", "bathrooms", "sqft", "year_built")
+        rc.get(k) is not None or listing_hints.get(k) is not None
+        for k in ("price", "bedrooms", "bathrooms", "sqft", "year_built")
     )
-    formatted = gd.get("formatted_address") or address
-    if has_listing:
+    formatted = rc.get("formatted_address") or gd.get("formatted_address") or address
+    if rc:
+        description = "Property details from RentCast records and current listing data."
+    elif has_listing:
         description = "Listing details from public property sites."
     elif gd:
         description = f"Location verified for {formatted}."
@@ -131,31 +146,106 @@ def _build_basic_property_response(
         description = f"Limited data available for {address}."
 
     return {
-        "address": gd.get("address") or address,
-        "city": gd.get("city", ""),
-        "state": gd.get("state", ""),
-        "zip": gd.get("zip", ""),
-        "lat": gd.get("lat"),
-        "lng": gd.get("lng"),
+        "address": rc.get("address") or gd.get("address") or address,
+        "formatted_address": formatted,
+        "city": rc.get("city") or gd.get("city", ""),
+        "state": rc.get("state") or gd.get("state", ""),
+        "zip": rc.get("zip") or gd.get("zip", ""),
+        "lat": rc.get("lat") or gd.get("lat"),
+        "lng": rc.get("lng") or gd.get("lng"),
         "nearby_hospitals": gd.get("nearby_hospitals"),
         "nearby_schools": gd.get("nearby_schools"),
         "nearby_highways": gd.get("nearby_highways"),
-        "price": listing_hints.get("price"),
-        "bedrooms": listing_hints.get("bedrooms"),
-        "bathrooms": listing_hints.get("bathrooms"),
-        "sqft": listing_hints.get("sqft"),
-        "year_built": listing_hints.get("year_built"),
+        "price": rc.get("price") or listing_hints.get("price"),
+        "bedrooms": rc.get("bedrooms") or listing_hints.get("bedrooms"),
+        "bathrooms": rc.get("bathrooms") or listing_hints.get("bathrooms"),
+        "sqft": rc.get("sqft") or listing_hints.get("sqft"),
+        "year_built": rc.get("year_built") or listing_hints.get("year_built"),
+        "property_type": rc.get("property_type"),
+        "county": rc.get("county"),
+        "lot_size": rc.get("lot_size"),
+        "hoa_fee": rc.get("hoa_fee"),
+        "listing_status": rc.get("listing_status"),
+        "listing_type": rc.get("listing_type"),
+        "listed_date": rc.get("listed_date"),
+        "last_seen_date": rc.get("last_seen_date"),
+        "days_on_market": rc.get("days_on_market"),
+        "mls_name": rc.get("mls_name"),
+        "mls_number": rc.get("mls_number"),
+        "last_sale_date": rc.get("last_sale_date"),
+        "last_sale_price": rc.get("last_sale_price"),
+        "tax_assessment": rc.get("tax_assessment"),
+        "annual_taxes": rc.get("annual_taxes"),
+        "features": rc.get("features") or {},
+        "sale_history": rc.get("sale_history") or [],
+        "listing_history": rc.get("listing_history") or [],
+        "rentcast_id": rc.get("rentcast_id"),
+        "data_updated_at": rc.get("data_updated_at"),
         "description": description,
         "walk_score": None,
         "school_rating": None,
-        "on_market": bool(listing_hints.get("on_market") or listing_hints.get("price")),
-        "listing_source": listing_hints.get("listing_source"),
-        "data_source": "public_listings" if has_listing else ("google_maps" if gd else None),
+        "on_market": rc.get("on_market") if rc else bool(listing_hints.get("on_market") or listing_hints.get("price")),
+        "listing_source": "RentCast" if rc.get("price") else listing_hints.get("listing_source"),
+        "data_source": "rentcast" if rc else ("public_listings" if has_listing else ("google_maps" if gd else None)),
+        "data_sources": [
+            source
+            for source, present in (
+                ("RentCast", bool(rc)),
+                ("Google Maps", bool(gd)),
+            )
+            if present
+        ],
     }
 
 
 class SearchBody(BaseModel):
     address: str = Field(..., min_length=3, max_length=300)
+
+
+@router.get("/street-view")
+async def street_view_image(
+    request: Request,
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+):
+    """Proxy a cached Street View exterior so the server-side API key stays private."""
+    _enforce_public_search_limit(
+        request,
+        namespace="street-view",
+        limit=PUBLIC_STREET_VIEW_LIMIT,
+    )
+    settings = get_settings()
+    api_key = settings.google_street_view_api_key or settings.google_places_api_key
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Street View is not configured")
+    params = {
+        "size": "900x520",
+        "location": f"{lat},{lng}",
+        "fov": 90,
+        "pitch": 0,
+        "source": "outdoor",
+        "return_error_code": "true",
+        "key": api_key,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            upstream = await client.get(
+                "https://maps.googleapis.com/maps/api/streetview",
+                params=params,
+            )
+    except httpx.HTTPError as exc:
+        logger.warning("Street View request failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Street View is temporarily unavailable") from exc
+    if upstream.status_code == 404:
+        raise HTTPException(status_code=404, detail="Street View imagery is unavailable for this address")
+    if upstream.status_code >= 400:
+        logger.warning("Street View returned HTTP %s", upstream.status_code)
+        raise HTTPException(status_code=502, detail="Street View could not be loaded")
+    return Response(
+        content=upstream.content,
+        media_type=upstream.headers.get("content-type", "image/jpeg"),
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"},
+    )
 
 
 @router.post("/places/search-nearby")
@@ -200,7 +290,8 @@ async def search(
         # Basic public lookup must remain available even if profile/cache
         # persistence is temporarily unavailable.
         logger.warning("Supabase unavailable during property lookup", exc_info=True)
-    result_cache_key = key if is_paid else f"public_{key}"
+    provider_key = "rentcast" if get_settings().rentcast_api_key else "basic"
+    result_cache_key = f"v2_{provider_key}_{'paid' if is_paid else 'public'}_{key}"
 
     # Paid and public results use separate keys so AI-enriched paid data cannot
     # be replayed to a free or anonymous caller.
@@ -219,12 +310,23 @@ async def search(
     except Exception:
         pass
 
-    google_data = await get_property_via_google(address)
+    google_data, rentcast_data = await asyncio.gather(
+        get_property_via_google(address),
+        get_rentcast_property(address),
+    )
     if google_data:
         logger.info("Google geocode: %s, %s %s", google_data.get("city"), google_data.get("state"), google_data.get("zip"))
+    if rentcast_data:
+        logger.info(
+            "RentCast match: %s (%s)",
+            rentcast_data.get("formatted_address"),
+            rentcast_data.get("listing_status") or "property record",
+        )
 
-    search_addr = google_data.get("formatted_address") or address if google_data else address
-    web_results = await search_property_listings(search_addr)
+    search_addr = (google_data.get("formatted_address") or address) if google_data else address
+    # Public snippets are a legacy fallback only. RentCast facts take priority
+    # and should never be overwritten by scraped or generated values.
+    web_results = [] if rentcast_data else await search_property_listings(search_addr)
     listing_hints = extract_listing_hints(web_results)
     web_context = format_search_context(web_results)
     if web_context:
@@ -244,9 +346,10 @@ async def search(
             # Keep explicitly parsed listing facts when an LLM omits a field.
             # Paid users must not receive less complete address/price data than
             # the non-LLM fallback from the same verified search results.
-            basic_data = _build_basic_property_response(address, google_data, listing_hints)
-            for field in (
+            basic_data = _build_basic_property_response(address, google_data, listing_hints, rentcast_data)
+            trusted_fields = (
                 "address",
+                "formatted_address",
                 "city",
                 "state",
                 "zip",
@@ -256,15 +359,19 @@ async def search(
                 "sqft",
                 "year_built",
                 "listing_source",
-            ):
-                if data.get(field) in (None, "") and basic_data.get(field) not in (None, ""):
+            )
+            for field in trusted_fields:
+                if basic_data.get(field) not in (None, ""):
                     data[field] = basic_data[field]
-            _save_cache(key, data)
+            for field, value in basic_data.items():
+                if field not in data or data.get(field) in (None, "", [], {}):
+                    data[field] = value
+            _save_cache(result_cache_key, data)
             return data
         logger.warning("LLM property lookup failed; falling back to basic listing data")
 
-    if google_data or listing_hints:
-        data = _build_basic_property_response(address, google_data, listing_hints)
+    if google_data or rentcast_data or listing_hints:
+        data = _build_basic_property_response(address, google_data, listing_hints, rentcast_data)
         _save_cache(result_cache_key, data)
         return data
 
@@ -273,7 +380,7 @@ async def search(
             status_code=503,
             detail=(
                 "Property search is not fully configured. Set GOOGLE_PLACES_API_KEY for address lookup "
-                "and GOOGLE_CSE_ID for listing prices, or configure ANTHROPIC_API_KEY / OPENAI_API_KEY."
+                "and RENTCAST_API_KEY for verified property and listing details."
             ),
         )
 

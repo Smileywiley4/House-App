@@ -10,10 +10,12 @@ import ExplainScore from "@/components/ai/ExplainScore.jsx";
 import GamifiedWalkthrough from "@/components/ai/GamifiedWalkthrough.jsx";
 import GoogleAutoScore from "@/components/evaluate/GoogleAutoScore.jsx";
 import PropertyLocationMap from "@/components/PropertyLocationMap";
+import PropertyOverview from "@/components/property/PropertyOverview";
 import { PremiumGate } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
 import { useAuth } from "@/lib/AuthContext";
+import { readCurrentProperty } from "@/core/currentProperty";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -28,18 +30,27 @@ export default function Evaluate() {
     return s;
   };
 
+  const routeAddress = readParam("address") || "Unknown Address";
+  const enrichedProperty = readCurrentProperty(routeAddress) || {};
   const property = {
-    address: readParam("address") || "Unknown Address",
-    city: readParam("city") || "",
-    state: readParam("state") || "",
-    price: readParam("price"),
-    beds: readParam("beds"),
-    baths: readParam("baths"),
-    sqft: readParam("sqft"),
-    year: readParam("year"),
-    lat: readParam("lat") ? Number(readParam("lat")) : null,
-    lng: readParam("lng") ? Number(readParam("lng")) : null,
+    ...enrichedProperty,
+    address: enrichedProperty.address || routeAddress,
+    city: enrichedProperty.city || readParam("city") || "",
+    state: enrichedProperty.state || readParam("state") || "",
+    price: enrichedProperty.price ?? readParam("price"),
+    beds: enrichedProperty.bedrooms ?? readParam("beds"),
+    baths: enrichedProperty.bathrooms ?? readParam("baths"),
+    sqft: enrichedProperty.sqft ?? readParam("sqft"),
+    year: enrichedProperty.year_built ?? readParam("year"),
+    lat: enrichedProperty.lat ?? (readParam("lat") ? Number(readParam("lat")) : null),
+    lng: enrichedProperty.lng ?? (readParam("lng") ? Number(readParam("lng")) : null),
   };
+  const summaryFacts = [
+    property.beds != null ? `${property.beds}bd` : null,
+    property.baths != null ? `${property.baths}ba` : null,
+    property.sqft != null ? `${Number(property.sqft).toLocaleString()} sqft` : null,
+    property.year != null ? `Built ${property.year}` : null,
+  ].filter(Boolean).join(" · ");
 
   const [activeCategories, setActiveCategories] = useState(() => {
     const mandatory = MANDATORY_CATEGORIES.map(c => ({ ...c, importance: 5, score: 5 }));
@@ -154,7 +165,7 @@ export default function Evaluate() {
             {property.price && (
               <div className="text-right">
                 <div className="text-2xl font-bold text-[#c9a84c]">${Number(property.price).toLocaleString()}</div>
-                <div className="text-xs text-slate-400">{property.beds}bd · {property.baths}ba · {Number(property.sqft).toLocaleString()} sqft · Built {property.year}</div>
+                {summaryFacts && <div className="text-xs text-slate-400">{summaryFacts}</div>}
               </div>
             )}
           </div>
@@ -238,6 +249,8 @@ export default function Evaluate() {
           {saveError && <p className="w-full text-sm text-red-600 font-medium">{saveError}</p>}
         </div>
       </div>
+
+      <PropertyOverview property={property} />
 
       <div className="max-w-4xl mx-auto px-6 pt-6">
         <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">

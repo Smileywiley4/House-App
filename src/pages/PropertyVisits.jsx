@@ -36,11 +36,10 @@ function PropertyVisitsInner() {
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const [newAddress, setNewAddress] = useState("");
+  const [newAddress, setNewAddress] = useState(
+    () => new URLSearchParams(window.location.search).get("address") || "",
+  );
   const [creating, setCreating] = useState(false);
-
-  const [listingUrl, setListingUrl] = useState("");
-  const [importing, setImporting] = useState(false);
 
   const [folderName, setFolderName] = useState("");
   const [realtorQuery, setRealtorQuery] = useState("");
@@ -150,8 +149,8 @@ function PropertyVisitsInner() {
         <Camera className="w-14 h-14 mx-auto text-[#10b981] mb-4" />
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Property visits</h1>
         <p className="text-slate-600 mb-6">
-          Upload in-person photos, save your visit score, organize homes into folders, import listing photos, and share
-          with your subscribed realtor.
+          Upload in-person photos, save your visit score, organize homes into folders, and share with your subscribed
+          realtor.
         </p>
         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
           Premium or Realtor subscription required.
@@ -473,41 +472,6 @@ function PropertyVisitsInner() {
                   onChange={(e) => setDetail({ ...detail, visit_notes: e.target.value })}
                 />
               </div>
-
-              {isOwner && (
-              <div>
-                <label className="text-xs font-medium text-slate-600">Import photos from a listing URL</label>
-                <div className="flex gap-2 mt-1">
-                  <input
-                    className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
-                    placeholder="https://…"
-                    value={listingUrl}
-                    onChange={(e) => setListingUrl(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    disabled={importing}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm"
-                    onClick={async () => {
-                      if (!listingUrl.trim()) return;
-                      setImporting(true);
-                      try {
-                        await api.library.importListingPhotos(detail.id, listingUrl.trim());
-                        setListingUrl("");
-                        fetchDetail(detail.id);
-                      } catch (e) {
-                        setErr(e?.message || "Import failed");
-                      } finally {
-                        setImporting(false);
-                      }
-                    }}
-                  >
-                    {importing ? "…" : "Import"}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">Only use URLs you have rights to view. Best-effort image detection.</p>
-              </div>
-              )}
 
               {isOwner && (
               <div>

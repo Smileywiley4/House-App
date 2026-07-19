@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { getPropertyByAddress } from "@/core/propertyService";
+import { saveCurrentProperty } from "@/core/currentProperty";
 
 /**
  * Shared address search — used in the Home hero and the global header bar.
@@ -24,6 +25,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
     setLoading(true);
     try {
       const data = await getPropertyByAddress(value);
+      saveCurrentProperty(data);
 
       const qp = new URLSearchParams();
       qp.set("address", data?.address ?? value);

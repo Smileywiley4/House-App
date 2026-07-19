@@ -5,13 +5,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field, HttpUrl
 
 from app.dependencies import require_paid_plan, require_realtor_plan
 from app.supabase_client import get_supabase_admin
-from app.listing_photos import extract_listing_image_urls, fetch_listing_html
 
 router = APIRouter(prefix="/library", tags=["library"])
 
@@ -419,74 +417,18 @@ async def delete_photo(saved_id: str, photo_id: str, user_id: str = Depends(requ
 
 
 @router.post("/saved-properties/{saved_id}/import-listing-photos")
-async def import_listing_photos(saved_id: str, body: ImportListingBody, user_id: str = Depends(require_paid_plan)):
-    """Fetch a public listing URL and import likely property images into this saved property."""
+async def import_listing_photos(
+    saved_id: str,
+    _body: ImportListingBody,
+    user_id: str = Depends(require_paid_plan),
+):
+    """Deprecated: listing-site scraping is not a licensed photo source."""
     supabase = get_supabase_admin()
     _assert_owns_saved(supabase, user_id, saved_id)
-    url = str(body.listing_url)
-    try:
-        html = await fetch_listing_html(url)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Could not fetch listing page") from e
-    img_urls = extract_listing_image_urls(url, html)
-    if not img_urls:
-        raise HTTPException(status_code=422, detail="No listing images found on that page")
-
-    added = []
-    async with httpx.AsyncClient(
-        timeout=httpx.Timeout(25.0),
-        follow_redirects=True,
-        headers={"User-Agent": "PropertyPulse/1.0"},
-    ) as client:
-        for src in img_urls:
-            try:
-                resp = await client.get(src)
-                resp.raise_for_status()
-                data = resp.content
-                if len(data) > MAX_UPLOAD_BYTES:
-                    continue
-                ct = resp.headers.get("content-type", "image/jpeg")
-                if not ct.startswith("image/"):
-                    continue
-                ext = "jpg"
-                if "png" in ct:
-                    ext = "png"
-                elif "webp" in ct:
-                    ext = "webp"
-                path = f"{user_id}/{saved_id}/import-{uuid.uuid4().hex}.{ext}"
-                supabase.storage.from_(BUCKET).upload(
-                    path,
-                    data,
-                    file_options={"content-type": ct, "upsert": "true"},
-                )
-                ins = (
-                    supabase.table("user_property_photos")
-                    .insert(
-                        {
-                            "user_id": user_id,
-                            "saved_property_id": saved_id,
-                            "storage_path": path,
-                            "source": "listing_import",
-                            "caption": None,
-                            "sort_order": len(added),
-                        }
-                    )
-                    .select()
-                    .execute()
-                )
-                if ins.data:
-                    signed = _sign_url(supabase, path)
-                    added.append(_photo_row(ins.data[0], signed))
-            except Exception:
-                continue
-
-    if not added:
-        raise HTTPException(status_code=422, detail="Could not download any images from the listing")
-
-    supabase.table("user_saved_properties").update(
-        {"external_listing_url": url, "updated_at": _now_iso()}
-    ).eq("id", saved_id).execute()
-    return {"imported": len(added), "photos": added}
+    raise HTTPException(
+        status_code=410,
+        detail="Listing-site photo import has been retired. Upload photos you own or use licensed MLS/IDX media.",
+    )
 
 
 @router.post("/saved-properties/{saved_id}/share")
