@@ -115,7 +115,6 @@ export default function Evaluate() {
   const addCategory = (cat) => {
     if (activeCategories.find(c => c.id === cat.id)) return;
     setActiveCategories(prev => [...prev, { ...cat, importance: 5, score: 5 }]);
-    setShowPicker(false);
   };
 
   const removeCategory = (id) => {
@@ -343,10 +342,24 @@ export default function Evaluate() {
 
       {/* Categories */}
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-[#1a2234]">Scoring Categories</h2>
+            <p className="mt-0.5 text-sm text-slate-500">Choose the factors that matter for this property.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPicker(true)}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a2234] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
+          >
+            <Plus size={16} /> Add Categories
+          </button>
+        </div>
+
         {activeCategories.length === 0 && (
           <div className="text-center py-10 text-slate-400">
             <p className="text-sm font-medium mb-1">No categories added yet</p>
-            <p className="text-xs">Add categories below to start scoring this property.</p>
+            <p className="text-xs">Use Add Categories above to start scoring this property.</p>
           </div>
         )}
 
@@ -383,18 +396,13 @@ export default function Evaluate() {
           </>
         )}
 
-        <button
-          onClick={() => setShowPicker(true)}
-          className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:border-[#c9a84c] hover:text-[#c9a84c] transition-colors font-medium flex items-center justify-center gap-2"
-        >
-          <Plus size={18} /> Add a Category
-        </button>
       </div>
 
       {showPicker && (
         <CategoryPicker
           activeIds={activeCategories.map(c => c.id)}
           onAdd={addCategory}
+          onRemove={removeCategory}
           onClose={() => setShowPicker(false)}
         />
       )}
