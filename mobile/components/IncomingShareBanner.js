@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useIncomingShare } from 'expo-sharing';
 
 /**
- * Shows shared images from other apps (Share → Property Pulse) and lets the user load them into the visit flow.
+ * Shows shared images from other apps (Share → Property Pocket) and lets the user load them into the visit flow.
  * Only mount on native — `useIncomingShare` is not supported on web.
  */
 export default function IncomingShareBanner({ onUseSharedImage }) {
@@ -23,7 +23,7 @@ export default function IncomingShareBanner({ onUseSharedImage }) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>Shared with Property Pulse</Text>
+      <Text style={styles.title}>Shared with Property Pocket</Text>
       {error ? <Text style={styles.err}>{error?.message ?? String(error)}</Text> : null}
       {isResolving ? <ActivityIndicator color="#10b981" style={styles.spinner} /> : null}
       {firstImageUri ? (

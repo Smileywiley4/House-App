@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.proppocket.mobile",
       "buildNumber": "1",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Property Pocket uses the camera to capture in-person photos of homes you visit.",
         "NSPhotoLibraryUsageDescription": "Property Pocket can read your photo library when you choose existing photos for visit notes.",
@@ -23,10 +23,13 @@
       "package": "com.proppocket.mobile",
       "versionCode": 1,
       "permissions": [
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -104,7 +107,8 @@
         {
           "photosPermission": "Allow Property Pocket to access your photos when you pick images for property visits.",
           "savePhotosPermission": "Allow Property Pocket to save visit photos you capture to your library.",
-          "isAccessMediaLocationEnabled": false
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": []
         }
       ],
       [
@@ -120,7 +124,8 @@
           "requestLocationPermission": true,
           "locationPermission": "Property Pocket uses your location to show where you are on the map and nearby homes."
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }

@@ -16,9 +16,9 @@ export default function Privacy() {
         <li><strong>Marketing preferences</strong> — If you opt in at signup or in your profile, we record that choice and when you opted in.</li>
         <li><strong>Property data</strong> — Addresses you search, scores, comparisons, saved properties, and visit notes you create.</li>
         <li><strong>Mobile content</strong> — Photos and notes you capture during property visits, if you use our mobile app.</li>
-        <li><strong>Location</strong> — Approximate location when you enable map features (with your device permission).</li>
+        <li><strong>Location</strong> — Approximate or precise foreground location when you enable native map features, depending on the permission you grant. Location is used to position the map and is not collected by us unless a feature clearly says it will be submitted.</li>
         <li><strong>Contacts</strong> — Only when you explicitly use invite features; we do not upload your full contact book without action.</li>
-        <li><strong>Payment data</strong> — Processed by Stripe (web) or Apple (iOS). We receive subscription status, not full card numbers.</li>
+        <li><strong>Payment data</strong> — Processed by Stripe (web), Apple App Store, or Google Play. RevenueCat helps synchronize mobile subscription status. We receive purchase and entitlement status, not full card numbers.</li>
         <li><strong>Usage &amp; diagnostics</strong> — Basic logs and optional device snapshots if you opt in, to improve reliability.</li>
       </ul>
 
@@ -64,7 +64,7 @@ export default function Privacy() {
       <ul>
         <li>Supabase (authentication and database)</li>
         <li>Stripe (web payments)</li>
-        <li>Apple / RevenueCat (iOS in-app purchases)</li>
+        <li>Apple App Store, Google Play, and RevenueCat (mobile in-app purchases and entitlement synchronization)</li>
         <li>Cloud hosting (e.g. Vercel, Railway or similar for API hosting)</li>
         <li>Google AdSense (optional display ads for free-tier web users — subject to Google&apos;s policies)</li>
         <li>Google Sheets (internal CRM for marketing opt-in contacts — service account access only)</li>

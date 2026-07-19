@@ -83,7 +83,7 @@ export default function PropertyMap() {
       if (!granted) {
         Alert.alert(
           'Location',
-          'Permission was not granted. You can enable location for Property Pulse in system Settings.'
+          'Permission was not granted. You can enable location for Property Pocket in system Settings.'
         );
         return;
       }
@@ -95,7 +95,7 @@ export default function PropertyMap() {
 
   const markers = buildMarkers(
     cameraPosition.coordinates,
-    locationGranted ? 'Near you' : 'Property Pulse'
+    locationGranted ? 'Near you' : 'Property Pocket'
   );
 
   if (Platform.OS === 'web') {

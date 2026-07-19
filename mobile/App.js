@@ -29,7 +29,6 @@ import { getDeviceSnapshotPayload } from './utils/deviceSnapshot';
 import {
   configureIap,
   getCustomerInfo,
-  getEntitlementId,
   getOfferings,
   hasActiveEntitlement,
   isIapAvailableOnThisBuild,
@@ -56,9 +55,21 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const APP_URL = (process.env.EXPO_PUBLIC_APP_URL || '').replace(/\/$/, '');
+
 function getInviteMessage() {
-  const appUrl = process.env.EXPO_PUBLIC_APP_URL || 'https://your-prop-pocket-app.com';
-  return `Join me on Property Pocket: ${appUrl}/login`;
+  if (!APP_URL) return 'Join me on Property Pocket.';
+  return `Join me on Property Pocket: ${APP_URL}/login`;
+}
+
+function openWebPage(path) {
+  if (!APP_URL) {
+    Alert.alert('Unavailable', 'The public app URL is not configured in this build.');
+    return;
+  }
+  Linking.openURL(`${APP_URL}${path}`).catch(() => {
+    Alert.alert('Could not open page', 'Please try again later.');
+  });
 }
 
 /**
@@ -89,9 +100,11 @@ export default function App() {
   useEffect(() => {
     if (Platform.OS === 'web') return;
 
-    registerForPushNotificationsAsync().then((token) => {
-      if (token) setExpoPushToken(token);
-    });
+    if (__DEV__) {
+      registerForPushNotificationsAsync().then((token) => {
+        if (token) setExpoPushToken(token);
+      });
+    }
 
     if (Platform.OS === 'android') {
       Notifications.getNotificationChannelsAsync().then((value) => setAndroidChannels(value ?? []));
@@ -250,7 +263,7 @@ export default function App() {
       const res = await purchase(pkg);
       const info = res?.customerInfo || (await getCustomerInfo());
       setEntitlementActive(hasActiveEntitlement(info));
-      Alert.alert('Purchase complete', 'Your subscription is active on this Apple ID.');
+      Alert.alert('Purchase complete', 'Your subscription is active on this store account.');
     } catch (e) {
       const msg = e?.userCancelled ? 'Purchase cancelled.' : e?.message || 'Purchase failed.';
       Alert.alert('In-App Purchase', msg);
@@ -272,34 +285,11 @@ export default function App() {
     }
   };
 
-  if (!permission) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.hint}>Checking camera permission…</Text>
-        <StatusBar style="auto" />
-      </View>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Property Pocket — Visits</Text>
-        <Text style={styles.hint}>Camera access is needed for in-person property photos.</Text>
-        <TouchableOpacity style={styles.btn} onPress={requestPermission}>
-          <Text style={styles.btnText}>Allow camera</Text>
-        </TouchableOpacity>
-        <StatusBar style="auto" />
-      </View>
-    );
-  }
-
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.root}>
       <Text style={styles.title}>Visit camera</Text>
       <Text style={styles.sub}>
-        Capture photos on site. Upload them from the web app under Visits, or extend this screen to call your API with a
-        Supabase session.
+        Capture and organize photos while touring a property. Camera access is requested only when you choose to use it.
       </Text>
       <Text style={styles.deviceLine} selectable>
         {deviceSnap.manufacturer || deviceSnap.brand || '—'}:{' '}
@@ -310,7 +300,20 @@ export default function App() {
 
       {Platform.OS !== 'web' && <PropertyMap />}
 
-      {!photoUri ? (
+      {!permission ? (
+        <View style={styles.permissionCard}>
+          <ActivityIndicator color="#10b981" />
+          <Text style={styles.hint}>Checking camera availability…</Text>
+        </View>
+      ) : !permission.granted ? (
+        <View style={styles.permissionCard}>
+          <Text style={styles.pushTitle}>Visit photos are optional</Text>
+          <Text style={styles.hint}>Allow camera access only when you want to capture an in-person property photo.</Text>
+          <TouchableOpacity style={styles.btn} onPress={requestPermission}>
+            <Text style={styles.btnText}>Enable visit camera</Text>
+          </TouchableOpacity>
+        </View>
+      ) : !photoUri ? (
         <View style={styles.camWrap}>
           <CameraView ref={camRef} style={styles.camera} facing="back" />
           <TouchableOpacity style={styles.capture} onPress={takePicture}>
@@ -351,25 +354,25 @@ export default function App() {
         </TouchableOpacity>
       )}
       <Text style={styles.inviteHint}>
-        Email invite uses the share sheet. SMS opens your device's message composer. Set EXPO_PUBLIC_APP_URL for your
-        web app.
+        Email invitations use the share sheet. SMS opens your device&apos;s message composer for you to review and send.
       </Text>
       <Text style={styles.mediaHint}>
-        expo-media-library: after you capture a shot, use Save to Photos to store it in your gallery (upload to Property
-        Pocket from the web app when signed in).
+        After capturing a photo, you can save it to your device or share it using an app you choose.
       </Text>
 
-      {Platform.OS === 'ios' && (
+      {Platform.OS !== 'web' && (
         <View style={styles.iapSection}>
-          <Text style={styles.pushTitle}>iOS subscription</Text>
+          <Text style={styles.pushTitle}>Property Pocket subscription</Text>
           {!isIapAvailableOnThisBuild() ? (
             <Text style={styles.pushHint}>
-              IAP not configured in this build. Set EXPO_PUBLIC_RC_APPLE_API_KEY and configure RevenueCat offerings.
+              Store purchases are not configured in this build.
             </Text>
           ) : (
             <>
               <Text style={styles.pushHint}>
-                Entitlement `{getEntitlementId()}`: {entitlementActive ? 'active' : 'inactive'}
+                {entitlementActive
+                  ? 'Your paid features are active.'
+                  : 'Subscriptions renew automatically unless cancelled through your store account at least 24 hours before renewal.'}
               </Text>
               {iapReady && packages.length === 0 && (
                 <Text style={styles.pushHint}>No packages found in current offering.</Text>
@@ -389,10 +392,35 @@ export default function App() {
               <TouchableOpacity style={[styles.iapRestoreBtn, iapLoading && styles.btnDisabled]} onPress={onRestore} disabled={iapLoading}>
                 <Text style={styles.iapRestoreBtnText}>Restore purchases</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iapRestoreBtn}
+                onPress={() => Linking.openURL(
+                  Platform.OS === 'ios'
+                    ? 'https://apps.apple.com/account/subscriptions'
+                    : 'https://play.google.com/store/account/subscriptions?package=com.proppocket.mobile'
+                )}
+              >
+                <Text style={styles.iapRestoreBtnText}>Manage subscription</Text>
+              </TouchableOpacity>
             </>
           )}
         </View>
       )}
+
+      <View style={styles.legalSection}>
+        <Text style={styles.pushTitle}>Support and legal</Text>
+        <View style={styles.legalLinks}>
+          <TouchableOpacity onPress={() => openWebPage('/Privacy')}>
+            <Text style={styles.legalLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openWebPage('/Terms')}>
+            <Text style={styles.legalLink}>Terms of Use</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openWebPage('/Support')}>
+            <Text style={styles.legalLink}>Support</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {__DEV__ && Platform.OS !== 'web' && (
         <View style={styles.pushSection}>
@@ -634,6 +662,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 16,
   },
+  permissionCard: {
+    minHeight: 220,
+    borderRadius: 16,
+    backgroundColor: '#1e293b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 24,
+    marginBottom: 16,
+  },
   camera: {
     flex: 1,
     minHeight: 360,
@@ -820,6 +858,24 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#334155',
+  },
+  legalSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 18,
+    marginTop: 10,
+  },
+  legalLink: {
+    color: '#34d399',
+    fontSize: 13,
+    fontWeight: '600',
   },
   iapBuyBtn: {
     marginTop: 10,

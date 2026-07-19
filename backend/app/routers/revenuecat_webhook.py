@@ -1,6 +1,8 @@
 """RevenueCat webhooks -> sync Apple IAP entitlements to profiles.plan."""
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Request
 
 from app.config import get_settings
@@ -19,6 +21,24 @@ def _plan_from_entitlements(entitlement_ids: list[str]) -> str | None:
     return None
 
 
+def _profile_user_id(event: dict) -> str | None:
+    aliases = event.get("aliases") or []
+    if not isinstance(aliases, list):
+        aliases = [aliases]
+    candidates = [
+        event.get("app_user_id"),
+        event.get("original_app_user_id"),
+        *aliases,
+    ]
+    for candidate in candidates:
+        value = str(candidate or "").strip()
+        try:
+            return str(UUID(value))
+        except ValueError:
+            continue
+    return None
+
+
 @router.post("/revenuecat")
 async def revenuecat_webhook(request: Request):
     s = get_settings()
@@ -34,9 +54,9 @@ async def revenuecat_webhook(request: Request):
     if not isinstance(event, dict):
         raise HTTPException(status_code=400, detail="Invalid event payload")
 
-    app_user_id = (event.get("app_user_id") or "").strip()
+    app_user_id = _profile_user_id(event)
     if not app_user_id:
-        raise HTTPException(status_code=400, detail="Missing app_user_id")
+        raise HTTPException(status_code=400, detail="No linked account user ID in RevenueCat event")
 
     entitlements = event.get("entitlement_ids") or []
     if isinstance(entitlements, str):
@@ -44,24 +64,44 @@ async def revenuecat_webhook(request: Request):
     entitlements = [str(x).strip() for x in entitlements if str(x).strip()]
 
     event_type = str(event.get("type") or "").upper()
+    event_id = str(event.get("id") or "").strip() or None
     target_plan = _plan_from_entitlements(entitlements)
 
     supabase = get_supabase_admin()
+    if event_id:
+        try:
+            duplicate = (
+                supabase.table("iap_events")
+                .select("id")
+                .eq("provider", "revenuecat")
+                .eq("event_id", event_id)
+                .limit(1)
+                .execute()
+            )
+            if duplicate.data:
+                return {"ok": True, "duplicate": True}
+        except Exception:
+            # Migration may not have reached every environment yet.
+            pass
+
     # best-effort event log for audit/debug
     try:
-        supabase.table("iap_events").insert(
-            {
-                "provider": "revenuecat",
-                "app_user_id": app_user_id,
-                "event_type": event_type,
-                "entitlement_ids": entitlements,
-                "raw_event": event,
-            }
-        ).execute()
+        event_row = {
+            "provider": "revenuecat",
+            "app_user_id": app_user_id,
+            "event_type": event_type,
+            "entitlement_ids": entitlements,
+            "raw_event": event,
+        }
+        if event_id:
+            event_row["event_id"] = event_id
+        supabase.table("iap_events").insert(event_row).execute()
     except Exception:
         pass
 
-    if event_type in {"CANCELLATION", "EXPIRATION", "SUBSCRIPTION_PAUSED", "BILLING_ISSUE"}:
+    # Cancellation and billing-issue events can retain paid access through the
+    # current period or grace period. Revoke only when RevenueCat confirms expiry.
+    if event_type == "EXPIRATION":
         supabase.table("profiles").update({"plan": "free"}).eq("id", app_user_id).execute()
         return {"ok": True, "plan": "free"}
 
