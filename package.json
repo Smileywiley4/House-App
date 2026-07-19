@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --open",
     "build": "vite build",
+    "postbuild": "node scripts/seo-postbuild.mjs",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
