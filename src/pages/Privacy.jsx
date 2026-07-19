@@ -35,8 +35,22 @@ export default function Privacy() {
       <h2>What we do not do</h2>
       <ul>
         <li>We do <strong>not</strong> sell your personal information to data brokers or advertisers.</li>
-        <li>We do <strong>not</strong> use your property searches to target you with unrelated third-party offers.</li>
       </ul>
+
+      <h2>Advertising and privacy choices</h2>
+      <p>
+        Guest visitors and free-account users may see advertising provided by Google AdSense. Google and its
+        advertising partners may use cookies, device identifiers, IP-derived location, page context, and interaction
+        data to deliver, measure, limit, and—where permitted by your choices—personalize ads. Paid plans do not load
+        our on-page advertising placements.
+      </p>
+      <p>
+        Where required, we use a Google-certified consent message so you can accept, reject, or manage advertising
+        choices. You may revisit those choices using the privacy controls presented on the site. Learn more about{' '}
+        <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noreferrer">
+          how Google uses information for advertising
+        </a>.
+      </p>
 
       <h2>Marketing communications</h2>
       <p>

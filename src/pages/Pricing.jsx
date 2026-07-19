@@ -21,8 +21,10 @@ const PLANS = [
       "Compare up to 2 properties side-by-side",
       "30+ weighted scoring categories",
       "Mandatory & custom category weights",
+      "Save and reuse scoring presets",
       "Save & revisit property scorecards",
       "Mobile-friendly for walk-throughs",
+      "Supported by advertising",
     ],
   },
   {
@@ -36,10 +38,9 @@ const PLANS = [
     cta: "Upgrade to Premium",
     features: [
       "Everything in Free",
+      "Ad-free web experience",
       "Compare 3+ properties at once",
       "Gamified live walk-through mode",
-      "Add fully custom categories",
-      "Preset weight profiles (save & reuse)",
       "Folder organization for searches",
       "Priority support",
     ],

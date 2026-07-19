@@ -135,6 +135,7 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
   if (!showAds) return null;
 
   if (!CLIENT_ID || !HAS_ANY_SLOT) {
+    if (import.meta.env.PROD) return null;
     const hint =
       ENV_CLIENT && !ENV_HAS_ANY_SLOT
         ? "Set VITE_GOOGLE_ADS_SLOT_LEADERBOARD (and/or INFEED / RECTANGLE) in .env.local"
@@ -150,6 +151,7 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
 
   const slotId = slotForFormat(format);
   if (!slotId) {
+    if (import.meta.env.PROD) return null;
     return (
       <div className={`flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-xs py-8 ${className}`}>
         Ad slot (missing slot for format &quot;{format}&quot;)
@@ -163,7 +165,10 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
     format === "rectangle" ? "auto" : format === "infeed" ? "fluid" : "horizontal";
 
   return (
-    <div className={className}>
+    <div className={className} aria-label="Advertisement">
+      <p className="mb-1 text-center text-[9px] font-medium uppercase tracking-[0.18em] text-slate-400">
+        Advertisement
+      </p>
       <ins
         ref={insRef}
         className="adsbygoogle"

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { AdSlot } from '@/components/AdSlot';
 import { APP_NAME } from '@/core/constants';
 import { COMPANY_TAGLINE, SUPPORT_EMAIL } from '@/core/companyConfig';
 
@@ -27,10 +26,6 @@ export default function SiteFooter() {
   return (
     <footer className="bg-[#1a2234] border-t border-white/5 text-slate-400">
       <div className="max-w-5xl mx-auto px-6 pt-10 pb-6">
-        <div className="max-w-5xl mx-auto mb-8">
-          <AdSlot format="leaderboard" className="min-h-[90px]" />
-        </div>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 md:col-span-1">
             <p className="font-bold text-white text-base mb-1">{APP_NAME}</p>
