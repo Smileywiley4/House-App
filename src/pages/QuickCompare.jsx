@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, MapPin, X, Trophy, ChevronDown, ChevronUp, BarChart3, Loader2, Check } from "lucide-react";
 import { getPropertyByAddress } from "@/core/propertyService";
+import AddressAutocompleteInput from "@/components/AddressAutocompleteInput";
 import { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import { api } from "@/api";
@@ -54,12 +55,13 @@ export default function QuickCompare() {
     setPanels(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
   };
 
-  const searchProperty = async (id) => {
+  const searchProperty = async (id, addressOverride) => {
     const panel = panels.find(p => p.id === id);
-    if (!panel?.address.trim()) return;
-    updatePanel(id, { loading: true, error: null });
+    const address = (addressOverride ?? panel?.address ?? "").trim();
+    if (!address) return;
+    updatePanel(id, { address, loading: true, error: null });
     try {
-      const data = await getPropertyByAddress(panel.address);
+      const data = await getPropertyByAddress(address);
       updatePanel(id, { property: data, loading: false });
     } catch (err) {
       updatePanel(id, { error: err.message || "Could not load property", loading: false });
@@ -119,7 +121,7 @@ export default function QuickCompare() {
               score={scores[idx]}
               isWinner={winner === idx}
               onAddressChange={(val) => updatePanel(panel.id, { address: val })}
-              onSearch={() => searchProperty(panel.id)}
+              onSearch={(addressOverride) => searchProperty(panel.id, addressOverride)}
               onScoreChange={(catId, val) => updateScore(panel.id, catId, val)}
               onImportanceChange={(catId, val) => updateImportance(panel.id, catId, val)}
               onAutoScoreApply={(scoreUpdates) => {
@@ -191,16 +193,13 @@ function PropertyPanel({ panel, index, score, isWinner, onAddressChange, onSearc
           )}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); onSearch(); }} className="flex gap-2">
-          <div className="flex-1 relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-            <input
-              type="text"
-              value={panel.address}
-              onChange={(e) => onAddressChange(e.target.value)}
-              placeholder="Enter address..."
-              className="w-full pl-9 pr-3 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-[#10b981]"
-            />
-          </div>
+          <AddressAutocompleteInput
+            value={panel.address}
+            onChange={onAddressChange}
+            onSelect={onSearch}
+            placeholder="Enter address..."
+            inputClassName="w-full pl-9 pr-3 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-[#10b981]"
+          />
           <button
             type="submit"
             disabled={panel.loading}
