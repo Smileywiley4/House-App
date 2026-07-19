@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Search, MapPin, Loader2 } from "lucide-react";
+import { api } from "@/api";
 import { getPropertyByAddress } from "@/core/propertyService";
 import PropertySearchPreviewDialog from "@/components/property/PropertySearchPreviewDialog";
 
@@ -13,13 +14,59 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
   const [error, setError] = useState(null);
   const [property, setProperty] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const suppressAutocomplete = useRef("");
+  const autocompleteRequest = useRef(0);
+  const listboxId = useId();
   const isHero = variant === "hero";
 
-  const submit = async (e) => {
-    e.preventDefault();
-    const value = (address || "").trim();
+  useEffect(() => {
+    const requestId = ++autocompleteRequest.current;
+    const value = address.trim();
+    if (suppressAutocomplete.current === value) {
+      return undefined;
+    }
+    if (value.length < 3 || !api.property?.autocomplete) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setSuggestionsLoading(true);
+      try {
+        const result = await api.property.autocomplete(value, controller.signal);
+        if (controller.signal.aborted || requestId !== autocompleteRequest.current) return;
+        setSuggestions(result?.predictions || []);
+        setActiveSuggestion(-1);
+        setSuggestionsOpen(true);
+      } catch (autocompleteError) {
+        if (autocompleteError?.name !== "AbortError") setSuggestions([]);
+      } finally {
+        if (!controller.signal.aborted && requestId === autocompleteRequest.current) setSuggestionsLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [address]);
+
+  const searchAddress = async (rawAddress) => {
+    const value = (rawAddress || "").trim();
     if (!value) return;
 
+    autocompleteRequest.current += 1;
+    suppressAutocomplete.current = value;
+    setAddress(value);
+    setSuggestionsOpen(false);
+    setSuggestions([]);
+    setSuggestionsLoading(false);
     setError(null);
     setLoading(true);
     try {
@@ -30,6 +77,32 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
       setError(err?.message || "Could not load property. Try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    searchAddress(address);
+  };
+
+  const chooseSuggestion = (suggestion) => {
+    suppressAutocomplete.current = suggestion.address;
+    searchAddress(suggestion.address);
+  };
+
+  const handleInputKeyDown = (event) => {
+    if (!suggestionsOpen || suggestions.length === 0) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestion(current => Math.min(current + 1, suggestions.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestion(current => Math.max(current - 1, 0));
+    } else if (event.key === "Escape") {
+      setSuggestionsOpen(false);
+    } else if (event.key === "Enter" && activeSuggestion >= 0) {
+      event.preventDefault();
+      chooseSuggestion(suggestions[activeSuggestion]);
     }
   };
 
@@ -55,11 +128,63 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
           <input
             type="text"
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={(e) => {
+              suppressAutocomplete.current = "";
+              setAddress(e.target.value);
+              setSuggestionsOpen(true);
+            }}
+            onFocus={() => suggestions.length > 0 && setSuggestionsOpen(true)}
+            onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)}
+            onKeyDown={handleInputKeyDown}
             placeholder="Enter a property address..."
             className={inputClass}
             aria-label="Search property by address"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={suggestionsOpen && suggestions.length > 0}
+            aria-controls={listboxId}
+            aria-activedescendant={activeSuggestion >= 0 ? `${listboxId}-${activeSuggestion}` : undefined}
+            autoComplete="off"
           />
+          {suggestionsOpen && (suggestionsLoading || suggestions.length > 0) && (
+            <div
+              id={listboxId}
+              role="listbox"
+              className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-xl"
+            >
+              {suggestionsLoading && suggestions.length === 0 ? (
+                <div className="flex items-center gap-2 px-4 py-3 text-sm text-slate-500">
+                  <Loader2 size={15} className="animate-spin text-[#10b981]" /> Finding addresses...
+                </div>
+              ) : (
+                suggestions.map((suggestion, index) => (
+                  <button
+                    id={`${listboxId}-${index}`}
+                    key={suggestion.place_id || suggestion.address}
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeSuggestion}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => chooseSuggestion(suggestion)}
+                    className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 ${
+                      index === activeSuggestion ? "bg-[#10b981]/10" : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <MapPin size={16} className="mt-0.5 shrink-0 text-[#10b981]" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-[#1a2234]">{suggestion.main_text}</span>
+                      {suggestion.secondary_text && (
+                        <span className="block truncate text-xs text-slate-500">{suggestion.secondary_text}</span>
+                      )}
+                    </span>
+                  </button>
+                ))
+              )}
+              <div className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 text-right text-[10px] font-medium text-slate-400">
+                Powered by Google
+              </div>
+            </div>
+          )}
         </div>
         <button type="submit" disabled={loading} className={buttonClass}>
           {loading ? <Loader2 size={isHero ? 18 : 16} className="animate-spin" /> : <Search size={isHero ? 18 : 16} />}

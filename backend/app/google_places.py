@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 # Places API (New) — https://developers.google.com/maps/documentation/places/web-service/nearby-search
 PLACES_V1_SEARCH_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
+PLACES_V1_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete"
 DEFAULT_SEARCH_NEARBY_FIELD_MASK = (
     "places.displayName,places.formattedAddress,places.location,places.types,places.id"
 )
@@ -25,6 +26,50 @@ DEFAULT_SEARCH_NEARBY_FIELD_MASK = (
 
 def _api_key() -> str | None:
     return get_settings().google_places_api_key or None
+
+
+async def autocomplete_addresses(query: str) -> list[dict]:
+    """Return US street-address predictions from Places API (New)."""
+    key = _api_key()
+    text = (query or "").strip()
+    if not key or len(text) < 3:
+        return []
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+    }
+    body = {
+        "input": text,
+        "includedPrimaryTypes": ["street_address", "premise", "subpremise"],
+        "regionCode": "US",
+        "languageCode": "en",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post(PLACES_V1_AUTOCOMPLETE_URL, json=body, headers=headers)
+        if response.status_code >= 400:
+            logger.warning("Places autocomplete failed: %s", response.text[:1000])
+            return []
+        suggestions = response.json().get("suggestions") or []
+        predictions = []
+        for suggestion in suggestions[:6]:
+            prediction = suggestion.get("placePrediction") or {}
+            structured = prediction.get("structuredFormat") or {}
+            main_text = (structured.get("mainText") or {}).get("text")
+            secondary_text = (structured.get("secondaryText") or {}).get("text")
+            full_text = (prediction.get("text") or {}).get("text")
+            if not full_text:
+                continue
+            predictions.append({
+                "place_id": prediction.get("placeId"),
+                "address": full_text,
+                "main_text": main_text or full_text,
+                "secondary_text": secondary_text or "",
+            })
+        return predictions
+    except Exception as exc:
+        logger.error("Places autocomplete error: %s", exc)
+        return []
 
 
 def _parse_address_components(components: list[dict]) -> dict:

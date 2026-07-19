@@ -93,11 +93,11 @@ async function request(method, path, body = undefined, extraHeaders = undefined)
   return res.json();
 }
 
-async function publicGet(path) {
+async function publicGet(path, signal) {
   requireApiBase();
   let res;
   try {
-    res = await fetch(`${baseUrl}${path}`, { credentials: 'include' });
+    res = await fetch(`${baseUrl}${path}`, { credentials: 'include', signal });
   } catch (err) {
     throw wrapNetworkError(err, path);
   }
@@ -249,6 +249,8 @@ export function createPythonBackendAdapter() {
     },
     property: {
       search: (address) => request('POST', '/api/property/search', { address }),
+      autocomplete: (query, signal) =>
+        publicGet(`/api/property/autocomplete?q=${encodeURIComponent(query)}`, signal),
       searchByCriteria: (filters, source = 'public') =>
         request('POST', '/api/property/search-by-criteria', { filters, source }),
       autoscore: (address, property) => request('POST', '/api/property/autoscore', { address, property }),

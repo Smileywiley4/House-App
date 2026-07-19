@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id, get_optional_user_id, user_has_paid_plan, require_paid_plan
 from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
-from app.google_places import get_property_via_google, get_autoscore_data, places_v1_search_nearby
+from app.google_places import autocomplete_addresses, get_property_via_google, get_autoscore_data, places_v1_search_nearby
 from app.rentcast import get_rentcast_property
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
@@ -370,6 +370,16 @@ async def places_search_nearby(
             return JSONResponse(content=data, status_code=status)
         raise HTTPException(status_code=status, detail=err or "Places searchNearby failed")
     return data
+
+
+@router.get("/autocomplete")
+async def autocomplete(
+    request: Request,
+    q: str = Query(..., min_length=3, max_length=120),
+):
+    _enforce_public_search_limit(request, namespace="autocomplete", limit=120)
+    predictions = await autocomplete_addresses(q)
+    return {"predictions": predictions}
 
 
 @router.post("/search")
