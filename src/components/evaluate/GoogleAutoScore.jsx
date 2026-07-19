@@ -19,6 +19,14 @@ const SCOREABLE_IDS = new Set([
   "garage_storage",
   "fireplace",
 ]);
+const LOCATION_SCORE_IDS = new Set([
+  "hospital_distance",
+  "highway_access",
+  "schools",
+  "neighborhood_safety",
+  "public_transportation",
+  "location_lifestyle",
+]);
 
 const CATEGORY_DETAIL = {
   hospital_distance: "Hospital distance",
@@ -44,7 +52,20 @@ export default function GoogleAutoScore({ address, property, categories, onApply
   const [applied, setApplied] = useState(false);
   const [error, setError] = useState(null);
 
-  const eligible = categories.filter(c => SCOREABLE_IDS.has(c.id));
+  const propertyFactAvailable = {
+    location_investment: (property?.sale_history?.length || 0) >= 2,
+    longterm_neighborhood_value: (property?.sale_history?.length || 0) >= 2,
+    bedroom_count: property?.beds != null || property?.bedrooms != null,
+    bathroom_count: property?.baths != null || property?.bathrooms != null,
+    overall_living_space: property?.sqft != null,
+    property_tax_cost: property?.annual_taxes != null && property?.tax_assessment != null,
+    hoa_cost: property?.hoa_fee != null,
+    garage_storage: property?.features?.garage != null,
+    fireplace: property?.features?.fireplace != null,
+  };
+  const eligible = categories.filter(
+    c => SCOREABLE_IDS.has(c.id) && (LOCATION_SCORE_IDS.has(c.id) || propertyFactAvailable[c.id]),
+  );
   if (eligible.length === 0) return null;
 
   const run = async () => {
@@ -105,7 +126,7 @@ export default function GoogleAutoScore({ address, property, categories, onApply
                 Automatically score <strong>{eligible.length} categories</strong> using verified property records and location data.
               </p>
               <p className="text-xs text-slate-400 mb-3">
-                Scores are based on real distances and never change between searches.
+                Scores use recorded facts and consistent formulas. Review and adjust them for your needs.
               </p>
               <button
                 onClick={run}
