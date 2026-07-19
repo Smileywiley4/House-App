@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ChevronLeft, Plus, Save, BarChart3, LogIn, Columns } from "lucide-react";
+import { Bookmark, ChevronLeft, Plus, Save, BarChart3, LogIn, Columns, X } from "lucide-react";
 import { api } from "@/api";
 import CategorySlider from "@/components/evaluate/CategorySlider.jsx";
 import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker.jsx";
@@ -98,6 +98,11 @@ export default function Evaluate() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [showPresetForm, setShowPresetForm] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [presetStatus, setPresetStatus] = useState("");
+  const [presetRefreshKey, setPresetRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -191,6 +196,36 @@ export default function Evaluate() {
     }
   };
 
+  const savePreset = async () => {
+    const name = presetName.trim();
+    if (!name || !isAuthenticated) return;
+    setSavingPreset(true);
+    setPresetStatus("");
+    try {
+      await api.entities.Preset.create({
+        name,
+        weights: Object.fromEntries(activeCategories.map(category => [category.id, category.importance])),
+        filters: {
+          categories: activeCategories.map(category => ({
+            id: category.id,
+            label: category.label,
+            custom: Boolean(category.custom),
+            mandatory: Boolean(category.mandatory),
+            neighborhood: Boolean(category.neighborhood),
+          })),
+        },
+      });
+      setPresetName("");
+      setShowPresetForm(false);
+      setPresetStatus("Preset saved");
+      setPresetRefreshKey(value => value + 1);
+    } catch (error) {
+      setPresetStatus(error?.message || "Could not save this preset.");
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
@@ -244,14 +279,9 @@ export default function Evaluate() {
               <PresetPicker
                 activeCategories={activeCategories}
                 onLoadPreset={(next) => setActiveCategories(next)}
+                refreshKey={presetRefreshKey}
               />
             )}
-            <button
-              onClick={() => setShowPicker(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-[#1a2234] font-semibold rounded-xl hover:bg-slate-50 transition-colors text-sm border-[#10b981]/30"
-            >
-              <Plus size={15} /> Add Category
-            </button>
             <button
               onClick={sendToCompare}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm"
@@ -347,14 +377,80 @@ export default function Evaluate() {
             <h2 className="text-lg font-bold text-[#1a2234]">Scoring Categories</h2>
             <p className="mt-0.5 text-sm text-slate-500">Choose the factors that matter for this property.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowPicker(true)}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a2234] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
-          >
-            <Plus size={16} /> Add Categories
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPresetForm(true);
+                  setPresetStatus("");
+                }}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2234] transition-colors hover:bg-slate-50"
+              >
+                <Bookmark size={16} /> Save Preset
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2234] transition-colors hover:bg-slate-50"
+              >
+                <LogIn size={16} /> Sign In to Save Preset
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowPicker(true)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a2234] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
+            >
+              <Plus size={16} /> Add Categories
+            </button>
+          </div>
         </div>
+
+        {showPresetForm && isAuthenticated && (
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
+            <Bookmark size={17} className="hidden shrink-0 text-[#10b981] sm:block" />
+            <input
+              autoFocus
+              type="text"
+              value={presetName}
+              onChange={(event) => setPresetName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  savePreset();
+                }
+              }}
+              maxLength={80}
+              placeholder="Preset name, e.g. Family Home"
+              className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3 py-2.5 text-sm outline-none ring-[#10b981]/30 focus:ring-2"
+            />
+            <button
+              type="button"
+              onClick={savePreset}
+              disabled={!presetName.trim() || savingPreset}
+              className="rounded-lg bg-[#10b981] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#059669] disabled:opacity-40"
+            >
+              {savingPreset ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPresetForm(false);
+                setPresetName("");
+              }}
+              aria-label="Cancel saving preset"
+              className="inline-flex h-9 w-9 items-center justify-center self-end rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 sm:self-auto"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        {presetStatus && (
+          <p className={`text-sm font-medium ${presetStatus === "Preset saved" ? "text-[#059669]" : "text-red-600"}`}>
+            {presetStatus}
+          </p>
+        )}
 
         {activeCategories.length === 0 && (
           <div className="text-center py-10 text-slate-400">

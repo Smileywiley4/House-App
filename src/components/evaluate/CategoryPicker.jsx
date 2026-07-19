@@ -51,7 +51,6 @@ const ALL_BUILTIN_IDS = new Set([
 
 export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) {
   const [query, setQuery] = useState("");
-  const [customMode, setCustomMode] = useState(false);
   const [customName, setCustomName] = useState("");
 
   const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...OPTIONAL_CATEGORIES];
@@ -68,7 +67,6 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
     trackCustomCategory(name);
     onAdd(cat);
     setCustomName("");
-    setCustomMode(false);
   };
 
   return (
@@ -84,106 +82,90 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
           </button>
         </div>
 
-        {!customMode ? (
-          <>
-            <div className="px-6 py-4 border-b border-slate-50">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input
-                  autoFocus
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search categories..."
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 border border-transparent focus:border-[#10b981]"
-                />
-              </div>
+        <>
+          <div className="px-6 py-4 border-b border-slate-50 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                autoFocus
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search categories..."
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 border border-transparent focus:border-[#10b981]"
+              />
             </div>
-
-            <div className="overflow-y-auto flex-1 px-4 py-3">
-              <button
-                onClick={() => setCustomMode(true)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#10b981]/5 border border-[#10b981]/20 hover:bg-[#10b981]/10 text-left transition-colors group mb-2"
-              >
-                <span className="flex items-center gap-2 text-sm font-semibold text-[#10b981]">
-                  <PenLine size={15} /> Create Custom Category
-                </span>
-                <Plus size={16} className="text-[#10b981]/50 group-hover:text-[#10b981] transition-colors" />
-              </button>
-
-              {filtered.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm">No matching categories</div>
-              ) : (
-                <div className="space-y-1">
-                  {filtered.map(cat => {
-                    const isActive = activeIds.includes(cat.id);
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        role="checkbox"
-                        aria-checked={isActive}
-                        onClick={() => isActive ? onRemove(cat.id) : onAdd(cat)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                          isActive ? "bg-[#10b981]/5" : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
-                          isActive
-                            ? "border-[#10b981] bg-[#10b981] text-white"
-                            : "border-slate-300 bg-white"
-                        }`}>
-                          {isActive && <Check size={14} strokeWidth={3} />}
-                        </span>
-                        <span className={`text-sm font-medium ${isActive ? "text-[#047857]" : "text-[#1a2234]"}`}>
-                          {cat.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div className="border-t border-slate-100 px-6 py-4">
+            <div className="flex items-center gap-2 rounded-xl border border-[#10b981]/20 bg-[#10b981]/5 p-2">
+              <PenLine size={16} className="ml-1 shrink-0 text-[#10b981]" />
+              <input
+                type="text"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddCustom();
+                  }
+                }}
+                placeholder="Add custom category"
+                maxLength={80}
+                className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-[#1a2234] outline-none placeholder:text-slate-400"
+              />
               <button
                 type="button"
-                onClick={onClose}
-                className="w-full rounded-xl bg-[#1a2234] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
-              >
-                Done
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="px-6 py-6">
-            <p className="text-sm text-slate-500 mb-4">Enter a name for your custom scoring category.</p>
-            <input
-              autoFocus
-              type="text"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddCustom()}
-              placeholder="e.g. Pool, Wine Cellar, Home Office..."
-              maxLength={80}
-              className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 border border-transparent focus:border-[#10b981] mb-4"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setCustomMode(false); setCustomName(""); }}
-                className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50"
-              >
-                Back
-              </button>
-              <button
                 onClick={handleAddCustom}
                 disabled={!customName.trim()}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-40 transition-colors"
+                className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#10b981] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#059669] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Plus size={15} /> Add Category
+                <Plus size={14} /> Add
               </button>
             </div>
           </div>
-        )}
+
+          <div className="overflow-y-auto flex-1 px-4 py-3">
+            {filtered.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-sm">No matching categories</div>
+            ) : (
+              <div className="space-y-1">
+                {filtered.map(cat => {
+                  const isActive = activeIds.includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={isActive}
+                      onClick={() => isActive ? onRemove(cat.id) : onAdd(cat)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                        isActive ? "bg-[#10b981]/5" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        isActive
+                          ? "border-[#10b981] bg-[#10b981] text-white"
+                          : "border-slate-300 bg-white"
+                      }`}>
+                        {isActive && <Check size={14} strokeWidth={3} />}
+                      </span>
+                      <span className={`text-sm font-medium ${isActive ? "text-[#047857]" : "text-[#1a2234]"}`}>
+                        {cat.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="border-t border-slate-100 px-6 py-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-xl bg-[#1a2234] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
+            >
+              Done
+            </button>
+          </div>
+        </>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Bookmark, ChevronDown } from "lucide-react";
 import { api } from "@/api";
 /** Dropdown to select a preset and load its weights into activeCategories. clientId for realtor client presets. */
-export default function PresetPicker({ activeCategories, onLoadPreset, clientId, className = "" }) {
+export default function PresetPicker({ activeCategories, onLoadPreset, clientId, refreshKey = 0, className = "" }) {
   const [presets, setPresets] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -12,14 +12,24 @@ export default function PresetPicker({ activeCategories, onLoadPreset, clientId,
       .then(setPresets)
       .catch(() => setPresets([]))
       .finally(() => setLoading(false));
-  }, [clientId]);
+  }, [clientId, refreshKey]);
 
   const loadPreset = (preset) => {
     const weights = preset.weights || {};
-    const next = activeCategories.map((c) => ({
-      ...c,
-      importance: weights[c.id] !== undefined ? weights[c.id] : c.importance,
-    }));
+    const savedCategories = Array.isArray(preset.filters?.categories) ? preset.filters.categories : [];
+    const activeById = new Map(activeCategories.map((category) => [category.id, category]));
+    const source = savedCategories.length > 0 ? savedCategories : activeCategories;
+    const next = source.map((savedCategory) => {
+      const current = activeById.get(savedCategory.id);
+      return {
+        ...savedCategory,
+        ...current,
+        importance: weights[savedCategory.id] !== undefined
+          ? weights[savedCategory.id]
+          : (current?.importance ?? 5),
+        score: current?.score ?? 5,
+      };
+    });
     onLoadPreset(next, preset.filters || {});
     setOpen(false);
   };
