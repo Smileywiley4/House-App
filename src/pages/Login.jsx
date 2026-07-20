@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Home, Mail, Lock, Loader2, AlertCircle, Phone } from "lucide-react";
 import { getSharedSupabase } from "@/lib/supabase";
@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { SeoHelmet } from "@/components/SeoHelmet";
 import { createPageUrl } from "@/utils";
 import CaptchaField, { isCaptchaConfigured } from "@/components/CaptchaField";
+import { bridgeSignIn, bridgeSignUp, applyBridgeSession } from "@/lib/authBridge";
 import {
   saveOAuthPending,
   readOAuthPending,
@@ -17,6 +18,36 @@ import {
 
 function getSupabase() {
   return getSharedSupabase();
+}
+
+/** Map opaque network/auth failures into actionable copy for the login UI. */
+function formatAuthError(err, fallback = "Something went wrong") {
+  const raw = (err?.message || err?.error_description || err?.code || fallback || "").trim();
+  const lower = raw.toLowerCase();
+  const code = String(err?.code || err?.error_code || "").toLowerCase();
+  if (
+    lower === "failed to fetch"
+    || lower.includes("networkerror")
+    || lower.includes("load failed")
+    || lower.includes("network request failed")
+  ) {
+    return (
+      "Can't reach the account service right now. This is usually a temporary outage — " +
+      "please try again in a few minutes. If it keeps happening, the auth database may be down."
+    );
+  }
+  if (
+    code === "captcha_failed"
+    || lower.includes("captcha")
+    || lower.includes("turnstile")
+  ) {
+    return (
+      "Human verification failed. Complete the checkbox again, then retry. " +
+      "If it keeps failing, the Turnstile secret in Supabase may not match this site’s widget — " +
+      "or temporarily disable CAPTCHA under Supabase → Authentication → Attack Protection."
+    );
+  }
+  return raw || fallback;
 }
 
 /** Resolve only an in-app path; never redirect an authenticated user off-site. */
@@ -56,6 +87,37 @@ async function acceptInviteToken(token, accessToken) {
   }).catch(() => {});
 }
 
+/** Signup plan ids: Free, Pro (stored as premium), Realtor. */
+const SIGNUP_PLANS = [
+  { id: "free", label: "Free", blurb: "Compare up to 2 homes · ads supported" },
+  { id: "premium", label: "Pro", blurb: "Ad-free · compare 3+ · walk-through tools" },
+  { id: "realtor", label: "Realtor", blurb: "Clients, private listings & sharing" },
+];
+
+function isPaidSignupPlan(planId) {
+  return planId === "premium" || planId === "realtor";
+}
+
+function postSignupHref(planId, redirect) {
+  // Always land on the app home when signed in so the header profile control confirms auth.
+  // Paid plans keep intended_plan in metadata; checkout is available from Pricing.
+  void planId;
+  const path = resolveRedirectForRouter(redirect) || "/";
+  // Prefer home after signup unless an explicit in-app deep link was requested.
+  if (!redirect || redirect === "/" || redirect === "") {
+    return `${window.location.origin}/`;
+  }
+  return `${window.location.origin}${path}`;
+}
+
+/** Don't let a slow/unreachable Python API block leaving the signup page. */
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(resolve, ms)),
+  ]);
+}
+
 async function completePostAuth(session, inviteTokenFromUrl) {
   const pending = readOAuthPending();
   clearOAuthPending();
@@ -78,6 +140,8 @@ async function completePostAuth(session, inviteTokenFromUrl) {
   if (invite && session?.access_token) {
     await acceptInviteToken(invite, session.access_token);
   }
+
+  return pending?.intended_plan || "free";
 }
 
 export default function Login() {
@@ -93,9 +157,12 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  /** Required on signup: free | premium (Pro) | realtor */
+  const [selectedPlan, setSelectedPlan] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [mode, setMode] = useState("signin"); // signin | signup
+  const errorBannerRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -109,6 +176,11 @@ export default function Login() {
     setCaptchaToken("");
     setCaptchaResetKey((key) => key + 1);
   }, []);
+
+  useEffect(() => {
+    if (!error) return;
+    errorBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [error]);
 
   const requireCaptchaToken = () => {
     if (!isCaptchaConfigured()) {
@@ -211,14 +283,14 @@ export default function Login() {
 
         if (cancelled) return;
 
-        await completePostAuth(session, inviteToken);
+        const intendedPlan = await completePostAuth(session, inviteToken);
 
-        const dest = resolveRedirectHref(redirect);
+        const dest = postSignupHref(intendedPlan, redirect);
         window.history.replaceState({}, document.title, "/login");
         window.location.replace(dest);
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || "Google sign-in failed");
+          setError(formatAuthError(err, "Google sign-in failed"));
           setOauthLoading(false);
         }
       }
@@ -235,24 +307,30 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const token = requireCaptchaToken();
-      if (token === null) {
-        setLoading(false);
-        return;
+      // Prefer service-role bridge (bypasses broken Turnstile/CAPTCHA pairing).
+      try {
+        const sessionPayload = await bridgeSignIn({ email, password });
+        await applyBridgeSession(supabase, sessionPayload);
+      } catch (bridgeErr) {
+        const token = requireCaptchaToken();
+        if (token === null) {
+          setLoading(false);
+          return;
+        }
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+          options: token ? { captchaToken: token } : undefined,
+        });
+        if (err) throw bridgeErr?.message ? bridgeErr : err;
       }
-      const { error: err } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-        options: token ? { captchaToken: token } : undefined,
-      });
-      if (err) throw err;
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         await acceptInviteToken(inviteToken, session.access_token);
       }
       window.location.href = resolveRedirectHref(redirect);
     } catch (err) {
-      setError(err.message || "Sign in failed");
+      setError(formatAuthError(err, "Sign in failed"));
       refreshCaptcha();
     } finally {
       setLoading(false);
@@ -315,6 +393,10 @@ export default function Login() {
       setError("Please agree to the Terms of Service to create an account.");
       return;
     }
+    if (!SIGNUP_PLANS.some((p) => p.id === selectedPlan)) {
+      setError("Please choose a plan: Free, Pro, or Realtor.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match. Please enter the same password twice.");
       return;
@@ -324,56 +406,110 @@ export default function Login() {
       return;
     }
 
-    const token = requireCaptchaToken();
-    if (token === null) return;
-
     setLoading(true);
     try {
-      const emailRedirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent(redirect || "/")}`;
-      const userMetadata = {};
-      if (fullName.trim()) userMetadata.full_name = fullName.trim();
-      if (phone.trim()) userMetadata.phone = phone.trim();
-      userMetadata.marketing_opt_in = marketingOptIn;
-      userMetadata.terms_accepted = true;
+      let session = null;
 
-      const { data, error: err } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo,
-          data: userMetadata,
-          ...(token ? { captchaToken: token } : {}),
-        },
-      });
-      if (err) throw err;
+      // Prefer service-role bridge (bypasses Turnstile/CAPTCHA pairing issues).
+      try {
+        const sessionPayload = await bridgeSignUp({
+          email,
+          password,
+          full_name: fullName.trim() || undefined,
+          phone: phone.trim() || undefined,
+          marketing_opt_in: marketingOptIn,
+          terms_accepted: true,
+          intended_plan: selectedPlan,
+        });
+        await applyBridgeSession(supabase, sessionPayload);
+        session = (await supabase.auth.getSession()).data.session;
+      } catch (bridgeErr) {
+        const token = requireCaptchaToken();
+        if (token === null) {
+          setLoading(false);
+          return;
+        }
+        const emailRedirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent("/")}`;
+        const userMetadata = {
+          marketing_opt_in: marketingOptIn,
+          terms_accepted: true,
+          intended_plan: selectedPlan,
+        };
+        if (fullName.trim()) userMetadata.full_name = fullName.trim();
+        if (phone.trim()) userMetadata.phone = phone.trim();
 
-      if (data.session) {
-        // Email confirmation disabled in Supabase — signed in immediately.
+        let { data, error: err } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo,
+            data: userMetadata,
+            ...(token ? { captchaToken: token } : {}),
+          },
+        });
+        if (err) throw bridgeErr?.message ? bridgeErr : err;
+
+        session = data.session;
+        if (!session && data.user) {
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+            options: token ? { captchaToken: token } : undefined,
+          });
+          if (!signInErr) {
+            session = signInData.session;
+          } else {
+            const msg = (signInErr.message || "").toLowerCase();
+            if (msg.includes("confirm") || msg.includes("verification")) {
+              setMessage(
+                "Account created! Check your email to confirm, then sign in. " +
+                  "After you confirm, you’ll land on the home page signed in."
+              );
+              setMode("signin");
+              setConfirmPassword("");
+              setAcceptTerms(false);
+              setSelectedPlan("");
+              refreshCaptcha();
+              return;
+            }
+            setMessage("Account created! Sign in with your email and password to continue.");
+            setMode("signin");
+            setConfirmPassword("");
+            setAcceptTerms(false);
+            setSelectedPlan("");
+            refreshCaptcha();
+            return;
+          }
+        }
+      }
+
+      if (session) {
+        // Profile sync is best-effort — never block redirect on a slow Railway/API call.
         if (import.meta.env.VITE_USE_PYTHON_BACKEND === "true") {
-          try {
-            await api.auth.updateMe({
+          await withTimeout(
+            api.auth.updateMe({
               full_name: fullName.trim() || undefined,
               phone: phone.trim() || undefined,
               marketing_opt_in: marketingOptIn,
-            });
-          } catch {
-            /* profile sync is best-effort */
-          }
+            }).catch(() => {}),
+            2500,
+          );
         }
-        window.location.href = resolveRedirectHref(redirect);
+        window.location.assign(postSignupHref(selectedPlan, redirect));
         return;
       }
 
       setMessage(
         "Account created! Check your email to confirm, then sign in. " +
-          "If you don't see it, check spam. You can also try signing in — some projects allow login before confirm."
+          "If you don't see it, check spam."
       );
       setMode("signin");
       setConfirmPassword("");
       setAcceptTerms(false);
+      setSelectedPlan("");
       refreshCaptcha();
     } catch (err) {
-      setError(err.message || "Sign up failed");
+      setError(formatAuthError(err, "Sign up failed"));
       refreshCaptcha();
     } finally {
       setLoading(false);
@@ -388,18 +524,24 @@ export default function Login() {
       setError("Please agree to the Terms of Service to create an account.");
       return;
     }
+    if (mode === "signup" && !SIGNUP_PLANS.some((p) => p.id === selectedPlan)) {
+      setError("Please choose a plan: Free, Pro, or Realtor.");
+      return;
+    }
     if (mode === "signup") {
       const token = requireCaptchaToken();
       if (token === null) return;
     }
     setLoading(true);
     try {
+      const oauthRedirect = "/";
       saveOAuthPending({
         marketing_opt_in: mode === "signup" && marketingOptIn,
         inviteToken: inviteToken || null,
+        intended_plan: mode === "signup" ? selectedPlan : "free",
       });
 
-      const returnParams = new URLSearchParams({ redirect: redirect || "/" });
+      const returnParams = new URLSearchParams({ redirect: oauthRedirect });
       if (inviteToken) returnParams.set("invite", inviteToken);
       const redirectTo = `${window.location.origin}/login?${returnParams.toString()}`;
       const options = {
@@ -413,6 +555,7 @@ export default function Login() {
         if (phone.trim()) meta.phone = phone.trim();
         if (marketingOptIn) meta.marketing_opt_in = true;
         meta.terms_accepted = true;
+        meta.intended_plan = selectedPlan;
         if (Object.keys(meta).length > 0) {
           options.data = meta;
         }
@@ -425,7 +568,7 @@ export default function Login() {
       if (err) throw err;
     } catch (err) {
       clearOAuthPending();
-      setError(err.message || "Google sign-in failed");
+      setError(formatAuthError(err, "Google sign-in failed"));
       setLoading(false);
     }
   };
@@ -505,7 +648,7 @@ export default function Login() {
           </h1>
           <p className="text-slate-500 text-sm mb-2">
             {mode === "signup"
-              ? "Start free, then upgrade anytime from Pricing."
+              ? "Choose Free, Pro, or Realtor to create your account."
               : "Use your account to continue."}
           </p>
           <p className="text-slate-400 text-xs mb-6 leading-relaxed">
@@ -513,9 +656,13 @@ export default function Login() {
           </p>
 
           {error && (
-            <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 rounded-xl p-3 mb-4">
-              <AlertCircle size={16} />
-              {error}
+            <div
+              ref={errorBannerRef}
+              role="alert"
+              className="flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 rounded-xl p-3 mb-4"
+            >
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
           {message && (
@@ -544,6 +691,43 @@ export default function Login() {
               </div>
 
               <form onSubmit={mode === "signup" ? handleSignUp : handleSignIn} className="space-y-4">
+                {mode === "signup" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-2">
+                      Plan <span className="text-slate-400 font-normal">(required)</span>
+                    </label>
+                    <div className="grid gap-2" role="radiogroup" aria-label="Choose a plan">
+                      {SIGNUP_PLANS.map((plan) => {
+                        const selected = selectedPlan === plan.id;
+                        return (
+                          <button
+                            key={plan.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setSelectedPlan(plan.id)}
+                            className={`w-full text-left rounded-xl border px-3 py-2.5 transition ${
+                              selected
+                                ? "border-[#10b981] bg-[#10b981]/10 ring-1 ring-[#10b981]/40"
+                                : "border-slate-200 hover:border-slate-300 bg-white"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-bold text-[#1a2234]">{plan.label}</span>
+                              {plan.id === "premium" && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#10b981]">Popular</span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{plan.blurb}</p>
+                            {isPaidSignupPlan(plan.id) && (
+                              <p className="text-[10px] text-slate-400 mt-1">You can upgrade anytime from Pricing after signup.</p>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {mode === "signup" && (
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1.5">Name (optional)</label>
@@ -675,13 +859,21 @@ export default function Login() {
                   resetKey={captchaResetKey}
                   className="pt-1"
                 />
+                {error && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 rounded-xl p-3"
+                  >
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="submit"
                     disabled={
                       loading
-                      || (mode === "signup" && (!acceptTerms || !password || password !== confirmPassword))
-                      || (isCaptchaConfigured() && !captchaToken)
+                      || (mode === "signup" && (!acceptTerms || !selectedPlan || !password || password !== confirmPassword))
                     }
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                   >
@@ -780,7 +972,7 @@ export default function Login() {
               disabled={
                 loading
                 || oauthLoading
-                || (mode === "signup" && !acceptTerms)
+                || (mode === "signup" && (!acceptTerms || !selectedPlan))
                 || (mode === "signup" && isCaptchaConfigured() && !captchaToken)
               }
               className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition-colors"
@@ -797,9 +989,11 @@ export default function Login() {
               )}
               {oauthLoading ? "Signing in..." : mode === "signup" ? "Sign up with Google" : "Continue with Google"}
             </button>
-            {mode === "signup" && !acceptTerms && (
+            {mode === "signup" && (!acceptTerms || !selectedPlan) && (
               <p className="mt-2 text-center text-[11px] text-slate-400">
-                Agree to the Terms of Service above to continue with Google.
+                {!selectedPlan
+                  ? "Choose Free, Pro, or Realtor above to continue with Google."
+                  : "Agree to the Terms of Service above to continue with Google."}
               </p>
             )}
           </div>

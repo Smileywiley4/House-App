@@ -1,9 +1,10 @@
 """FastAPI dependencies: Supabase client and current user from JWT."""
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jose import JWTError
 from app.config import get_settings
 from app.supabase_client import get_supabase_admin
+from app.supabase_jwt import auth_verification_configured, decode_supabase_access_token
 
 security = HTTPBearer(auto_error=False)
 
@@ -14,16 +15,10 @@ async def get_current_user_id(
     if not creds:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     token = creds.credentials
-    s = get_settings()
-    if not s.supabase_jwt_secret:
+    if not auth_verification_configured():
         raise HTTPException(status_code=503, detail="Authentication is not configured")
     try:
-        payload = jwt.decode(
-            token,
-            s.supabase_jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
+        payload = decode_supabase_access_token(token)
         sub = payload.get("sub")
         if not sub or payload.get("role") != "authenticated":
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -102,16 +97,10 @@ async def get_optional_user_id(
     if not creds:
         return None
     token = creds.credentials
-    s = get_settings()
-    if not s.supabase_jwt_secret:
+    if not auth_verification_configured():
         return None
     try:
-        payload = jwt.decode(
-            token,
-            s.supabase_jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
+        payload = decode_supabase_access_token(token)
         return payload.get("sub") if payload.get("role") == "authenticated" else None
     except JWTError:
         return None

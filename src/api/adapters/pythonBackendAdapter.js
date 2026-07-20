@@ -93,6 +93,48 @@ async function request(method, path, body = undefined, extraHeaders = undefined)
   return res.json();
 }
 
+/** Auth profile calls: try Railway first, then same-origin Vercel bridge. */
+async function requestAuthProfile(method, path, body = undefined) {
+  const token = await getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const bases = [];
+  if (baseUrl) bases.push(baseUrl);
+  if (typeof window !== 'undefined' && window.location?.origin && !bases.includes(window.location.origin)) {
+    bases.push(window.location.origin);
+  }
+
+  let lastErr = null;
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        const err = new Error(parseApiErrorBody(text, res.statusText));
+        err.status = res.status;
+        // Stale Railway JWT / missing route → try next base
+        if (res.status === 401 || res.status === 404 || res.status === 502 || res.status === 503) {
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
+      if (res.status === 204 || res.headers.get('content-length') === '0') return null;
+      return res.json();
+    } catch (err) {
+      lastErr = wrapNetworkError(err, path);
+      if (err?.status && err.status !== 401 && err.status !== 404) throw lastErr;
+    }
+  }
+  throw lastErr || new Error('Auth profile unavailable');
+}
+
 async function publicGet(path, signal) {
   requireApiBase();
   let res;
@@ -202,8 +244,9 @@ async function uploadVisitPhoto(savedId, file, caption) {
 export function createPythonBackendAdapter() {
   return {
     auth: {
-      me: () => request('GET', '/api/auth/me'),
-      updateMe: (profile) => request('PATCH', '/api/auth/me', profile),
+      me: () => requestAuthProfile('GET', '/api/auth/me'),
+      updateMe: (profile) => requestAuthProfile('PATCH', '/api/auth/me', profile),
+      deleteMe: () => request('DELETE', '/api/auth/me', { confirmation: 'DELETE' }),
       updateEmail: async (email) => {
         // Supabase client updates auth email; backend /api/auth/me only stores profile fields.
         const { error } = await getSupabase().auth.updateUser({ email });
@@ -2091,6 +2134,10 @@ export function createPythonBackendAdapter() {
     subscription: {
       createCheckoutSession: (options) => request('POST', '/api/subscription/create-checkout-session', options).then((r) => ({ url: r?.url })),
       getPortalUrl: () => request('GET', '/api/subscription/portal').then((r) => ({ url: r?.url })),
+    },
+    promo: {
+      redeem: (code, planId = 'premium') =>
+        request('POST', '/api/promo/redeem', { code, plan_id: planId }),
     },
     /** Premium/Realtor: visit photos, folders, realtor sharing */
     library: {
