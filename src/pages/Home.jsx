@@ -14,10 +14,14 @@ import { PRODUCT_DISCLAIMER } from "@/core/companyConfig";
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-16 md:py-20 text-center">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 30% 50%, #10b981 0%, transparent 60%), radial-gradient(circle at 70% 20%, #10b981 0%, transparent 50%)" }} />
-        <div className="relative max-w-2xl mx-auto">
+      <div className="relative bg-[#1a2234] px-6 py-16 md:py-20 text-center">
+        {/* Decorative layer only — keep overflow off the hero so address suggestions are not clipped */}
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden opacity-10"
+          aria-hidden
+          style={{ backgroundImage: "radial-gradient(circle at 30% 50%, #10b981 0%, transparent 60%), radial-gradient(circle at 70% 20%, #10b981 0%, transparent 50%)" }}
+        />
+        <div className="relative z-10 max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-4">
             <HomeIcon className="text-[#10b981]" size={28} />
             <span className="text-[#10b981] font-semibold tracking-widest text-sm uppercase">Property Pocket</span>

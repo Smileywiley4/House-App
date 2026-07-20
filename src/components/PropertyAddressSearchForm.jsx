@@ -120,9 +120,9 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
         onSubmit={submit}
         className={isHero ? "flex flex-col sm:flex-row items-stretch gap-3" : "flex items-stretch gap-2"}
       >
-        <div className="flex-1 relative min-w-0">
+        <div className={`relative min-w-0 flex-1 ${isHero ? "z-30" : "z-20"}`}>
           <MapPin
-            className={`absolute left-4 top-1/2 -translate-y-1/2 ${isHero ? "text-slate-400" : "text-slate-300"}`}
+            className={`absolute left-4 top-1/2 z-10 -translate-y-1/2 ${isHero ? "text-slate-400" : "text-slate-300"}`}
             size={18}
           />
           <input
@@ -133,15 +133,17 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
               setAddress(e.target.value);
               setSuggestionsOpen(true);
             }}
-            onFocus={() => suggestions.length > 0 && setSuggestionsOpen(true)}
-            onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)}
+            onFocus={() => {
+              if (suggestions.length > 0 || suggestionsLoading) setSuggestionsOpen(true);
+            }}
+            onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 180)}
             onKeyDown={handleInputKeyDown}
             placeholder="Enter a property address..."
             className={inputClass}
             aria-label="Search property by address"
             role="combobox"
             aria-autocomplete="list"
-            aria-expanded={suggestionsOpen && suggestions.length > 0}
+            aria-expanded={suggestionsOpen && (suggestions.length > 0 || suggestionsLoading)}
             aria-controls={listboxId}
             aria-activedescendant={activeSuggestion >= 0 ? `${listboxId}-${activeSuggestion}` : undefined}
             autoComplete="off"
@@ -150,7 +152,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
             <div
               id={listboxId}
               role="listbox"
-              className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-xl"
+              className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white text-left shadow-2xl"
             >
               {suggestionsLoading && suggestions.length === 0 ? (
                 <div className="flex items-center gap-2 px-4 py-3 text-sm text-slate-500">

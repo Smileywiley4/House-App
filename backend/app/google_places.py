@@ -38,13 +38,8 @@ async def autocomplete_addresses(query: str) -> list[dict]:
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
     }
-    body = {
-        "input": text,
-        "includedPrimaryTypes": ["street_address", "premise", "subpremise"],
-        "regionCode": "US",
-        "languageCode": "en",
-    }
-    try:
+
+    async def _request(body: dict) -> list[dict]:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(PLACES_V1_AUTOCOMPLETE_URL, json=body, headers=headers)
         if response.status_code >= 400:
@@ -52,7 +47,7 @@ async def autocomplete_addresses(query: str) -> list[dict]:
             return []
         suggestions = response.json().get("suggestions") or []
         predictions = []
-        for suggestion in suggestions[:6]:
+        for suggestion in suggestions[:8]:
             prediction = suggestion.get("placePrediction") or {}
             structured = prediction.get("structuredFormat") or {}
             main_text = (structured.get("mainText") or {}).get("text")
@@ -67,6 +62,25 @@ async def autocomplete_addresses(query: str) -> list[dict]:
                 "secondary_text": secondary_text or "",
             })
         return predictions
+
+    # Prefer street/building matches; fall back to broader geocode if empty so
+    # partial typing (city + street start) still shows a dropdown.
+    primary = {
+        "input": text,
+        "includedPrimaryTypes": ["street_address", "premise", "subpremise"],
+        "regionCode": "US",
+        "languageCode": "en",
+    }
+    try:
+        predictions = await _request(primary)
+        if predictions:
+            return predictions
+        return await _request({
+            "input": text,
+            "includedPrimaryTypes": ["geocode"],
+            "regionCode": "US",
+            "languageCode": "en",
+        })
     except Exception as exc:
         logger.error("Places autocomplete error: %s", exc)
         return []
