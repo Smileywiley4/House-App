@@ -1,6 +1,6 @@
 /**
  * Password auth via same-origin Vercel bridge (prod) or Python API (local).
- * Uses the service-role grant so CAPTCHA misconfig on Supabase does not block signup/signin.
+ * Signup is two-step: start (email code) → confirm (code + password).
  */
 function authBridgeBases() {
   const bases = [];
@@ -12,7 +12,7 @@ function authBridgeBases() {
   return bases;
 }
 
-async function postAuth(path, body) {
+async function postAuth(path, body, { expectSession = true } = {}) {
   let lastError = null;
   for (const base of authBridgeBases()) {
     try {
@@ -25,17 +25,17 @@ async function postAuth(path, body) {
       if (!res.ok) {
         const detail = data.detail || data.message || data.error || `Request failed (${res.status})`;
         lastError = new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
-        // 404/405 → try next base (SPA host without API, etc.)
+        lastError.status = res.status;
+        lastError.retry_after = data.retry_after;
         if (res.status === 404 || res.status === 405) continue;
         throw lastError;
       }
-      if (!data.access_token || !data.refresh_token) {
+      if (expectSession && (!data.access_token || !data.refresh_token)) {
         throw new Error("Auth service did not return a session");
       }
       return data;
     } catch (err) {
       lastError = err;
-      // Network failure → try next base
       if (err?.name === "TypeError" || /failed to fetch|network/i.test(String(err?.message || ""))) {
         continue;
       }
@@ -49,8 +49,19 @@ export async function bridgeSignIn({ email, password }) {
   return postAuth("/api/auth/sign-in", { email, password });
 }
 
+/** Step 1: send 15-minute email confirmation code. */
+export async function bridgeSignupStart(payload) {
+  return postAuth("/api/auth/signup-start", payload, { expectSession: false });
+}
+
+/** Step 2: verify code and finish signup (returns session). */
+export async function bridgeSignupConfirm(payload) {
+  return postAuth("/api/auth/signup-confirm", payload, { expectSession: true });
+}
+
+/** @deprecated Instant signup removed — use bridgeSignupStart + bridgeSignupConfirm. */
 export async function bridgeSignUp(payload) {
-  return postAuth("/api/auth/sign-up", payload);
+  return bridgeSignupStart(payload);
 }
 
 export async function applyBridgeSession(supabase, sessionPayload) {

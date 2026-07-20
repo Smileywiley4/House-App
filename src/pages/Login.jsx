@@ -7,7 +7,12 @@ import { useAuth } from "@/lib/AuthContext";
 import { SeoHelmet } from "@/components/SeoHelmet";
 import { createPageUrl } from "@/utils";
 import CaptchaField, { isCaptchaConfigured } from "@/components/CaptchaField";
-import { bridgeSignIn, bridgeSignUp, applyBridgeSession } from "@/lib/authBridge";
+import {
+  bridgeSignIn,
+  bridgeSignupStart,
+  bridgeSignupConfirm,
+  applyBridgeSession,
+} from "@/lib/authBridge";
 import {
   saveOAuthPending,
   readOAuthPending,
@@ -162,6 +167,13 @@ export default function Login() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [mode, setMode] = useState("signin"); // signin | signup
+  /** signup form → email code confirmation */
+  const [signupStep, setSignupStep] = useState("form"); // form | code
+  const [challengeToken, setChallengeToken] = useState("");
+  const [codeExpiresAt, setCodeExpiresAt] = useState(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [resendCooldownSec, setResendCooldownSec] = useState(0);
+  const [codeTick, setCodeTick] = useState(0);
   const errorBannerRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -181,6 +193,33 @@ export default function Login() {
     if (!error) return;
     errorBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [error]);
+
+  useEffect(() => {
+    if (resendCooldownSec <= 0) return undefined;
+    const id = window.setInterval(() => {
+      setResendCooldownSec((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [resendCooldownSec]);
+
+  useEffect(() => {
+    if (signupStep !== "code" || !codeExpiresAt) return undefined;
+    const id = window.setInterval(() => setCodeTick((t) => t + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [signupStep, codeExpiresAt]);
+
+  const codeSecondsLeft = codeExpiresAt
+    ? Math.max(0, Math.floor((new Date(codeExpiresAt).getTime() - Date.now()) / 1000))
+    : 0;
+  void codeTick; // keep countdown rendering
+
+  const resetSignupCodeStep = useCallback(() => {
+    setSignupStep("form");
+    setChallengeToken("");
+    setCodeExpiresAt(null);
+    setOtpCode("");
+    setResendCooldownSec(0);
+  }, []);
 
   const requireCaptchaToken = () => {
     if (!isCaptchaConfigured()) {
@@ -383,6 +422,41 @@ export default function Login() {
     }
   };
 
+  const finishSignupSession = async (session) => {
+    if (!session) return false;
+    if (import.meta.env.VITE_USE_PYTHON_BACKEND === "true") {
+      await withTimeout(
+        api.auth.updateMe({
+          full_name: fullName.trim() || undefined,
+          phone: phone.trim() || undefined,
+          marketing_opt_in: marketingOptIn,
+        }).catch(() => {}),
+        2500,
+      );
+    }
+    window.location.assign(postSignupHref(selectedPlan, redirect));
+    return true;
+  };
+
+  const handleSignupStart = async () => {
+    const started = await bridgeSignupStart({
+      email,
+      password,
+      full_name: fullName.trim() || undefined,
+      phone: phone.trim() || undefined,
+      marketing_opt_in: marketingOptIn,
+      terms_accepted: true,
+      intended_plan: selectedPlan,
+      challenge_token: challengeToken || undefined,
+    });
+    setChallengeToken(started.challenge_token || "");
+    setCodeExpiresAt(started.expires_at || null);
+    setOtpCode("");
+    setSignupStep("code");
+    setResendCooldownSec(60);
+    setMessage(`We sent a confirmation code to ${email}. It expires in 15 minutes.`);
+  };
+
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (!supabase) return;
@@ -408,109 +482,54 @@ export default function Login() {
 
     setLoading(true);
     try {
-      let session = null;
-
-      // Prefer service-role bridge (bypasses Turnstile/CAPTCHA pairing issues).
-      try {
-        const sessionPayload = await bridgeSignUp({
-          email,
-          password,
-          full_name: fullName.trim() || undefined,
-          phone: phone.trim() || undefined,
-          marketing_opt_in: marketingOptIn,
-          terms_accepted: true,
-          intended_plan: selectedPlan,
-        });
-        await applyBridgeSession(supabase, sessionPayload);
-        session = (await supabase.auth.getSession()).data.session;
-      } catch (bridgeErr) {
-        const token = requireCaptchaToken();
-        if (token === null) {
-          setLoading(false);
-          return;
-        }
-        const emailRedirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent("/")}`;
-        const userMetadata = {
-          marketing_opt_in: marketingOptIn,
-          terms_accepted: true,
-          intended_plan: selectedPlan,
-        };
-        if (fullName.trim()) userMetadata.full_name = fullName.trim();
-        if (phone.trim()) userMetadata.phone = phone.trim();
-
-        let { data, error: err } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo,
-            data: userMetadata,
-            ...(token ? { captchaToken: token } : {}),
-          },
-        });
-        if (err) throw bridgeErr?.message ? bridgeErr : err;
-
-        session = data.session;
-        if (!session && data.user) {
-          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-            options: token ? { captchaToken: token } : undefined,
-          });
-          if (!signInErr) {
-            session = signInData.session;
-          } else {
-            const msg = (signInErr.message || "").toLowerCase();
-            if (msg.includes("confirm") || msg.includes("verification")) {
-              setMessage(
-                "Account created! Check your email to confirm, then sign in. " +
-                  "After you confirm, you’ll land on the home page signed in."
-              );
-              setMode("signin");
-              setConfirmPassword("");
-              setAcceptTerms(false);
-              setSelectedPlan("");
-              refreshCaptcha();
-              return;
-            }
-            setMessage("Account created! Sign in with your email and password to continue.");
-            setMode("signin");
-            setConfirmPassword("");
-            setAcceptTerms(false);
-            setSelectedPlan("");
-            refreshCaptcha();
-            return;
-          }
-        }
-      }
-
-      if (session) {
-        // Profile sync is best-effort — never block redirect on a slow Railway/API call.
-        if (import.meta.env.VITE_USE_PYTHON_BACKEND === "true") {
-          await withTimeout(
-            api.auth.updateMe({
-              full_name: fullName.trim() || undefined,
-              phone: phone.trim() || undefined,
-              marketing_opt_in: marketingOptIn,
-            }).catch(() => {}),
-            2500,
-          );
-        }
-        window.location.assign(postSignupHref(selectedPlan, redirect));
-        return;
-      }
-
-      setMessage(
-        "Account created! Check your email to confirm, then sign in. " +
-          "If you don't see it, check spam."
-      );
-      setMode("signin");
-      setConfirmPassword("");
-      setAcceptTerms(false);
-      setSelectedPlan("");
-      refreshCaptcha();
+      await handleSignupStart();
     } catch (err) {
-      setError(formatAuthError(err, "Sign up failed"));
+      setError(formatAuthError(err, "Could not send confirmation code"));
       refreshCaptcha();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmSignupCode = async (e) => {
+    e?.preventDefault?.();
+    if (!supabase) return;
+    setError("");
+    setMessage("");
+    if (!/^\d{6,12}$/.test(otpCode)) {
+      setError("Enter the confirmation code from your email.");
+      return;
+    }
+    if (codeSecondsLeft <= 0) {
+      setError("This confirmation code has expired. Please request a new one.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const sessionPayload = await bridgeSignupConfirm({
+        email,
+        password,
+        code: otpCode,
+        challenge_token: challengeToken,
+      });
+      await applyBridgeSession(supabase, sessionPayload);
+      const session = (await supabase.auth.getSession()).data.session;
+      await finishSignupSession(session);
+    } catch (err) {
+      setError(formatAuthError(err, "Confirmation failed"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendSignupCode = async () => {
+    if (resendCooldownSec > 0 || loading) return;
+    setError("");
+    setLoading(true);
+    try {
+      await handleSignupStart();
+    } catch (err) {
+      setError(formatAuthError(err, "Could not resend confirmation code"));
     } finally {
       setLoading(false);
     }
@@ -644,12 +663,18 @@ export default function Login() {
         </a>
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h1 className="text-xl font-bold text-[#1a2234] mb-2">
-            {mode === "signup" ? "Create account" : "Sign in"}
+            {mode === "signup" && signupStep === "code"
+              ? "Confirm your email"
+              : mode === "signup"
+                ? "Create account"
+                : "Sign in"}
           </h1>
           <p className="text-slate-500 text-sm mb-2">
-            {mode === "signup"
-              ? "Choose Free, Pro, or Realtor to create your account."
-              : "Use your account to continue."}
+            {mode === "signup" && signupStep === "code"
+              ? `Enter the confirmation code we sent to ${email}.`
+              : mode === "signup"
+                ? "Choose Free, Pro, or Realtor to create your account."
+                : "Use your account to continue."}
           </p>
           <p className="text-slate-400 text-xs mb-6 leading-relaxed">
             You stay signed in on this browser until you sign out or clear site data for Property Pocket. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
@@ -676,20 +701,98 @@ export default function Login() {
               <div className="flex gap-1 mb-5 p-1 bg-slate-100 rounded-xl">
                 <button
                   type="button"
-                  onClick={() => { setMode("signin"); setError(""); setMessage(""); refreshCaptcha(); }}
+                  onClick={() => {
+                    setMode("signin");
+                    setError("");
+                    setMessage("");
+                    resetSignupCodeStep();
+                    refreshCaptcha();
+                  }}
                   className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signin" ? "bg-white text-[#1a2234] shadow-sm" : "text-slate-500"}`}
                 >
                   Sign in
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setMode("signup"); setError(""); setMessage(""); refreshCaptcha(); }}
+                  onClick={() => {
+                    setMode("signup");
+                    setError("");
+                    setMessage("");
+                    resetSignupCodeStep();
+                    refreshCaptcha();
+                  }}
                   className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signup" ? "bg-white text-[#1a2234] shadow-sm" : "text-slate-500"}`}
                 >
                   Create account
                 </button>
               </div>
 
+              {mode === "signup" && signupStep === "code" ? (
+                <form onSubmit={handleConfirmSignupCode} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-2">
+                      Confirmation code
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]*"
+                      maxLength={12}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                      placeholder="6-digit code"
+                      disabled={loading}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm tracking-[0.35em] text-center font-semibold focus:outline-none focus:border-[#10b981]"
+                      required
+                    />
+                    <p className="text-center text-xs text-slate-500 mt-3">
+                      {codeSecondsLeft > 0
+                        ? `Code expires in ${Math.floor(codeSecondsLeft / 60)}:${String(codeSecondsLeft % 60).padStart(2, "0")}`
+                        : "Code expired — request a new one"}
+                    </p>
+                  </div>
+                  {error && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 rounded-xl p-3"
+                    >
+                      <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={loading || otpCode.length < 6 || codeSecondsLeft <= 0}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+                    Verify and create account
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleResendSignupCode}
+                      disabled={loading || resendCooldownSec > 0}
+                      className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      {resendCooldownSec > 0 ? `Resend in ${resendCooldownSec}s` : "Resend code"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError("");
+                        setMessage("");
+                        resetSignupCodeStep();
+                      }}
+                      disabled={loading}
+                      className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </form>
+              ) : (
               <form onSubmit={mode === "signup" ? handleSignUp : handleSignIn} className="space-y-4">
                 {mode === "signup" && (
                   <div>
@@ -878,11 +981,13 @@ export default function Login() {
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-                    {mode === "signup" ? "Create account" : "Sign in"}
+                    {mode === "signup" ? "Send confirmation code" : "Sign in"}
                   </button>
                 </div>
               </form>
+              )}
 
+              {!(mode === "signup" && signupStep === "code") && (
               <div className="mt-4 flex items-center justify-between">
                 <button
                   type="button"
@@ -901,6 +1006,7 @@ export default function Login() {
                   Forgot password?
                 </button>
               </div>
+              )}
             </>
           ) : (
             <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -964,7 +1070,7 @@ export default function Login() {
             </form>
           )}
 
-          {!forgotMode && (
+          {!forgotMode && !(mode === "signup" && signupStep === "code") && (
           <div className="mt-6 pt-6 border-t border-slate-100">
             <button
               type="button"

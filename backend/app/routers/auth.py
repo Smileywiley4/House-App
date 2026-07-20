@@ -1,6 +1,7 @@
-"""Auth routes: me, update_me, password sign-in/up. Most require valid Supabase JWT."""
+"""Auth routes: me, update_me, password sign-in, email-code signup. Most require valid Supabase JWT."""
 from datetime import datetime, timezone
 import logging
+import time
 from typing import Any, Literal
 
 import httpx
@@ -11,6 +12,14 @@ import stripe
 from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id
 from app.google_sheets_marketing import mark_account_cancelled, upsert_account_row
+from app.signup_challenge import (
+    SIGNUP_CODE_TTL_SEC,
+    SIGNUP_RESEND_COOLDOWN_SEC,
+    generate_six_digit_code,
+    hash_signup_code,
+    mint_signup_challenge,
+    read_signup_challenge,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -50,6 +59,16 @@ class PasswordSignUpBody(BaseModel):
     marketing_opt_in: bool = False
     terms_accepted: bool = False
     intended_plan: Literal["free", "premium", "realtor"] = "free"
+    challenge_token: str | None = None
+
+
+class SignupConfirmBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=8, max_length=200)
+    code: str = Field(min_length=6, max_length=12)
+    challenge_token: str
 
 
 async def _password_grant(email: str, password: str) -> dict[str, Any]:
@@ -88,55 +107,266 @@ async def _password_grant(email: str, password: str) -> dict[str, Any]:
     return data
 
 
+async def _find_user_by_email(email: str) -> dict[str, Any] | None:
+    settings = get_settings()
+    base = (settings.supabase_url or "").rstrip("/")
+    service = settings.supabase_service_role_key or ""
+    target = email.strip().lower()
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.get(
+            f"{base}/auth/v1/admin/users",
+            params={"page": 1, "per_page": 200},
+            headers={"apikey": service, "Authorization": f"Bearer {service}"},
+        )
+    if r.status_code >= 400:
+        return None
+    users = (r.json() or {}).get("users") or []
+    for user in users:
+        if str(user.get("email") or "").lower() == target:
+            return user
+    return None
+
+
+async def _send_resend_code(email: str, code: str) -> bool:
+    import os
+
+    api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    if not api_key:
+        return False
+    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Property Pocket <onboarding@resend.dev>"
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "from": from_addr,
+                "to": [email],
+                "subject": "Your Property Pocket confirmation code",
+                "text": (
+                    f"Your Property Pocket confirmation code is {code}.\n\n"
+                    "It expires in 15 minutes. If you did not request this, you can ignore this email."
+                ),
+                "html": (
+                    "<p>Your Property Pocket confirmation code is:</p>"
+                    f'<p style="font-size:28px;letter-spacing:6px;font-weight:700">{code}</p>'
+                    "<p>This code expires in <strong>15 minutes</strong>.</p>"
+                    "<p>If you did not request this, you can ignore this email.</p>"
+                ),
+            },
+        )
+    return r.status_code < 300
+
+
 @router.post("/sign-in")
 async def sign_in_with_password(body: PasswordSignInBody):
     """Password sign-in that bypasses anon-key CAPTCHA (service role grant)."""
     return await _password_grant(str(body.email).strip().lower(), body.password)
 
 
-@router.post("/sign-up")
-async def sign_up_with_password(body: PasswordSignUpBody):
-    """
-    Create an account (admin API) then return a session via service-role password grant.
-    Bypasses CAPTCHA misconfiguration on the new Supabase project.
-    """
+@router.post("/signup-start")
+async def signup_start(body: PasswordSignUpBody):
+    """Send a 15-minute email confirmation code. Does not finish signup."""
     if not body.terms_accepted:
         raise HTTPException(status_code=400, detail="Please agree to the Terms of Service to create an account.")
-    settings = get_settings()
-    supabase = get_supabase_admin()
     email = str(body.email).strip().lower()
+    if "@" not in email:
+        raise HTTPException(status_code=400, detail="A valid email is required.")
+
+    prior = read_signup_challenge(body.challenge_token)
+    if prior and prior.get("email") == email and prior.get("iat"):
+        elapsed = time.time() - float(prior["iat"])
+        if elapsed < SIGNUP_RESEND_COOLDOWN_SEC:
+            wait = int(SIGNUP_RESEND_COOLDOWN_SEC - elapsed) + 1
+            raise HTTPException(status_code=429, detail=f"Please wait {wait}s before requesting another code.")
+
+    existing = await _find_user_by_email(email)
+    if existing and existing.get("email_confirmed_at"):
+        raise HTTPException(status_code=400, detail="An account with this email already exists. Sign in instead.")
+
+    settings = get_settings()
+    base = (settings.supabase_url or "").rstrip("/")
+    service = settings.supabase_service_role_key or ""
     meta = {
         "terms_accepted": True,
         "marketing_opt_in": bool(body.marketing_opt_in),
         "intended_plan": body.intended_plan,
+        "signup_pending": True,
     }
     if body.full_name and body.full_name.strip():
         meta["full_name"] = body.full_name.strip()
     if body.phone and body.phone.strip():
         meta["phone"] = body.phone.strip()
-    try:
-        supabase.auth.admin.create_user(
-            {
-                "email": email,
-                "password": body.password,
-                "email_confirm": True,
-                "user_metadata": meta,
-            }
-        )
-    except Exception as exc:
-        msg = str(exc).lower()
-        if "already" in msg or "registered" in msg or "exists" in msg:
-            raise HTTPException(status_code=400, detail="An account with this email already exists. Sign in instead.") from exc
-        logger.exception("Admin create_user failed")
-        raise HTTPException(status_code=400, detail="Could not create account. Please try again.") from exc
-    try:
-        return await _password_grant(email, body.password)
-    except HTTPException:
-        # Account exists; ask them to sign in if grant fails for any reason.
+
+    now = int(time.time())
+    expires_at = now + SIGNUP_CODE_TTL_SEC
+    code = generate_six_digit_code()
+    challenge: dict[str, Any] = {
+        "email": email,
+        "exp": expires_at,
+        "iat": now,
+        "intended_plan": body.intended_plan,
+        "marketing_opt_in": bool(body.marketing_opt_in),
+        "terms_accepted": True,
+        "full_name": meta.get("full_name"),
+        "phone": meta.get("phone"),
+    }
+
+    delivery = "resend"
+    if await _send_resend_code(email, code):
+        challenge["mode"] = "custom"
+        challenge["code_hash"] = hash_signup_code(code, email)
+        # Ensure unconfirmed auth user exists with this password.
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            if existing:
+                await client.put(
+                    f"{base}/auth/v1/admin/users/{existing['id']}",
+                    headers={"apikey": service, "Authorization": f"Bearer {service}", "Content-Type": "application/json"},
+                    json={"password": body.password, "email_confirm": False, "user_metadata": meta},
+                )
+            else:
+                await client.post(
+                    f"{base}/auth/v1/admin/users",
+                    headers={"apikey": service, "Authorization": f"Bearer {service}", "Content-Type": "application/json"},
+                    json={"email": email, "password": body.password, "email_confirm": False, "user_metadata": meta},
+                )
+    else:
+        delivery = "supabase"
+        challenge["mode"] = "supabase_otp"
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            if not existing:
+                await client.post(
+                    f"{base}/auth/v1/admin/users",
+                    headers={"apikey": service, "Authorization": f"Bearer {service}", "Content-Type": "application/json"},
+                    json={"email": email, "password": body.password, "email_confirm": False, "user_metadata": meta},
+                )
+            otp = await client.post(
+                f"{base}/auth/v1/otp",
+                headers={"apikey": service, "Authorization": f"Bearer {service}", "Content-Type": "application/json"},
+                json={"email": email, "create_user": False, "data": meta},
+            )
+        if otp.status_code >= 400:
+            detail = "Could not send confirmation email"
+            try:
+                detail = otp.json().get("msg") or detail
+            except Exception:
+                pass
+            # Fallback: mint code via generate_link (no email send) only when debug enabled.
+            import os
+            if os.environ.get("SIGNUP_OTP_DEBUG") == "1":
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    link = await client.post(
+                        f"{base}/auth/v1/admin/generate_link",
+                        headers={
+                            "apikey": service,
+                            "Authorization": f"Bearer {service}",
+                            "Content-Type": "application/json",
+                        },
+                        json={"type": "magiclink", "email": email},
+                    )
+                link_data = link.json() if link.status_code < 400 else {}
+                debug_code = str(link_data.get("email_otp") or "")
+                if debug_code:
+                    challenge["mode"] = "custom"
+                    challenge["code_hash"] = hash_signup_code(debug_code, email)
+                    token = mint_signup_challenge(challenge)
+                    return {
+                        "email": email,
+                        "expires_at": datetime.fromtimestamp(expires_at, tz=timezone.utc).isoformat(),
+                        "expires_in": SIGNUP_CODE_TTL_SEC,
+                        "challenge_token": token,
+                        "delivery": "debug",
+                        "debug_code": debug_code,
+                    }
+            raise HTTPException(status_code=429 if otp.status_code == 429 else 502, detail=str(detail))
+
+    token = mint_signup_challenge(challenge)
+    return {
+        "email": email,
+        "expires_at": datetime.fromtimestamp(expires_at, tz=timezone.utc).isoformat(),
+        "expires_in": SIGNUP_CODE_TTL_SEC,
+        "challenge_token": token,
+        "delivery": delivery,
+    }
+
+
+@router.post("/signup-confirm")
+async def signup_confirm(body: SignupConfirmBody):
+    """Verify the email code and finish signup (session returned)."""
+    challenge = read_signup_challenge(body.challenge_token)
+    if not challenge:
         raise HTTPException(
             status_code=400,
-            detail="Account created, but automatic sign-in failed. Please sign in with your email and password.",
+            detail="This confirmation code has expired or is invalid. Please request a new code.",
         )
+    email = str(body.email).strip().lower()
+    if email != challenge.get("email"):
+        raise HTTPException(status_code=400, detail="Email does not match this confirmation request.")
+    code = str(body.code).strip()
+    if not code.isdigit() or not (6 <= len(code) <= 12):
+        raise HTTPException(status_code=400, detail="Enter the confirmation code from your email.")
+
+    settings = get_settings()
+    base = (settings.supabase_url or "").rstrip("/")
+    service = settings.supabase_service_role_key or ""
+    mode = challenge.get("mode") or "custom"
+
+    if mode in ("custom", "supabase_debug"):
+        if hash_signup_code(code, email) != challenge.get("code_hash"):
+            raise HTTPException(status_code=400, detail="That confirmation code is incorrect. Please try again.")
+    else:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            verify = await client.post(
+                f"{base}/auth/v1/verify",
+                headers={"apikey": service, "Authorization": f"Bearer {service}", "Content-Type": "application/json"},
+                json={"type": "email", "email": email, "token": code},
+            )
+        if verify.status_code >= 400:
+            detail = "That confirmation code is incorrect or expired."
+            try:
+                detail = verify.json().get("msg") or detail
+            except Exception:
+                pass
+            raise HTTPException(status_code=400, detail=str(detail))
+
+    user = await _find_user_by_email(email)
+    if not user or not user.get("id"):
+        raise HTTPException(status_code=400, detail="Signup session not found. Please start again.")
+
+    meta = {
+        "terms_accepted": True,
+        "marketing_opt_in": bool(challenge.get("marketing_opt_in")),
+        "intended_plan": challenge.get("intended_plan") or "free",
+        "signup_pending": False,
+    }
+    if challenge.get("full_name"):
+        meta["full_name"] = challenge["full_name"]
+    if challenge.get("phone"):
+        meta["phone"] = challenge["phone"]
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        upd = await client.put(
+            f"{base}/auth/v1/admin/users/{user['id']}",
+            headers={"apikey": service, "Authorization": f"Bearer {service}", "Content-Type": "application/json"},
+            json={"password": body.password, "email_confirm": True, "user_metadata": meta},
+        )
+    if upd.status_code >= 400:
+        detail = "Could not finish signup. Please try again."
+        try:
+            detail = upd.json().get("msg") or detail
+        except Exception:
+            pass
+        raise HTTPException(status_code=400, detail=str(detail))
+
+    return await _password_grant(email, body.password)
+
+
+@router.post("/sign-up")
+async def sign_up_legacy_removed():
+    """Legacy instant signup removed — use signup-start + signup-confirm."""
+    raise HTTPException(
+        status_code=400,
+        detail="Signup now requires email confirmation. Use /api/auth/signup-start then /api/auth/signup-confirm.",
+    )
 
 
 def _profile_to_user(row: dict | None) -> dict | None:
