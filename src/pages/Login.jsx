@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Home, Mail, Lock, Loader2, AlertCircle, Phone } from "lucide-react";
 import { getSharedSupabase } from "@/lib/supabase";
@@ -6,6 +6,7 @@ import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
 import { SeoHelmet } from "@/components/SeoHelmet";
 import { createPageUrl } from "@/utils";
+import CaptchaField, { isCaptchaConfigured } from "@/components/CaptchaField";
 import {
   saveOAuthPending,
   readOAuthPending,
@@ -92,11 +93,37 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [mode, setMode] = useState("signin"); // signin | signup
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [oauthLoading, setOauthLoading] = useState(false);
+
+  const handleCaptchaToken = useCallback((token) => {
+    setCaptchaToken(token || "");
+  }, []);
+
+  const refreshCaptcha = useCallback(() => {
+    setCaptchaToken("");
+    setCaptchaResetKey((key) => key + 1);
+  }, []);
+
+  const requireCaptchaToken = () => {
+    if (!isCaptchaConfigured()) {
+      if (import.meta.env.PROD) {
+        setError("Bot protection is not configured. Account actions are temporarily unavailable.");
+        return null;
+      }
+      return "";
+    }
+    if (!captchaToken) {
+      setError("Please complete the human verification challenge.");
+      return null;
+    }
+    return captchaToken;
+  };
 
   // Forgot password flow (sends a reset link email; never sends passwords)
   const [forgotMode, setForgotMode] = useState(false);
@@ -208,7 +235,16 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      const token = requireCaptchaToken();
+      if (token === null) {
+        setLoading(false);
+        return;
+      }
+      const { error: err } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: token ? { captchaToken: token } : undefined,
+      });
       if (err) throw err;
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
@@ -217,6 +253,7 @@ export default function Login() {
       window.location.href = resolveRedirectHref(redirect);
     } catch (err) {
       setError(err.message || "Sign in failed");
+      refreshCaptcha();
     } finally {
       setLoading(false);
     }
@@ -235,17 +272,34 @@ export default function Login() {
       return;
     }
 
+    let token = "";
+    if (isCaptchaConfigured()) {
+      if (!captchaToken) {
+        setForgotError("Please complete the human verification challenge.");
+        return;
+      }
+      token = captchaToken;
+    } else if (import.meta.env.PROD) {
+      setForgotError("Bot protection is not configured. Password reset is temporarily unavailable.");
+      return;
+    }
+
     setForgotLoading(true);
     try {
       // After reset, Supabase will redirect back to this page.
       const redirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}`;
-      const { error: err } = await supabase.auth.resetPasswordForEmail(targetEmail, { redirectTo });
+      const { error: err } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+        redirectTo,
+        captchaToken: token || undefined,
+      });
       if (err) throw err;
       setForgotSent(true);
+      refreshCaptcha();
     } catch (err) {
       // Defensive UX: do not reveal whether an email exists (prevents account enumeration).
       setForgotError("");
       setForgotSent(true);
+      refreshCaptcha();
     } finally {
       setForgotLoading(false);
     }
@@ -270,6 +324,9 @@ export default function Login() {
       return;
     }
 
+    const token = requireCaptchaToken();
+    if (token === null) return;
+
     setLoading(true);
     try {
       const emailRedirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent(redirect || "/")}`;
@@ -285,6 +342,7 @@ export default function Login() {
         options: {
           emailRedirectTo,
           data: userMetadata,
+          ...(token ? { captchaToken: token } : {}),
         },
       });
       if (err) throw err;
@@ -313,8 +371,10 @@ export default function Login() {
       setMode("signin");
       setConfirmPassword("");
       setAcceptTerms(false);
+      refreshCaptcha();
     } catch (err) {
       setError(err.message || "Sign up failed");
+      refreshCaptcha();
     } finally {
       setLoading(false);
     }
@@ -327,6 +387,10 @@ export default function Login() {
     if (mode === "signup" && !acceptTerms) {
       setError("Please agree to the Terms of Service to create an account.");
       return;
+    }
+    if (mode === "signup") {
+      const token = requireCaptchaToken();
+      if (token === null) return;
     }
     setLoading(true);
     try {
@@ -465,14 +529,14 @@ export default function Login() {
               <div className="flex gap-1 mb-5 p-1 bg-slate-100 rounded-xl">
                 <button
                   type="button"
-                  onClick={() => { setMode("signin"); setError(""); setMessage(""); }}
+                  onClick={() => { setMode("signin"); setError(""); setMessage(""); refreshCaptcha(); }}
                   className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signin" ? "bg-white text-[#1a2234] shadow-sm" : "text-slate-500"}`}
                 >
                   Sign in
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setMode("signup"); setError(""); setMessage(""); }}
+                  onClick={() => { setMode("signup"); setError(""); setMessage(""); refreshCaptcha(); }}
                   className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signup" ? "bg-white text-[#1a2234] shadow-sm" : "text-slate-500"}`}
                 >
                   Create account
@@ -606,12 +670,18 @@ export default function Login() {
                     </span>
                   </label>
                 )}
+                <CaptchaField
+                  onToken={handleCaptchaToken}
+                  resetKey={captchaResetKey}
+                  className="pt-1"
+                />
                 <div className="flex gap-2">
                   <button
                     type="submit"
                     disabled={
                       loading
                       || (mode === "signup" && (!acceptTerms || !password || password !== confirmPassword))
+                      || (isCaptchaConfigured() && !captchaToken)
                     }
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                   >
@@ -632,6 +702,7 @@ export default function Login() {
                     setForgotEmail(email);
                     setError("");
                     setMessage("");
+                    refreshCaptcha();
                   }}
                   className="text-xs font-semibold text-[#10b981] hover:underline"
                 >
@@ -656,6 +727,13 @@ export default function Login() {
                 </div>
               </div>
 
+              {!forgotSent && (
+                <CaptchaField
+                  onToken={handleCaptchaToken}
+                  resetKey={captchaResetKey}
+                />
+              )}
+
               {forgotError && (
                 <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 rounded-xl p-3">
                   <AlertCircle size={16} />
@@ -670,7 +748,7 @@ export default function Login() {
               ) : (
                 <button
                   type="submit"
-                  disabled={forgotLoading}
+                  disabled={forgotLoading || (isCaptchaConfigured() && !captchaToken)}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                 >
                   {forgotLoading ? <Loader2 size={18} className="animate-spin" /> : null}
@@ -681,7 +759,10 @@ export default function Login() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setForgotMode(false)}
+                  onClick={() => {
+                    setForgotMode(false);
+                    refreshCaptcha();
+                  }}
                   disabled={forgotLoading}
                   className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl text-sm hover:bg-slate-50 disabled:opacity-60"
                 >
@@ -691,11 +772,17 @@ export default function Login() {
             </form>
           )}
 
+          {!forgotMode && (
           <div className="mt-6 pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={() => handleOAuth("google")}
-              disabled={loading || oauthLoading || (mode === "signup" && !acceptTerms)}
+              disabled={
+                loading
+                || oauthLoading
+                || (mode === "signup" && !acceptTerms)
+                || (mode === "signup" && isCaptchaConfigured() && !captchaToken)
+              }
               className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition-colors"
             >
               {oauthLoading ? (
@@ -716,6 +803,7 @@ export default function Login() {
               </p>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>
