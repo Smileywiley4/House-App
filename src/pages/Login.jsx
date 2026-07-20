@@ -87,9 +87,11 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [mode, setMode] = useState("signin"); // signin | signup
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -254,6 +256,20 @@ export default function Login() {
     if (!supabase) return;
     setError("");
     setMessage("");
+
+    if (!acceptTerms) {
+      setError("Please agree to the Terms of Service to create an account.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please enter the same password twice.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
     setLoading(true);
     try {
       const emailRedirectTo = `${window.location.origin}/login?redirect=${encodeURIComponent(redirect || "/")}`;
@@ -261,6 +277,7 @@ export default function Login() {
       if (fullName.trim()) userMetadata.full_name = fullName.trim();
       if (phone.trim()) userMetadata.phone = phone.trim();
       userMetadata.marketing_opt_in = marketingOptIn;
+      userMetadata.terms_accepted = true;
 
       const { data, error: err } = await supabase.auth.signUp({
         email,
@@ -294,6 +311,8 @@ export default function Login() {
           "If you don't see it, check spam. You can also try signing in — some projects allow login before confirm."
       );
       setMode("signin");
+      setConfirmPassword("");
+      setAcceptTerms(false);
     } catch (err) {
       setError(err.message || "Sign up failed");
     } finally {
@@ -305,6 +324,10 @@ export default function Login() {
     if (!supabase) return;
     setError("");
     setMessage("");
+    if (mode === "signup" && !acceptTerms) {
+      setError("Please agree to the Terms of Service to create an account.");
+      return;
+    }
     setLoading(true);
     try {
       saveOAuthPending({
@@ -325,6 +348,7 @@ export default function Login() {
         if (fullName.trim()) meta.full_name = fullName.trim();
         if (phone.trim()) meta.phone = phone.trim();
         if (marketingOptIn) meta.marketing_opt_in = true;
+        meta.terms_accepted = true;
         if (Object.keys(meta).length > 0) {
           options.data = meta;
         }
@@ -510,9 +534,61 @@ export default function Login() {
                       placeholder="••••••••"
                       className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
                       required
+                      minLength={mode === "signup" ? 8 : undefined}
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     />
                   </div>
                 </div>
+                {mode === "signup" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5">Confirm password</label>
+                    <div className="relative">
+                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none ${
+                          confirmPassword && confirmPassword !== password
+                            ? "border-red-400 focus:border-red-500"
+                            : "border-slate-200 focus:border-[#10b981]"
+                        }`}
+                        required
+                        minLength={8}
+                        autoComplete="new-password"
+                      />
+                    </div>
+                    {confirmPassword && confirmPassword !== password && (
+                      <p className="mt-1.5 text-xs font-semibold text-red-600">Passwords do not match.</p>
+                    )}
+                    {confirmPassword && password && confirmPassword === password && (
+                      <p className="mt-1.5 text-xs font-semibold text-[#059669]">Passwords match.</p>
+                    )}
+                  </div>
+                )}
+                {mode === "signup" && (
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      required
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#10b981] focus:ring-[#10b981]"
+                    />
+                    <span className="text-xs text-slate-600 leading-relaxed">
+                      I agree to the{" "}
+                      <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline" target="_blank" rel="noopener noreferrer">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline" target="_blank" rel="noopener noreferrer">
+                        Privacy Policy
+                      </Link>
+                      . <span className="text-slate-400">(Required)</span>
+                    </span>
+                  </label>
+                )}
                 {mode === "signup" && (
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
@@ -533,7 +609,10 @@ export default function Login() {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={
+                      loading
+                      || (mode === "signup" && (!acceptTerms || !password || password !== confirmPassword))
+                    }
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : null}
@@ -616,7 +695,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => handleOAuth("google")}
-              disabled={loading || oauthLoading}
+              disabled={loading || oauthLoading || (mode === "signup" && !acceptTerms)}
               className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition-colors"
             >
               {oauthLoading ? (
@@ -631,6 +710,11 @@ export default function Login() {
               )}
               {oauthLoading ? "Signing in..." : mode === "signup" ? "Sign up with Google" : "Continue with Google"}
             </button>
+            {mode === "signup" && !acceptTerms && (
+              <p className="mt-2 text-center text-[11px] text-slate-400">
+                Agree to the Terms of Service above to continue with Google.
+              </p>
+            )}
           </div>
         </div>
       </div>
