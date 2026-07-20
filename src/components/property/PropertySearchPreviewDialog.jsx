@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Bath,
   BedDouble,
   CalendarDays,
+  CircleDollarSign,
   Columns3,
   Home,
   MapPin,
   Ruler,
+  UserRound,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,12 +28,22 @@ function money(value) {
   return value == null ? null : `$${Number(value).toLocaleString()}`;
 }
 
+function number(value) {
+  return value == null ? null : Number(value).toLocaleString();
+}
+
 function formatDate(value) {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime())
     ? String(value)
     : parsed.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function labelize(value) {
+  return String(value || "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (letter) => letter.toUpperCase());
 }
 
 function evaluationUrl(property) {
@@ -52,6 +64,22 @@ function evaluationUrl(property) {
 export default function PropertySearchPreviewDialog({ property, open, onOpenChange }) {
   const navigate = useNavigate();
   const [imageFailed, setImageFailed] = useState(false);
+
+  const history = useMemo(() => {
+    if (!property) return [];
+    const rows = [...(property.listing_history || []), ...(property.sale_history || [])];
+    const seen = new Set();
+    return rows
+      .filter((row) => {
+        const key = `${row.date}-${row.event}-${row.price}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+      .slice(0, 6);
+  }, [property]);
+
   if (!property) return null;
 
   const streetViewUrl =
@@ -60,13 +88,38 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
       : null;
   const status = property.listing_status || (property.on_market ? "Active" : "Off market");
   const primaryPrice = property.price;
-  const secondaryPrice = property.last_sale_price;
-  const details = [
-    { icon: Home, label: property.property_type },
-    { icon: CalendarDays, label: property.year_built ? `Built in ${property.year_built}` : null },
-    { icon: Ruler, label: property.lot_size ? `${Number(property.lot_size).toLocaleString()} sq ft lot` : null },
-    { icon: MapPin, label: property.county ? `${property.county} County` : null },
-  ].filter(item => item.label);
+  const priceLabel = property.price_label
+    || (property.list_price != null
+      ? "Current listing price"
+      : property.last_list_price != null
+        ? "Last listed price"
+        : property.estimated_value != null
+          ? "Estimated value"
+          : property.last_sale_price != null
+            ? "Last recorded sale"
+            : null);
+  const displayPrice = primaryPrice ?? property.last_list_price ?? property.estimated_value ?? property.last_sale_price;
+
+  const facts = [
+    { label: "Property type", value: property.property_type, icon: Home },
+    { label: "Year built", value: property.year_built, icon: CalendarDays },
+    { label: "Lot size", value: property.lot_size != null ? `${number(property.lot_size)} sq ft` : null, icon: MapPin },
+    { label: "County", value: property.county ? `${property.county} County` : null, icon: MapPin },
+    { label: "Annual taxes", value: money(property.annual_taxes), icon: CircleDollarSign },
+    { label: "Tax assessment", value: money(property.tax_assessment), icon: CircleDollarSign },
+    { label: "HOA", value: property.hoa_fee != null ? `${money(property.hoa_fee)}/mo` : null, icon: CircleDollarSign },
+    { label: "Days on market", value: property.days_on_market, icon: CalendarDays },
+    { label: "Listed", value: formatDate(property.listed_date), icon: CalendarDays },
+    { label: "MLS", value: property.mls_name ? `${property.mls_name}${property.mls_number ? ` #${property.mls_number}` : ""}` : null, icon: Home },
+  ].filter((item) => item.value !== null && item.value !== undefined && item.value !== "");
+
+  const features = Object.entries(property.features || {}).filter(([, value]) => value !== false && value != null);
+
+  const nearby = [
+    property.nearby_schools && { label: "Schools", value: property.nearby_schools },
+    property.nearby_hospitals && { label: "Hospitals", value: property.nearby_hospitals },
+    property.nearby_highways && { label: "Highways", value: property.nearby_highways },
+  ].filter(Boolean);
 
   const scoreProperty = () => {
     saveCurrentProperty(property);
@@ -88,7 +141,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
           {property.formatted_address || property.address}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Property preview with facts and actions to score or compare.
+          Property preview with listing facts and actions to score or compare.
         </DialogDescription>
 
         <div className="relative h-60 bg-slate-200 sm:h-80">
@@ -113,7 +166,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
         </div>
 
         <div className="grid lg:grid-cols-[1fr_19rem]">
-          <div className="p-5 sm:p-7">
+          <div className="space-y-5 p-5 sm:p-7">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
@@ -127,29 +180,33 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
                 </p>
               </div>
               <div className="sm:text-right">
-                {primaryPrice != null ? (
+                {displayPrice != null ? (
                   <>
-                    <div className="text-3xl font-black text-slate-950">{money(primaryPrice)}</div>
-                    <div className="text-xs text-slate-500">Current listing price</div>
-                  </>
-                ) : secondaryPrice != null ? (
-                  <>
-                    <div className="text-2xl font-black text-slate-950">{money(secondaryPrice)}</div>
-                    <div className="text-xs text-slate-500">
-                      Last recorded sale{property.last_sale_date ? ` · ${formatDate(property.last_sale_date)}` : ""}
-                    </div>
+                    <div className="text-3xl font-black text-slate-950">{money(displayPrice)}</div>
+                    <div className="text-xs text-slate-500">{priceLabel || "Price"}</div>
+                    {property.estimated_value != null && property.price == null && property.last_list_price == null && (
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        Range {money(property.estimated_value_low)} – {money(property.estimated_value_high)}
+                      </div>
+                    )}
+                    {property.last_sale_price != null && displayPrice !== property.last_sale_price && (
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        Last sale {money(property.last_sale_price)}
+                        {property.last_sale_date ? ` · ${formatDate(property.last_sale_date)}` : ""}
+                      </div>
+                    )}
                   </>
                 ) : (
-                  <div className="text-sm font-semibold text-slate-500">No active listing price</div>
+                  <div className="text-sm font-semibold text-slate-500">No price on record</div>
                 )}
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-3 divide-x divide-slate-200 rounded-xl border border-slate-200 bg-slate-50 py-4">
+            <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-xl border border-slate-200 bg-slate-50 py-4">
               {[
                 { icon: BedDouble, value: property.bedrooms, label: "beds" },
                 { icon: Bath, value: property.bathrooms, label: "baths" },
-                { icon: Ruler, value: property.sqft ? Number(property.sqft).toLocaleString() : null, label: "sq ft" },
+                { icon: Ruler, value: property.sqft ? number(property.sqft) : null, label: "sq ft" },
               ].map(({ icon: Icon, value, label }) => (
                 <div key={label} className="text-center">
                   <Icon className="mx-auto mb-1 text-emerald-600" size={18} />
@@ -159,22 +216,79 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
               ))}
             </div>
 
-            {details.length > 0 && (
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                {details.map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2.5 text-sm font-medium text-slate-700">
-                    <Icon size={15} className="text-slate-500" />
-                    {label}
+            {property.description && (
+              <p className="text-sm leading-6 text-slate-600">{property.description}</p>
+            )}
+
+            {facts.length > 0 && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {facts.map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex items-start gap-2 rounded-lg bg-slate-100 px-3 py-2.5 text-sm text-slate-700">
+                    <Icon size={15} className="mt-0.5 shrink-0 text-slate-500" />
+                    <span>
+                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</span>
+                      <span className="font-medium text-slate-800">{value}</span>
+                    </span>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
-              {property.annual_taxes != null && <span>Annual taxes: <strong className="text-slate-700">{money(property.annual_taxes)}</strong></span>}
-              {property.hoa_fee != null && <span>HOA: <strong className="text-slate-700">{money(property.hoa_fee)}/mo</strong></span>}
-              {property.data_updated_at && <span>Data checked {formatDate(property.data_updated_at)}</span>}
-            </div>
+            {features.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-bold text-slate-900">Features</h3>
+                <div className="flex flex-wrap gap-2">
+                  {features.slice(0, 14).map(([key, value]) => (
+                    <span key={key} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
+                      {labelize(key)}{value === true ? "" : `: ${value}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-bold text-slate-900">Price and sale history</h3>
+                <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                  {history.map((row, index) => (
+                    <div key={`${row.date}-${index}`} className="flex items-center justify-between gap-4 px-3 py-2.5 text-sm">
+                      <div>
+                        <div className="font-medium text-slate-800">{row.event || "Property event"}</div>
+                        <div className="text-xs text-slate-500">{formatDate(row.date)}</div>
+                      </div>
+                      {row.price != null && <div className="font-semibold text-slate-900">{money(row.price)}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {nearby.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-bold text-slate-900">Nearby</h3>
+                <div className="space-y-2 text-sm text-slate-600">
+                  {nearby.map((item) => (
+                    <p key={item.label}>
+                      <span className="font-semibold text-slate-800">{item.label}: </span>
+                      {item.value}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {property.listing_agent?.name && (
+              <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+                <UserRound size={16} className="mt-0.5 text-emerald-600" />
+                <div>
+                  <div className="font-semibold text-slate-900">{property.listing_agent.name}</div>
+                  {property.listing_agent.office && (
+                    <div className="text-xs text-slate-500">{property.listing_agent.office}</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <aside className="border-t border-slate-200 bg-slate-50 p-5 sm:p-6 lg:border-l lg:border-t-0">
@@ -196,9 +310,20 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
             >
               <Columns3 size={17} /> Add to Compare
             </button>
-            <p className="mt-4 text-[11px] leading-5 text-slate-500">
-              Property data may be incomplete or delayed. Verify material facts with an agent or public records.
-            </p>
+
+            <div className="mt-5 space-y-1.5 text-[11px] leading-5 text-slate-500">
+              {property.data_sources?.length > 0 && (
+                <p>
+                  <span className="font-semibold text-slate-700">Sources: </span>
+                  {property.data_sources.join(", ")}
+                </p>
+              )}
+              {property.data_updated_at && <p>Data checked {formatDate(property.data_updated_at)}.</p>}
+              <p>
+                Property facts come from licensed records and public listing information. We do not scrape private listing
+                galleries. Verify material facts with an agent or public records before deciding.
+              </p>
+            </div>
           </aside>
         </div>
       </DialogContent>

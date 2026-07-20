@@ -13,7 +13,7 @@ from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id, get_optional_user_id, user_has_paid_plan, require_paid_plan
 from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
 from app.google_places import autocomplete_addresses, get_property_via_google, get_autoscore_data, places_v1_search_nearby
-from app.rentcast import get_rentcast_property
+from app.rentcast import get_rentcast_property, is_sparse_property
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
@@ -260,12 +260,17 @@ def _build_basic_property_response(
         "nearby_hospitals": gd.get("nearby_hospitals"),
         "nearby_schools": gd.get("nearby_schools"),
         "nearby_highways": gd.get("nearby_highways"),
-        "price": rc.get("price") or listing_hints.get("price"),
-        "bedrooms": rc.get("bedrooms") or listing_hints.get("bedrooms"),
-        "bathrooms": rc.get("bathrooms") or listing_hints.get("bathrooms"),
-        "sqft": rc.get("sqft") or listing_hints.get("sqft"),
-        "year_built": rc.get("year_built") or listing_hints.get("year_built"),
-        "property_type": rc.get("property_type"),
+        "price": rc.get("price") or listing_hints.get("price") or rc.get("last_list_price") or rc.get("estimated_value"),
+        "list_price": rc.get("price"),
+        "last_list_price": rc.get("last_list_price"),
+        "estimated_value": rc.get("estimated_value"),
+        "estimated_value_low": rc.get("estimated_value_low"),
+        "estimated_value_high": rc.get("estimated_value_high"),
+        "bedrooms": rc.get("bedrooms") if rc.get("bedrooms") is not None else listing_hints.get("bedrooms"),
+        "bathrooms": rc.get("bathrooms") if rc.get("bathrooms") is not None else listing_hints.get("bathrooms"),
+        "sqft": rc.get("sqft") if rc.get("sqft") is not None else listing_hints.get("sqft"),
+        "year_built": rc.get("year_built") if rc.get("year_built") is not None else listing_hints.get("year_built"),
+        "property_type": rc.get("property_type") or listing_hints.get("property_type"),
         "county": rc.get("county"),
         "lot_size": rc.get("lot_size"),
         "hoa_fee": rc.get("hoa_fee"),
@@ -273,9 +278,11 @@ def _build_basic_property_response(
         "listing_type": rc.get("listing_type"),
         "listed_date": rc.get("listed_date"),
         "last_seen_date": rc.get("last_seen_date"),
+        "removed_date": rc.get("removed_date"),
         "days_on_market": rc.get("days_on_market"),
         "mls_name": rc.get("mls_name"),
         "mls_number": rc.get("mls_number"),
+        "listing_agent": rc.get("listing_agent"),
         "last_sale_date": rc.get("last_sale_date"),
         "last_sale_price": rc.get("last_sale_price"),
         "tax_assessment": rc.get("tax_assessment"),
@@ -289,16 +296,34 @@ def _build_basic_property_response(
         "walk_score": None,
         "school_rating": None,
         "on_market": rc.get("on_market") if rc else bool(listing_hints.get("on_market") or listing_hints.get("price")),
-        "listing_source": "RentCast" if rc.get("price") else listing_hints.get("listing_source"),
+        "listing_source": (
+            "RentCast"
+            if rc.get("price") or rc.get("last_list_price") or rc.get("estimated_value")
+            else listing_hints.get("listing_source")
+        ),
         "data_source": "rentcast" if rc else ("public_listings" if has_listing else ("google_maps" if gd else None)),
         "data_sources": [
             source
             for source, present in (
                 ("RentCast", bool(rc)),
                 ("Google Maps", bool(gd)),
+                ("Public listings", bool(listing_hints)),
             )
             if present
         ],
+        "price_label": (
+            "Current listing price"
+            if rc.get("price") is not None
+            else (
+                "Last listed price"
+                if rc.get("last_list_price") is not None
+                else (
+                    "Estimated value"
+                    if rc.get("estimated_value") is not None
+                    else ("Listing price" if listing_hints.get("price") is not None else None)
+                )
+            )
+        ),
     }
 
 
@@ -405,7 +430,7 @@ async def search(
         # persistence is temporarily unavailable.
         logger.warning("Supabase unavailable during property lookup", exc_info=True)
     provider_key = "rentcast" if get_settings().rentcast_api_key else "basic"
-    result_cache_key = f"v2_{provider_key}_{'paid' if is_paid else 'public'}_{key}"
+    result_cache_key = f"v3_{provider_key}_{'paid' if is_paid else 'public'}_{key}"
 
     # Paid and public results use separate keys so AI-enriched paid data cannot
     # be replayed to a free or anonymous caller.
@@ -424,10 +449,10 @@ async def search(
     except Exception:
         pass
 
-    google_data, rentcast_data = await asyncio.gather(
-        get_property_via_google(address),
-        get_rentcast_property(address),
-    )
+    # Geocode first so RentCast can use the canonical Street, City, State Zip form.
+    google_data = await get_property_via_google(address)
+    preferred = (google_data or {}).get("formatted_address")
+    rentcast_data = await get_rentcast_property(address, preferred_address=preferred)
     if google_data:
         logger.info("Google geocode: %s, %s %s", google_data.get("city"), google_data.get("state"), google_data.get("zip"))
     if rentcast_data:
@@ -437,10 +462,14 @@ async def search(
             rentcast_data.get("listing_status") or "property record",
         )
 
-    search_addr = (google_data.get("formatted_address") or address) if google_data else address
-    # Public snippets are a legacy fallback only. RentCast facts take priority
-    # and should never be overwritten by scraped or generated values.
-    web_results = [] if rentcast_data else await search_property_listings(search_addr)
+    search_addr = preferred or address
+    # Always try public listing snippets when RentCast is missing core facts.
+    # Do not scrape listing-site photo galleries — licensed records + snippets only.
+    need_web_hints = is_sparse_property(rentcast_data) or any(
+        rentcast_data.get(field) in (None, "")
+        for field in ("bedrooms", "bathrooms", "sqft", "price", "year_built")
+    ) if rentcast_data else True
+    web_results = await search_property_listings(search_addr) if need_web_hints else []
     listing_hints = extract_listing_hints(web_results)
     web_context = format_search_context(web_results)
     if web_context:
