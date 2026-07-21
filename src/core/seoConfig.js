@@ -14,6 +14,11 @@ export const SEO_BY_PAGE = {
     description:
       'Compare properties with weighted scores. Enter an address, pick what matters—schools, commute, noise—and see clear side-by-side results.',
   },
+  BrowseProperties: {
+    title: 'Search properties on the map',
+    description:
+      'Browse live for-sale listings and off-market value estimates across the U.S. Filter by price, beds, baths, and more, then score homes to compare.',
+  },
   QuickCompare: {
     title: 'Quick compare properties',
     description: 'Fast head-to-head comparison flow for two or more addresses using your saved weights.',

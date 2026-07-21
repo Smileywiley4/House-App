@@ -294,6 +294,7 @@ export function createPythonBackendAdapter() {
       search: (address) => request('POST', '/api/property/search', { address }),
       autocomplete: (query, signal) =>
         publicGet(`/api/property/autocomplete?q=${encodeURIComponent(query)}`, signal),
+      browse: (body) => request('POST', '/api/property/browse', body),
       searchByCriteria: (filters, source = 'public') =>
         request('POST', '/api/property/search-by-criteria', { filters, source }),
       autoscore: (address, property) => request('POST', '/api/property/autoscore', { address, property }),

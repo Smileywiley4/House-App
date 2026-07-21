@@ -13,12 +13,13 @@ from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id, get_optional_user_id, user_has_paid_plan, require_paid_plan
 from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
 from app.google_places import autocomplete_addresses, get_property_via_google, get_autoscore_data, places_v1_search_nearby
-from app.rentcast import get_rentcast_property, is_sparse_property
+from app.rentcast import browse_rentcast, get_rentcast_property, is_sparse_property
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
 logger = logging.getLogger(__name__)
 PUBLIC_SEARCH_LIMIT = 30
+PUBLIC_BROWSE_LIMIT = 60
 PUBLIC_STREET_VIEW_LIMIT = 60
 PUBLIC_AUTOSCORE_LIMIT = 10
 PUBLIC_SEARCH_WINDOW_SECONDS = 60 * 60
@@ -549,11 +550,56 @@ class SearchByCriteriaBody(BaseModel):
     source: str = "public"  # "public" | "private"
 
 
+class BrowseBody(BaseModel):
+    mode: str = Field(default="for_sale", description="for_sale | off_market")
+    latitude: float | None = None
+    longitude: float | None = None
+    radius: float | None = Field(default=5, description="Miles")
+    city: str | None = None
+    state: str | None = None
+    zip: str | None = None
+    filters: dict = Field(default_factory=dict)
+    limit: int = 40
+    offset: int = 0
+
+
+@router.post("/browse")
+async def browse_properties(
+    request: Request,
+    body: BrowseBody,
+    user_id: str | None = Depends(get_optional_user_id),
+):
+    """Map/list inventory browse via RentCast (licensed). Guests are rate-limited."""
+    if not user_id:
+        _enforce_public_search_limit(request, namespace="browse", limit=PUBLIC_BROWSE_LIMIT)
+
+    has_place = bool((body.city or "").strip() or (body.zip or "").strip())
+    has_geo = body.latitude is not None and body.longitude is not None
+    if not has_place and not has_geo:
+        raise HTTPException(status_code=400, detail="Provide a city/ZIP or map center coordinates.")
+
+    result = await browse_rentcast(
+        mode=body.mode,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        radius=body.radius,
+        city=(body.city or "").strip() or None,
+        state=(body.state or "").strip() or None,
+        zip_code=(body.zip or "").strip() or None,
+        filters=body.filters or {},
+        limit=body.limit,
+        offset=body.offset,
+    )
+    if result.get("error") == "RentCast is not configured":
+        raise HTTPException(status_code=503, detail="Property browse is not configured.")
+    return result
+
+
 @router.post("/search-by-criteria")
 async def search_by_criteria(
     body: SearchByCriteriaBody, user_id: str = Depends(require_paid_plan)
 ):
-    """Search properties by preset filters. Public: LLM-suggested listings. Private: realtor's private_listings."""
+    """Search properties by preset filters. Public: RentCast. Private: realtor's private_listings."""
     f = body.filters or {}
     source = (body.source or "public").lower()
 
@@ -590,15 +636,25 @@ async def search_by_criteria(
             "properties": [_listing_to_property(x) for x in rows],
         }
 
-    # Do not present generated addresses or prices as market inventory. Enable
-    # this only after wiring a licensed listing provider with a query endpoint.
-    raise HTTPException(
-        status_code=503,
-        detail=(
-            "Public criteria search is temporarily unavailable until a verified "
-            "listing-data provider is configured. Private listings remain available."
-        ),
+    result = await browse_rentcast(
+        mode="for_sale",
+        city=(f.get("city") or "").strip() or None,
+        state=(f.get("state") or "").strip() or None,
+        zip_code=(f.get("zip") or "").strip() or None,
+        filters=f,
+        limit=40,
+        offset=0,
     )
+    if result.get("error") == "RentCast is not configured":
+        raise HTTPException(
+            status_code=503,
+            detail="Public criteria search is unavailable until RentCast is configured.",
+        )
+    return {
+        "source": "public",
+        "properties": result.get("properties") or [],
+        "total": result.get("total") or 0,
+    }
 
 
 def _listing_to_property(row: dict) -> dict:

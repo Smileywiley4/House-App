@@ -72,6 +72,9 @@ def _safe_features(features: dict | None) -> dict:
         "roomCount",
         "unitCount",
         "viewType",
+        "basement",
+        "basementType",
+        "waterfront",
     )
     source = features or {}
     return {key: source[key] for key in allowed if source.get(key) not in (None, "")}
@@ -125,6 +128,18 @@ def _normalize(record: dict | None, listing: dict | None, avm: dict | None = Non
         "lot_size": _coalesce(listing.get("lotSize"), record.get("lotSize")),
         "year_built": _coalesce(listing.get("yearBuilt"), record.get("yearBuilt")),
         "hoa_fee": _coalesce((listing.get("hoa") or {}).get("fee"), (record.get("hoa") or {}).get("fee")),
+        "parking_spaces": _coalesce(
+            (record.get("features") or {}).get("garageSpaces"),
+            (listing.get("features") or {}).get("garageSpaces"),
+        ),
+        "stories": _coalesce(
+            (record.get("features") or {}).get("floorCount"),
+            (listing.get("features") or {}).get("floorCount"),
+        ),
+        "cover_photo": _coalesce(
+            listing.get("primaryPhotoUrl"),
+            (listing.get("photos") or [None])[0] if isinstance(listing.get("photos"), list) else None,
+        ),
         # Active listing price first; otherwise keep last known list price separately.
         "price": listing_price if active else None,
         "last_list_price": listing_price if listing_price is not None and not active else None,
@@ -251,3 +266,353 @@ async def get_rentcast_property(address: str, preferred_address: str | None = No
     except Exception as exc:
         logger.warning("RentCast property lookup failed: %s", exc)
         return None
+
+
+PROPERTY_TYPE_MAP = {
+    "house": "Single Family",
+    "houses": "Single Family",
+    "single_family": "Single Family",
+    "townhome": "Townhouse",
+    "townhomes": "Townhouse",
+    "townhouse": "Townhouse",
+    "apartment": "Apartment",
+    "apartments": "Apartment",
+    "condo": "Condo",
+    "condos": "Condo",
+    "multi_family": "Multi-Family",
+    "multifamily": "Multi-Family",
+    "lot": "Land",
+    "lots": "Land",
+    "land": "Land",
+}
+
+
+def _range_param(min_v: Any, max_v: Any) -> str | None:
+    """RentCast range syntax: min:max, *:max, min:*, or single max."""
+    has_min = min_v is not None and str(min_v).strip() != ""
+    has_max = max_v is not None and str(max_v).strip() != ""
+    if not has_min and not has_max:
+        return None
+    lo = str(int(float(min_v))) if has_min else "*"
+    hi = str(int(float(max_v))) if has_max else "*"
+    if lo == "*" and hi != "*":
+        return f"*:{hi}"
+    if hi == "*" and lo != "*":
+        return f"{lo}:*"
+    if lo == hi:
+        return lo
+    return f"{lo}:{hi}"
+
+
+def _beds_baths_param(value: Any) -> str | None:
+    """Map UI 1|2|3|4|5+ into RentCast multi / range values."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, (list, tuple, set)):
+        parts = []
+        for item in value:
+            text = str(item).strip().lower()
+            if not text:
+                continue
+            if text.endswith("+") or text == "5+":
+                parts.append("5:*")
+            else:
+                try:
+                    parts.append(str(int(float(text))))
+                except (TypeError, ValueError):
+                    continue
+        return "|".join(parts) if parts else None
+    text = str(value).strip().lower()
+    if text.endswith("+") or text == "5+":
+        return "5:*"
+    try:
+        return str(int(float(text)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _truthy_feature(features: dict | None, *keys: str) -> bool:
+    feats = features or {}
+    for key in keys:
+        val = feats.get(key)
+        if val is True:
+            return True
+        if isinstance(val, (int, float)) and val > 0:
+            return True
+        if isinstance(val, str) and val.strip() and val.strip().lower() not in {"false", "no", "none", "0"}:
+            return True
+    return False
+
+
+def _passes_amenity_filters(row: dict, filters: dict) -> bool:
+    feats = row.get("features") or {}
+    if filters.get("must_have_ac") and not _truthy_feature(feats, "cooling", "coolingType"):
+        return False
+    if filters.get("must_have_pool") and not _truthy_feature(feats, "pool", "poolType"):
+        return False
+    if filters.get("waterfront"):
+        if not _truthy_feature(feats, "waterfront"):
+            view = str(feats.get("viewType") or "").lower()
+            if not any(token in view for token in ("water", "lake", "ocean", "bay", "river")):
+                return False
+    if filters.get("must_have_garage") and not _truthy_feature(feats, "garage", "garageSpaces", "garageType"):
+        return False
+    if filters.get("has_basement") and not _truthy_feature(feats, "basement", "basementType"):
+        return False
+    if filters.get("single_story_only"):
+        stories = row.get("stories")
+        if stories is None:
+            stories = feats.get("floorCount")
+        try:
+            if stories is not None and float(stories) > 1:
+                return False
+            if stories is None:
+                return False
+        except (TypeError, ValueError):
+            return False
+    parking_min = filters.get("parking_min")
+    if parking_min is not None and str(parking_min).strip() != "":
+        try:
+            need = int(float(str(parking_min).replace("+", "")))
+            spaces = row.get("parking_spaces")
+            if spaces is None:
+                spaces = feats.get("garageSpaces")
+            if spaces is None or float(spaces) < need:
+                return False
+        except (TypeError, ValueError):
+            return False
+    if filters.get("no_hoa"):
+        fee = row.get("hoa_fee")
+        if fee is not None:
+            try:
+                if float(fee) > 0:
+                    return False
+            except (TypeError, ValueError):
+                return False
+    return True
+
+
+def _card_from_normalized(row: dict, *, mode: str) -> dict:
+    on_market = bool(row.get("on_market"))
+    display_price = row.get("price") if on_market else (row.get("estimated_value") or row.get("last_list_price") or row.get("tax_assessment"))
+    return {
+        "id": row.get("rentcast_id"),
+        "formatted_address": row.get("formatted_address"),
+        "address": row.get("address"),
+        "city": row.get("city"),
+        "state": row.get("state"),
+        "zip": row.get("zip"),
+        "lat": row.get("lat"),
+        "lng": row.get("lng"),
+        "price": display_price,
+        "list_price": row.get("price"),
+        "estimated_value": row.get("estimated_value"),
+        "bedrooms": row.get("bedrooms"),
+        "bathrooms": row.get("bathrooms"),
+        "sqft": row.get("sqft"),
+        "lot_size": row.get("lot_size"),
+        "year_built": row.get("year_built"),
+        "property_type": row.get("property_type"),
+        "hoa_fee": row.get("hoa_fee"),
+        "parking_spaces": row.get("parking_spaces"),
+        "stories": row.get("stories"),
+        "days_on_market": row.get("days_on_market"),
+        "listing_status": row.get("listing_status"),
+        "on_market": on_market,
+        "mode": mode,
+        "cover_photo": row.get("cover_photo"),
+        "mls_name": row.get("mls_name"),
+        "features": row.get("features") or {},
+        "data_source": "rentcast",
+    }
+
+
+async def _get_search(client: httpx.AsyncClient, path: str, params: dict) -> tuple[list[dict], dict]:
+    response = await client.get(path, params=params)
+    headers = {k: v for k, v in response.headers.items()}
+    if response.status_code in (401, 403):
+        logger.error("RentCast rejected the configured API key for %s", path)
+        return [], headers
+    if response.status_code == 429:
+        logger.warning("RentCast request quota reached for %s", path)
+        return [], headers
+    if response.status_code == 404:
+        return [], headers
+    if response.status_code >= 400:
+        logger.warning("RentCast %s failed with HTTP %s: %s", path, response.status_code, response.text[:200])
+        return [], headers
+    data = response.json()
+    return (data if isinstance(data, list) else []), headers
+
+
+async def _enrich_with_property_features(client: httpx.AsyncClient, cards: list[dict]) -> list[dict]:
+    """Attach property-record features (garage, pool, etc.) for amenity filtering."""
+
+    async def one(card: dict) -> dict:
+        address = card.get("formatted_address") or card.get("address")
+        if not address:
+            return card
+        rows, _ = await _get_search(client, "/properties", {"address": address, "limit": 1})
+        if not rows:
+            return card
+        record = rows[0]
+        feats = _safe_features(record.get("features"))
+        hoa_fee = _coalesce((record.get("hoa") or {}).get("fee"), card.get("hoa_fee"))
+        return {
+            **card,
+            "features": {**(card.get("features") or {}), **feats},
+            "hoa_fee": hoa_fee,
+            "parking_spaces": _coalesce(card.get("parking_spaces"), feats.get("garageSpaces")),
+            "stories": _coalesce(card.get("stories"), feats.get("floorCount")),
+            "lot_size": _coalesce(card.get("lot_size"), record.get("lotSize")),
+            "year_built": _coalesce(card.get("year_built"), record.get("yearBuilt")),
+            "tax_assessment": _latest_year_value(record.get("taxAssessments"), "value"),
+        }
+
+    # Cap enrichment cost for map browse.
+    subset = cards[:40]
+    enriched = await asyncio.gather(*(one(c) for c in subset))
+    return list(enriched) + cards[len(subset) :]
+
+
+async def browse_rentcast(
+    *,
+    mode: str = "for_sale",
+    latitude: float | None = None,
+    longitude: float | None = None,
+    radius: float | None = None,
+    city: str | None = None,
+    state: str | None = None,
+    zip_code: str | None = None,
+    filters: dict | None = None,
+    limit: int = 40,
+    offset: int = 0,
+) -> dict:
+    """
+    Geo / city browse via RentCast listings or property records.
+    mode: for_sale | off_market
+    """
+    settings = get_settings()
+    if not settings.rentcast_api_key:
+        return {"properties": [], "total": 0, "error": "RentCast is not configured"}
+
+    filters = filters or {}
+    limit = max(1, min(int(limit or 40), 100))
+    offset = max(0, int(offset or 0))
+    mode = (mode or "for_sale").strip().lower()
+    if mode not in {"for_sale", "off_market"}:
+        mode = "for_sale"
+
+    params: dict[str, Any] = {"limit": limit, "offset": offset}
+    if city:
+        params["city"] = city
+    if state:
+        params["state"] = state
+    if zip_code:
+        params["zipCode"] = zip_code
+    if latitude is not None and longitude is not None:
+        params["latitude"] = latitude
+        params["longitude"] = longitude
+        params["radius"] = radius if radius is not None else 5
+
+    beds = _beds_baths_param(filters.get("beds") or filters.get("beds_min"))
+    baths = _beds_baths_param(filters.get("baths") or filters.get("baths_min"))
+    if beds:
+        params["bedrooms"] = beds
+    if baths:
+        params["bathrooms"] = baths
+
+    price = _range_param(filters.get("budget_min") or filters.get("price_min"), filters.get("budget_max") or filters.get("price_max"))
+    if price:
+        params["price"] = price
+    sqft = _range_param(filters.get("sqft_min"), filters.get("sqft_max"))
+    if sqft:
+        params["squareFootage"] = sqft
+    lot = _range_param(filters.get("lot_min") or filters.get("lot_size_min"), filters.get("lot_max") or filters.get("lot_size_max"))
+    if lot:
+        params["lotSize"] = lot
+    year = _range_param(filters.get("year_built_min"), filters.get("year_built_max"))
+    if year:
+        params["yearBuilt"] = year
+
+    types = filters.get("property_types") or filters.get("property_type")
+    if types:
+        if isinstance(types, str):
+            types = [types]
+        mapped = []
+        for t in types:
+            key = str(t).strip().lower().replace(" ", "_").replace("-", "_")
+            mapped.append(PROPERTY_TYPE_MAP.get(key, t))
+        # unique preserve order
+        seen: set[str] = set()
+        ordered = []
+        for m in mapped:
+            if m and m not in seen:
+                seen.add(m)
+                ordered.append(m)
+        if ordered:
+            params["propertyType"] = "|".join(ordered)
+
+    if mode == "for_sale":
+        params["status"] = "Active"
+        path = "/listings/sale"
+    else:
+        path = "/properties"
+
+    amenity_keys = (
+        "must_have_ac",
+        "must_have_pool",
+        "waterfront",
+        "must_have_garage",
+        "has_basement",
+        "single_story_only",
+        "parking_min",
+        "no_hoa",
+    )
+    needs_enrichment = any(filters.get(k) not in (None, False, "", 0) for k in amenity_keys)
+
+    base_url = settings.rentcast_base_url.rstrip("/")
+    headers = {"Accept": "application/json", "X-Api-Key": settings.rentcast_api_key}
+    try:
+        async with httpx.AsyncClient(base_url=base_url, headers=headers, timeout=35) as client:
+            rows, resp_headers = await _get_search(client, path, params)
+            cards: list[dict] = []
+            if mode == "for_sale":
+                for listing in rows:
+                    cards.append(_card_from_normalized(_normalize(None, listing, None), mode=mode))
+            else:
+                # Off-market: property records; attach AVM for first page only (cost control).
+                async def with_avm(record: dict) -> dict:
+                    address = record.get("formattedAddress") or record.get("addressLine1")
+                    avm = await _get_avm(client, address) if address else None
+                    return _card_from_normalized(_normalize(record, None, avm), mode=mode)
+
+                # AVM only for first 15 to keep latency/cost reasonable.
+                head = rows[:15]
+                tail = rows[15:]
+                head_cards = await asyncio.gather(*(with_avm(r) for r in head))
+                cards = list(head_cards) + [
+                    _card_from_normalized(_normalize(r, None, None), mode=mode) for r in tail
+                ]
+
+            if needs_enrichment and cards:
+                cards = await _enrich_with_property_features(client, cards)
+                cards = [c for c in cards if _passes_amenity_filters(c, filters)]
+
+            total_raw = resp_headers.get("x-total-count") or resp_headers.get("X-Total-Count")
+            try:
+                total = int(total_raw) if total_raw else len(cards)
+            except ValueError:
+                total = len(cards)
+
+            return {
+                "properties": cards,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "mode": mode,
+                "source": "rentcast",
+            }
+    except Exception as exc:
+        logger.warning("RentCast browse failed: %s", exc)
+        return {"properties": [], "total": 0, "error": "Browse failed", "mode": mode, "source": "rentcast"}

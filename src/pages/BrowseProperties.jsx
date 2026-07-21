@@ -1,0 +1,525 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { Filter, List, Map as MapIcon, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
+import { api } from "@/api";
+import { createPageUrl } from "@/utils";
+import BrowseFilters from "@/components/browse/BrowseFilters";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const DEFAULT_CENTER = { lat: 40.7608, lng: -111.891 }; // Salt Lake City — good demo density
+const DEFAULT_ZOOM = 12;
+
+function formatPrice(n) {
+  if (n == null || n === "") return "—";
+  const num = Number(n);
+  if (!Number.isFinite(num)) return "—";
+  if (num >= 1000000) return `$${(num / 1000000).toFixed(2).replace(/\.?0+$/, "")}M`;
+  if (num >= 1000) return `$${Math.round(num / 1000)}K`;
+  return `$${Math.round(num).toLocaleString()}`;
+}
+
+function evaluateHref(p) {
+  const params = new URLSearchParams();
+  const address = p.formatted_address || [p.address, p.city, p.state, p.zip].filter(Boolean).join(", ");
+  if (address) params.set("address", address);
+  if (p.city) params.set("city", p.city);
+  if (p.state) params.set("state", p.state);
+  if (p.price != null) params.set("price", String(p.price));
+  if (p.bedrooms != null) params.set("beds", String(p.bedrooms));
+  if (p.bathrooms != null) params.set("baths", String(p.bathrooms));
+  if (p.sqft != null) params.set("sqft", String(p.sqft));
+  if (p.year_built != null) params.set("year", String(p.year_built));
+  return `${createPageUrl("Evaluate")}?${params.toString()}`;
+}
+
+function coverSrc(p) {
+  if (p.cover_photo) return p.cover_photo;
+  if (Number.isFinite(p.lat) && Number.isFinite(p.lng) && API_BASE) {
+    return `${API_BASE}/api/property/street-view?lat=${p.lat}&lng=${p.lng}`;
+  }
+  return null;
+}
+
+function priceIcon(price, selected) {
+  const label = formatPrice(price);
+  return L.divIcon({
+    className: "",
+    html: `<div style="
+      background:${selected ? "#059669" : "#1a2234"};
+      color:#fff;
+      font:700 11px/1 system-ui,sans-serif;
+      padding:6px 8px;
+      border-radius:999px;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+      white-space:nowrap;
+      border:2px solid #fff;
+    ">${label}</div>`,
+    iconSize: [54, 28],
+    iconAnchor: [27, 28],
+  });
+}
+
+function MapController({ center, zoom, flyToken }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!center) return;
+    map.flyTo([center.lat, center.lng], zoom ?? map.getZoom(), { duration: 0.6 });
+  }, [center, zoom, flyToken, map]);
+  return null;
+}
+
+function MapMoveWatcher({ onMoveEnd }) {
+  useMapEvents({
+    moveend: (e) => {
+      const map = e.target;
+      const c = map.getCenter();
+      const bounds = map.getBounds();
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      // Approximate radius (miles) from center to corner
+      const R = 3958.8;
+      const toRad = (d) => (d * Math.PI) / 180;
+      const dLat = toRad(ne.lat - c.lat);
+      const dLng = toRad(ne.lng - c.lng);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(c.lat)) * Math.cos(toRad(ne.lat)) * Math.sin(dLng / 2) ** 2;
+      const dist = 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+      onMoveEnd?.({
+        lat: c.lat,
+        lng: c.lng,
+        radius: Math.max(1, Math.min(25, dist * 0.85)),
+        zoom: map.getZoom(),
+      });
+    },
+  });
+  return null;
+}
+
+async function geocodePlace(query) {
+  const params = new URLSearchParams({
+    format: "json",
+    limit: "1",
+    q: `${query}, USA`,
+  });
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const hit = data?.[0];
+  if (!hit) return null;
+  return { lat: Number(hit.lat), lng: Number(hit.lon), label: hit.display_name };
+}
+
+export default function BrowseProperties() {
+  const [mode, setMode] = useState("for_sale"); // for_sale | off_market
+  const [view, setView] = useState("split"); // split | list | map
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [radius, setRadius] = useState(5);
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const [flyToken, setFlyToken] = useState(0);
+  const [properties, setProperties] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+  const debounceRef = useRef(null);
+  const skipNextMoveFetch = useRef(false);
+  const listRef = useRef(null);
+
+  const fetchBrowse = useCallback(
+    async (opts = {}) => {
+      const lat = opts.lat ?? center.lat;
+      const lng = opts.lng ?? center.lng;
+      const r = opts.radius ?? radius;
+      setLoading(true);
+      setError("");
+      try {
+        const result = await api.property.browse({
+          mode,
+          latitude: lat,
+          longitude: lng,
+          radius: r,
+          filters,
+          limit: 50,
+          offset: 0,
+        });
+        setProperties(result?.properties || []);
+        setTotal(result?.total ?? (result?.properties || []).length);
+      } catch (err) {
+        console.error(err);
+        setError(err?.message || "Could not load properties for this area.");
+        setProperties([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [center.lat, center.lng, radius, mode, filters]
+  );
+
+  // Initial + filter/mode changes
+  useEffect(() => {
+    fetchBrowse();
+  }, [mode, filters]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scheduleFetch = useCallback(
+    (next) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        fetchBrowse(next);
+      }, 450);
+    },
+    [fetchBrowse]
+  );
+
+  const onMapMoveEnd = useCallback(
+    (payload) => {
+      if (skipNextMoveFetch.current) {
+        skipNextMoveFetch.current = false;
+        return;
+      }
+      setCenter({ lat: payload.lat, lng: payload.lng });
+      setRadius(payload.radius);
+      setZoom(payload.zoom);
+      scheduleFetch(payload);
+    },
+    [scheduleFetch]
+  );
+
+  const runPlaceSearch = async (e) => {
+    e?.preventDefault?.();
+    const q = placeQuery.trim();
+    if (!q) return;
+    setLoading(true);
+    try {
+      const hit = await geocodePlace(q);
+      if (!hit) {
+        setError("Could not find that place. Try a city and state (e.g. Austin, TX).");
+        return;
+      }
+      skipNextMoveFetch.current = true;
+      setCenter({ lat: hit.lat, lng: hit.lng });
+      setZoom(12);
+      setFlyToken((t) => t + 1);
+      setRadius(6);
+      await fetchBrowse({ lat: hit.lat, lng: hit.lng, radius: 6 });
+    } catch (err) {
+      setError(err?.message || "Place search failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markers = useMemo(
+    () =>
+      (properties || []).filter(
+        (p) => Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng))
+      ),
+    [properties]
+  );
+
+  const layoutClass =
+    view === "list"
+      ? "grid-cols-1"
+      : view === "map"
+        ? "grid-cols-1"
+        : "lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,420px)]";
+
+  return (
+    <div className="min-h-[calc(100vh-4rem)] bg-[#f7f7f5] flex flex-col">
+      {/* Toolbar */}
+      <div className="border-b border-slate-200 bg-white px-4 py-3 sticky top-0 z-30">
+        <div className="max-w-[1600px] mx-auto flex flex-col gap-3 lg:flex-row lg:items-center">
+          <form onSubmit={runPlaceSearch} className="flex-1 flex gap-2 min-w-0">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={placeQuery}
+                onChange={(e) => setPlaceQuery(e.target.value)}
+                placeholder="City, neighborhood, ZIP…"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2.5 rounded-xl bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold shrink-0"
+            >
+              Search
+            </button>
+          </form>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setMode("for_sale")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                  mode === "for_sale" ? "bg-white shadow text-[#1a2234]" : "text-slate-500"
+                }`}
+              >
+                For sale
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("off_market")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                  mode === "off_market" ? "bg-white shadow text-[#1a2234]" : "text-slate-500"
+                }`}
+              >
+                Off-market est.
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            >
+              <SlidersHorizontal size={14} /> Filters
+            </button>
+
+            <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setView("map")}
+                className={`px-2.5 py-1.5 rounded-lg ${view === "map" ? "bg-white shadow" : ""}`}
+                aria-label="Map view"
+              >
+                <MapIcon size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                className={`px-2.5 py-1.5 rounded-lg ${view === "list" ? "bg-white shadow" : ""}`}
+                aria-label="List view"
+              >
+                <List size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("split")}
+                className={`px-2.5 py-1.5 rounded-lg hidden sm:inline-flex ${view === "split" ? "bg-white shadow" : ""}`}
+                aria-label="Split view"
+              >
+                <Filter size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`flex-1 max-w-[1600px] w-full mx-auto grid ${layoutClass} min-h-0`}>
+        {/* Map */}
+        {(view === "split" || view === "map") && (
+          <div className={`relative min-h-[45vh] lg:min-h-0 ${view === "map" ? "h-[calc(100vh-8rem)]" : "lg:h-[calc(100vh-8rem)]"}`}>
+            <MapContainer
+              center={[center.lat, center.lng]}
+              zoom={zoom}
+              className="h-full w-full z-0"
+              scrollWheelZoom
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              />
+              <MapController center={center} zoom={zoom} flyToken={flyToken} />
+              <MapMoveWatcher onMoveEnd={onMapMoveEnd} />
+              {markers.map((p) => (
+                <Marker
+                  key={p.id || `${p.lat},${p.lng},${p.address}`}
+                  position={[Number(p.lat), Number(p.lng)]}
+                  icon={priceIcon(p.price, selectedId === p.id)}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedId(p.id);
+                      const el = document.getElementById(`browse-card-${p.id}`);
+                      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    },
+                  }}
+                />
+              ))}
+            </MapContainer>
+            <div className="absolute top-3 left-3 z-[500] bg-[#1a2234]/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+              {loading ? "Updating…" : `${properties.length} shown${total > properties.length ? ` of ${total}` : ""}`}
+            </div>
+          </div>
+        )}
+
+        {/* List */}
+        {(view === "split" || view === "list") && (
+          <div
+            ref={listRef}
+            className={`bg-white border-l border-slate-200 overflow-y-auto ${
+              view === "list" ? "h-[calc(100vh-8rem)]" : "max-h-[55vh] lg:max-h-none lg:h-[calc(100vh-8rem)]"
+            }`}
+          >
+            <div className="p-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+              <h1 className="text-lg font-bold text-[#1a2234]">
+                {mode === "for_sale" ? "Homes for sale" : "Off-market estimates"}
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Licensed listing &amp; property data via RentCast. Drag the map to explore. Score any home to compare.
+              </p>
+            </div>
+
+            {error && (
+              <p className="mx-4 mt-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            {loading && properties.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 py-16 text-slate-400 text-sm">
+                <Loader2 className="animate-spin" size={18} /> Loading homes…
+              </div>
+            ) : properties.length === 0 ? (
+              <p className="text-sm text-slate-500 p-8 text-center">
+                No homes matched these filters in this area. Zoom out or clear filters.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {properties.map((p) => {
+                  const img = coverSrc(p);
+                  const selected = selectedId === p.id;
+                  return (
+                    <li
+                      key={p.id || p.formatted_address}
+                      id={`browse-card-${p.id}`}
+                      className={`p-4 hover:bg-slate-50 transition ${selected ? "bg-emerald-50/60" : ""}`}
+                      onMouseEnter={() => setSelectedId(p.id)}
+                    >
+                      <div className="flex gap-3">
+                        <div className="w-32 h-24 rounded-xl overflow-hidden bg-slate-200 shrink-0 relative">
+                          {img ? (
+                            <img
+                              src={img}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                              No photo
+                            </div>
+                          )}
+                          {!p.on_market && (
+                            <span className="absolute top-1 left-1 text-[9px] font-bold bg-slate-900/80 text-white px-1.5 py-0.5 rounded">
+                              Est.
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-lg font-bold text-[#1a2234]">
+                            {p.on_market ? formatPrice(p.price) : `Est. ${formatPrice(p.price)}`}
+                          </div>
+                          <div className="text-xs text-slate-600 mt-0.5">
+                            {[
+                              p.bedrooms != null ? `${p.bedrooms} bds` : null,
+                              p.bathrooms != null ? `${p.bathrooms} ba` : null,
+                              p.sqft != null ? `${Number(p.sqft).toLocaleString()} sqft` : null,
+                              p.property_type,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-1 truncate">
+                            {p.formatted_address || [p.address, p.city, p.state].filter(Boolean).join(", ")}
+                          </div>
+                          {p.hoa_fee != null && Number(p.hoa_fee) > 0 && (
+                            <div className="text-[10px] text-amber-700 mt-1 font-semibold">
+                              HOA ${Number(p.hoa_fee).toLocaleString()}/mo
+                            </div>
+                          )}
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Link
+                              to={evaluateHref(p)}
+                              className="inline-flex px-3 py-1.5 rounded-lg bg-[#10b981] hover:bg-[#059669] text-white text-[11px] font-bold"
+                            >
+                              Score this home
+                            </Link>
+                            <Link
+                              to={`${createPageUrl("QuickCompare")}?address=${encodeURIComponent(
+                                p.formatted_address || p.address || ""
+                              )}`}
+                              className="inline-flex px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
+                            >
+                              Add to compare
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Filters drawer */}
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close filters"
+            onClick={() => setFiltersOpen(false)}
+          />
+          <div className="relative w-full max-w-md h-full bg-white shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <h2 className="font-bold text-[#1a2234]">Filters</h2>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <BrowseFilters filters={filters} onChange={setFilters} />
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFilters({})}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

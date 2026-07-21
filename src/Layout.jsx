@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut } from "lucide-react";
+import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut, Map } from "lucide-react";
 import { LayoutSeo } from "@/components/SeoHelmet";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
@@ -28,7 +28,8 @@ export default function Layout({ children, currentPageName }) {
 
   /** Profile / account hub is opened from the header avatar only (upper right). */
   const allNavItems = [
-    { name: "Home", label: "Search", icon: Home, public: true },
+    { name: "BrowseProperties", label: "Search Properties", icon: Map, public: true },
+    { name: "Home", label: "Score address", icon: Home, public: true },
     { name: "QuickCompare", label: "Compare", icon: Columns, public: true },
     { name: "SearchByPreset", label: "Find by Preset", icon: Search },
     { name: "Compare", label: "Properties", icon: BarChart3 },
