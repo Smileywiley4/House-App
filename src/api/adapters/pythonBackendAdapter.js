@@ -334,6 +334,24 @@ export function createPythonBackendAdapter() {
       markRead: (id) => request('POST', `/api/notifications/${id}/read`),
       markAllRead: () => request('POST', '/api/notifications/read-all'),
     },
+    contacts: {
+      search: (q) => request('GET', `/api/contacts/search?q=${encodeURIComponent(q || '')}`),
+      list: () => request('GET', '/api/contacts'),
+      add: (body) => request('POST', '/api/contacts', body),
+      accept: (id) => request('POST', `/api/contacts/${encodeURIComponent(id)}/accept`),
+      decline: (id) => request('POST', `/api/contacts/${encodeURIComponent(id)}/decline`),
+      update: (id, body) => request('PATCH', `/api/contacts/${encodeURIComponent(id)}`, body),
+      remove: (id) => request('DELETE', `/api/contacts/${encodeURIComponent(id)}`),
+    },
+    shares: {
+      send: (body) => request('POST', '/api/shares', body),
+      inbox: () => request('GET', '/api/shares/inbox'),
+      sent: () => request('GET', '/api/shares/sent'),
+      pendingCount: () => request('GET', '/api/shares/pending-count'),
+      get: (id) => request('GET', `/api/shares/${encodeURIComponent(id)}`),
+      returnScores: (id, body) => request('POST', `/api/shares/${encodeURIComponent(id)}/return`, body),
+      cancel: (id) => request('POST', `/api/shares/${encodeURIComponent(id)}/cancel`),
+    },
     integrations: {
       invokeLLM: (options) => request('POST', '/api/integrations/llm/invoke', {
         prompt: options.prompt,
@@ -2207,10 +2225,22 @@ export function createPythonBackendAdapter() {
       limits: () => request('GET', '/api/projects/limits'),
       validateCompare: (count) => request('POST', '/api/projects/compare/validate', { count }),
       list: () => request('GET', '/api/projects'),
+      listInvites: () => request('GET', '/api/projects/invites'),
       create: (data) => request('POST', '/api/projects', data),
       get: (id) => request('GET', `/api/projects/${encodeURIComponent(id)}`),
       update: (id, data) => request('PATCH', `/api/projects/${encodeURIComponent(id)}`, data),
       delete: (id) => request('DELETE', `/api/projects/${encodeURIComponent(id)}`),
+      inviteMember: (projectId, body) =>
+        request('POST', `/api/projects/${encodeURIComponent(projectId)}/members`, body),
+      acceptInvite: (memberId) =>
+        request('POST', `/api/projects/members/${encodeURIComponent(memberId)}/accept`),
+      declineInvite: (memberId) =>
+        request('POST', `/api/projects/members/${encodeURIComponent(memberId)}/decline`),
+      removeMember: (projectId, memberId) =>
+        request(
+          'DELETE',
+          `/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(memberId)}`,
+        ),
       addProperty: (projectId, property, opts = {}) =>
         request('POST', `/api/projects/${encodeURIComponent(projectId)}/properties`, {
           property,

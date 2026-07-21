@@ -16,6 +16,8 @@ export const ROUTE_KEYS = {
   /** Saved / scored property list (formerly the old Compare page) */
   SAVED_PROPERTIES: 'SavedProperties',
   PROJECT_DETAIL: 'ProjectDetail',
+  CONTACTS: 'Contacts',
+  SHARED_HOMES: 'SharedHomes',
   REALTOR_PORTAL: 'RealtorPortal',
   PRICING: 'Pricing',
   PROFILE: 'Profile',

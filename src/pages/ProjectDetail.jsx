@@ -55,13 +55,20 @@ function ProjectDetailInner() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [titleEdit, setTitleEdit] = useState("");
   const [startOpen, setStartOpen] = useState(false);
+  const [invites, setInvites] = useState([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteBusy, setInviteBusy] = useState(false);
 
   const loadList = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const list = await api.projects.list();
+      const [list, pending] = await Promise.all([
+        api.projects.list(),
+        api.projects.listInvites?.().catch(() => []) || Promise.resolve([]),
+      ]);
       setProjectList(list || []);
+      setInvites(Array.isArray(pending) ? pending : []);
       setProject(null);
     } catch (e) {
       setError(e?.message || "Could not load projects");
@@ -187,11 +194,63 @@ function ProjectDetailInner() {
                       <div className="font-bold text-[#1a2234]">{p.title}</div>
                       <div className="text-xs text-slate-500 mt-1">
                         {p.property_count ?? 0} propert{(p.property_count ?? 0) === 1 ? "y" : "ies"}
+                        {p.membership === "collaborator" ? " · shared with you" : ""}
                       </div>
                     </Link>
                   </li>
                 ))}
               </ul>
+            )}
+
+            {invites.length > 0 && (
+              <div className="mt-10 space-y-3">
+                <h2 className="text-sm font-bold text-[#1a2234]">Pending project invites</h2>
+                {invites.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-[#1a2234] text-sm">
+                        {inv.project?.title || "Project"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        From {inv.invited_by?.full_name || inv.invited_by?.email || "someone"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="rounded-lg bg-[#10b981] px-3 py-1.5 text-xs font-bold text-white"
+                        onClick={async () => {
+                          try {
+                            await api.projects.acceptInvite(inv.id);
+                            await loadList();
+                          } catch (e) {
+                            setError(e?.message || "Could not accept");
+                          }
+                        }}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600"
+                        onClick={async () => {
+                          try {
+                            await api.projects.declineInvite(inv.id);
+                            await loadList();
+                          } catch (e) {
+                            setError(e?.message || "Could not decline");
+                          }
+                        }}
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -212,6 +271,8 @@ function ProjectDetailInner() {
   }
 
   const properties = project.properties || [];
+  const members = project.members || [];
+  const isOwner = project.is_owner === true || project.membership === "owner";
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -228,6 +289,7 @@ function ProjectDetailInner() {
             <div>
               <div className="flex items-center gap-2 text-[#10b981] text-xs font-bold uppercase tracking-wide mb-1">
                 <FolderKanban size={14} /> Project
+                {!isOwner && <span className="text-slate-400 font-semibold normal-case">· collaborator</span>}
               </div>
               <h1 className="text-2xl font-bold text-white">{project.title}</h1>
               <p className="text-slate-400 text-sm mt-1">
@@ -236,20 +298,24 @@ function ProjectDetailInner() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setPrefsOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-semibold"
-              >
-                <SlidersHorizontal size={15} /> Scoring prefs
-              </button>
-              <button
-                type="button"
-                onClick={deleteProject}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:text-white text-sm font-semibold"
-              >
-                <Trash2 size={15} /> Delete
-              </button>
+              {isOwner && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPrefsOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-semibold"
+                  >
+                    <SlidersHorizontal size={15} /> Scoring prefs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteProject}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:text-white text-sm font-semibold"
+                  >
+                    <Trash2 size={15} /> Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -260,6 +326,71 @@ function ProjectDetailInner() {
           <p className="mb-4 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
             {error}
           </p>
+        )}
+
+        {isOwner && (
+          <div className="mb-8 rounded-2xl border border-slate-100 bg-white p-4 space-y-3">
+            <h2 className="text-sm font-bold text-[#1a2234]">Invite collaborator</h2>
+            <p className="text-xs text-slate-500">
+              Collaborators can add and edit properties. Only you manage preferences and deletion.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="Their account email"
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#10b981]/30"
+              />
+              <button
+                type="button"
+                disabled={inviteBusy || !inviteEmail.trim()}
+                onClick={async () => {
+                  setInviteBusy(true);
+                  setError("");
+                  try {
+                    await api.projects.inviteMember(projectId, { email: inviteEmail.trim() });
+                    setInviteEmail("");
+                    await load();
+                  } catch (e) {
+                    setError(e?.message || "Invite failed");
+                  } finally {
+                    setInviteBusy(false);
+                  }
+                }}
+                className="rounded-xl bg-[#1a2234] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                {inviteBusy ? "Inviting…" : "Invite"}
+              </button>
+            </div>
+            {members.length > 0 && (
+              <ul className="divide-y divide-slate-100 text-sm">
+                {members.map((m) => (
+                  <li key={m.id} className="flex items-center justify-between py-2 gap-2">
+                    <span className="truncate">
+                      {m.user?.full_name || m.user?.email || m.user_id}
+                      <span className="text-xs text-slate-400 ml-2">{m.status}</span>
+                    </span>
+                    {m.status === "accepted" && (
+                      <button
+                        type="button"
+                        className="text-xs text-slate-400 hover:text-red-600"
+                        onClick={async () => {
+                          try {
+                            await api.projects.removeMember(projectId, m.id);
+                            await load();
+                          } catch (e) {
+                            setError(e?.message || "Could not remove");
+                          }
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         {properties.length === 0 ? (

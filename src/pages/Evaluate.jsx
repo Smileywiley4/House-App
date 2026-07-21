@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Bookmark, ChevronLeft, Plus, Save, BarChart3, LogIn, Columns, X } from "lucide-react";
+import { Bookmark, ChevronLeft, Plus, Save, BarChart3, LogIn, Columns, X, Send } from "lucide-react";
 import { api } from "@/api";
 import CategorySlider from "@/components/evaluate/CategorySlider.jsx";
 import CategoryPicker, { MANDATORY_CATEGORIES } from "@/components/evaluate/CategoryPicker.jsx";
@@ -14,14 +14,20 @@ import PropertyOverview from "@/components/property/PropertyOverview";
 import { PremiumFeatureGroup } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
+import SendForScoringModal from "@/components/shares/SendForScoringModal";
 import { useAuth } from "@/lib/AuthContext";
+import { usePlan } from "@/core/hooks/usePlan";
 import { readCurrentProperty } from "@/core/currentProperty";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
+  const { isRealtor } = usePlan();
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const [returnStatus, setReturnStatus] = useState("");
 
   const readParam = (key) => {
     const v = params.get(key);
@@ -31,6 +37,7 @@ export default function Evaluate() {
     return s;
   };
 
+  const shareId = readParam("shareId");
   const routeAddress = readParam("address") || "Unknown Address";
   const enrichedProperty = readCurrentProperty(routeAddress) || {};
   const property = {
@@ -194,6 +201,31 @@ export default function Evaluate() {
     }
   };
 
+  const returnToRealtor = async () => {
+    if (!shareId || !isAuthenticated) return;
+    setReturning(true);
+    setReturnStatus("");
+    try {
+      const scores = {
+        percentage,
+        weighted_total: weightedTotal,
+        max_possible: maxPossible,
+        categories: activeCategories.map((c) => ({
+          category_id: c.id,
+          category_label: c.label,
+          importance: c.importance,
+          score: c.score,
+        })),
+      };
+      await api.shares.returnScores(shareId, { scores });
+      setReturnStatus("Sent back to realtor");
+    } catch (error) {
+      setReturnStatus(error?.message || "Could not send scores back");
+    } finally {
+      setReturning(false);
+    }
+  };
+
   const savePreset = async () => {
     const name = presetName.trim();
     if (!name || !isAuthenticated) return;
@@ -279,6 +311,30 @@ export default function Evaluate() {
                 onLoadPreset={(next) => setActiveCategories(next)}
                 refreshKey={presetRefreshKey}
               />
+            )}
+            {isAuthenticated && isRealtor && (
+              <button
+                type="button"
+                onClick={() => setSendOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 border border-[#10b981]/40 text-[#059669] hover:bg-[#10b981]/10 font-semibold rounded-xl transition-colors text-sm"
+              >
+                <Send size={15} /> Send to client for scoring
+              </button>
+            )}
+            {shareId && isAuthenticated && (
+              <button
+                type="button"
+                onClick={returnToRealtor}
+                disabled={returning || activeCategories.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60"
+              >
+                {returning ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
+                {returning ? "Sending…" : "Send back to realtor"}
+              </button>
             )}
             <button
               onClick={sendToCompare}
@@ -500,6 +556,33 @@ export default function Evaluate() {
           onClose={() => setShowPicker(false)}
         />
       )}
+
+      {returnStatus && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-[#1a2234] text-white text-sm font-semibold px-4 py-2.5 shadow-lg">
+          {returnStatus}
+        </div>
+      )}
+
+      <SendForScoringModal
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        property={{
+          ...property,
+          address: property.address,
+          city: property.city,
+          state: property.state,
+          price: property.price,
+          bedrooms: property.beds,
+          bathrooms: property.baths,
+          sqft: property.sqft,
+          year_built: property.year,
+          lat: property.lat,
+          lng: property.lng,
+          image_url: property.image_url || property.primary_photo,
+          street_view_url: property.street_view_url,
+          photos: property.photos || property.images,
+        }}
+      />
     </div>
   );
 }

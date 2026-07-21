@@ -1,3 +1,7 @@
+/**
+ * Header bell: unread badge + recent in-app notifications (listing matches,
+ * shared homes, project activity). // future: FCM / web-push delivery
+ */
 import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,25 +16,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-/**
- * Header bell: unread badge + recent in-app listing match notifications.
- */
+function hrefForNotification(n) {
+  const path = n?.payload?.path;
+  if (typeof path === "string" && path.startsWith("/")) return path;
+  const kind = n?.kind || "";
+  if (kind.startsWith("property_share")) return createPageUrl("SharedHomes");
+  if (kind.startsWith("project_")) {
+    const id = n?.payload?.project_id;
+    return id
+      ? `${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(id)}`
+      : createPageUrl("ProjectDetail");
+  }
+  if (kind.startsWith("contact_")) return createPageUrl("Contacts");
+  return createPageUrl("BrowseProperties");
+}
+
 export default function NotificationsBell() {
   const [count, setCount] = useState(0);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sharePending, setSharePending] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
-      const [c, list] = await Promise.all([
+      const [c, list, shares] = await Promise.all([
         api.notifications.unreadCount().catch(() => ({ count: 0 })),
         api.notifications.list({ limit: 12 }).catch(() => []),
+        api.shares?.pendingCount?.().catch(() => ({ count: 0 })) || Promise.resolve({ count: 0 }),
       ]);
       setCount(Number(c?.count) || 0);
       setItems(Array.isArray(list) ? list : []);
+      setSharePending(Number(shares?.count) || 0);
     } catch {
       setCount(0);
       setItems([]);
+      setSharePending(0);
     }
   }, []);
 
@@ -69,18 +89,20 @@ export default function NotificationsBell() {
     }
   };
 
+  const badge = count + sharePending;
+
   return (
     <DropdownMenu onOpenChange={onOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
           className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234]"
-          aria-label={count ? `${count} unread notifications` : "Notifications"}
+          aria-label={badge ? `${badge} unread notifications` : "Notifications"}
         >
           <Bell size={18} strokeWidth={1.75} />
-          {count > 0 && (
+          {badge > 0 && (
             <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full bg-[#10b981] text-[10px] font-bold text-white flex items-center justify-center">
-              {count > 9 ? "9+" : count}
+              {badge > 9 ? "9+" : badge}
             </span>
           )}
         </button>
@@ -99,13 +121,23 @@ export default function NotificationsBell() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {sharePending > 0 && (
+          <>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to={createPageUrl("SharedHomes")} className="w-full text-sm font-semibold text-[#059669]">
+                {sharePending} shared home{sharePending === 1 ? "" : "s"} awaiting score →
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {loading && !items.length ? (
           <div className="px-3 py-6 flex justify-center text-slate-400">
             <Loader2 size={16} className="animate-spin" />
           </div>
         ) : items.length === 0 ? (
           <div className="px-3 py-6 text-center text-xs text-slate-500">
-            No match alerts yet. Save an alert from Search Properties.
+            No notifications yet. Listing alerts and shared homes appear here.
           </div>
         ) : (
           items.map((n) => (
@@ -119,7 +151,11 @@ export default function NotificationsBell() {
                 markOne(n.id);
               }}
             >
-              <Link to={createPageUrl("BrowseProperties")} className="w-full space-y-0.5" onClick={() => markOne(n.id)}>
+              <Link
+                to={hrefForNotification(n)}
+                className="w-full space-y-0.5"
+                onClick={() => markOne(n.id)}
+              >
                 <span className="text-sm font-semibold text-slate-800 line-clamp-2 block">{n.title}</span>
                 {n.body && (
                   <span className="text-[11px] text-slate-500 line-clamp-2 whitespace-pre-wrap block">{n.body}</span>

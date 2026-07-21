@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut, Map, FolderKanban } from "lucide-react";
+import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut, Map, FolderKanban, Users, Inbox } from "lucide-react";
 import { LayoutSeo } from "@/components/SeoHelmet";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
@@ -35,6 +35,8 @@ export default function Layout({ children, currentPageName }) {
     { name: "SearchByPreset", label: "Find by Preset", icon: Search },
     { name: "SavedProperties", label: "Properties", icon: BarChart3 },
     { name: "ProjectDetail", label: "Projects", icon: FolderKanban },
+    { name: "Contacts", label: "Contacts", icon: Users },
+    { name: "SharedHomes", label: "Shared", icon: Inbox },
     { name: "RealtorPortal", label: "Realtors", icon: Building2 },
     { name: "Pricing", label: "Pricing", icon: Zap, public: true },
     { name: "PropertyVisits", label: "Visits", icon: Camera },

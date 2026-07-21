@@ -41,7 +41,7 @@
  *       Layout: __Layout,
  *   };
  *
- * To change the main page from HomePage to Dashboard, use find_replace:
+ * To change the main page from HomePage to Dashboard, use find-replace:
  *   Old: mainPage: "HomePage",
  *   New: mainPage: "Dashboard",
  *
@@ -50,6 +50,7 @@
 import About from './pages/About';
 import BrowseProperties from './pages/BrowseProperties';
 import Compare from './pages/Compare';
+import Contacts from './pages/Contacts';
 import Evaluate from './pages/Evaluate';
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
@@ -64,6 +65,7 @@ import RealtorPortal from './pages/RealtorPortal';
 import SavedProperties from './pages/SavedProperties';
 import SearchByPreset from './pages/SearchByPreset';
 import SharedComparison from './pages/SharedComparison';
+import SharedHomes from './pages/SharedHomes';
 import SideBySide from './pages/SideBySide';
 import __Layout from './Layout.jsx';
 
@@ -72,6 +74,7 @@ export const PAGES = {
     "About": About,
     "BrowseProperties": BrowseProperties,
     "Compare": Compare,
+    "Contacts": Contacts,
     "Evaluate": Evaluate,
     "Home": Home,
     "Pricing": Pricing,
@@ -86,6 +89,7 @@ export const PAGES = {
     "SavedProperties": SavedProperties,
     "SearchByPreset": SearchByPreset,
     "SharedComparison": SharedComparison,
+    "SharedHomes": SharedHomes,
     "SideBySide": SideBySide,
 }
 

@@ -13,6 +13,7 @@ import {
   X,
   Search,
   MapPin,
+  Send,
 } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
@@ -20,6 +21,7 @@ import { getPropertyByAddress } from "@/core/propertyService";
 import ShareComparison from "@/components/ShareComparison";
 import RequireAuth from "@/components/RequireAuth";
 import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
+import SendForScoringModal from "@/components/shares/SendForScoringModal";
 import AddressAutocompleteInput from "@/components/AddressAutocompleteInput";
 import PaywallModal from "@/components/PaywallModal";
 import { browseListingToCompareRow, loadBrowseCompareSelection } from "@/lib/browseCompare";
@@ -65,7 +67,8 @@ function CompareInner() {
   const [addSlotIndex, setAddSlotIndex] = useState(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  const { maxCompareCount, isPremium } = usePlan();
+  const [sendOpen, setSendOpen] = useState(false);
+  const { maxCompareCount, isPremium, isRealtor } = usePlan();
 
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +183,15 @@ function CompareInner() {
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15"
                 >
                   <FolderPlus size={14} /> Save to project
+                </button>
+              )}
+              {isRealtor && saveSnapshots.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSendOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-[#10b981]/20 text-[#6ee7b7] hover:bg-[#10b981]/30"
+                >
+                  <Send size={14} /> Send to client for scoring
                 </button>
               )}
               <ShareComparison scores={comparing} />
@@ -349,6 +361,15 @@ function CompareInner() {
         onSaved={() => {
           toast({ title: "Saved to project", description: "Properties added to your project folder." });
         }}
+      />
+
+      <SendForScoringModal
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        property={saveSnapshots[0] || {}}
+        onSent={() =>
+          toast({ title: "Sent for scoring", description: "Your client will see this in Shared homes." })
+        }
       />
 
       <PaywallModal
