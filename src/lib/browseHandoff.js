@@ -86,6 +86,20 @@ export function browseAreaUrl({ label } = {}) {
   return `${createPageUrl("BrowseProperties")}?${params.toString()}`;
 }
 
+/** Center Browse on the user’s GPS (no city boundary required). */
+export function browseLocationUrl({ lat, lng, zoom = 14, label } = {}) {
+  const params = new URLSearchParams();
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (Number.isFinite(la) && Number.isFinite(ln)) {
+    params.set("lat", String(la));
+    params.set("lng", String(ln));
+  }
+  params.set("zoom", String(Number.isFinite(Number(zoom)) ? zoom : 14));
+  if (label) params.set("highlightAddress", String(label).slice(0, 80));
+  return `${createPageUrl("BrowseProperties")}?${params.toString()}`;
+}
+
 export function storePropertyHandoff(property) {
   const lat = Number(property?.lat);
   const lng = Number(property?.lng);

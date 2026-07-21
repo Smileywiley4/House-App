@@ -1,16 +1,18 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Loader2 } from "lucide-react";
+import { Search, MapPin, Loader2, LocateFixed } from "lucide-react";
 import { api } from "@/api";
 import { getPropertyByAddress } from "@/core/propertyService";
 import PropertySearchPreviewDialog from "@/components/property/PropertySearchPreviewDialog";
 import {
   browseAreaUrl,
+  browseLocationUrl,
   browsePropertyUrl,
   looksLikePlaceQuery,
   storeBoundaryHandoff,
   storePropertyHandoff,
 } from "@/lib/browseHandoff";
+import { getCurrentPosition } from "@/lib/geolocation";
 
 /**
  * Shared address / place search — Home hero and sticky header.
@@ -22,6 +24,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
   const navigate = useNavigate();
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState(null);
   const [property, setProperty] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -160,6 +163,20 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
     searchAddress(address);
   };
 
+  const useCurrentLocation = async () => {
+    if (locating || loading) return;
+    setError(null);
+    setLocating(true);
+    try {
+      const { lat, lng } = await getCurrentPosition();
+      navigate(browseLocationUrl({ lat, lng, zoom: 14, label: "Current location" }));
+    } catch (err) {
+      setError(err?.message || "Could not get your location.");
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const chooseSuggestion = (suggestion) => {
     suppressAutocomplete.current = suggestion.address;
     searchAddress(suggestion.address, suggestion.kind);
@@ -270,11 +287,28 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
             </div>
           )}
         </div>
-        <button type="submit" disabled={loading} className={buttonClass}>
+        <button type="submit" disabled={loading || locating} className={buttonClass}>
           {loading ? <Loader2 size={isHero ? 18 : 16} className="animate-spin" /> : <Search size={isHero ? 18 : 16} />}
           {loading ? "Searching..." : "Search"}
         </button>
       </form>
+      <button
+        type="button"
+        onClick={useCurrentLocation}
+        disabled={locating || loading}
+        className={
+          isHero
+            ? "mt-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[#10b981] hover:text-[#34d399] disabled:opacity-60 mx-auto sm:mx-0"
+            : "mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-[#10b981] hover:text-[#34d399] disabled:opacity-60"
+        }
+      >
+        {locating ? (
+          <Loader2 size={isHero ? 15 : 13} className="animate-spin" />
+        ) : (
+          <LocateFixed size={isHero ? 15 : 13} />
+        )}
+        {locating ? "Getting location…" : "Use current location"}
+      </button>
       {error && (
         <p className={`text-xs mt-1.5 ${isHero ? "text-red-300 text-center sm:text-left" : "text-red-200"}`}>
           {error}

@@ -11,6 +11,7 @@ import {
   Filter,
   FolderKanban,
   List,
+  LocateFixed,
   Map as MapIcon,
   Loader2,
   Pencil,
@@ -29,6 +30,7 @@ import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
 import StartProjectModal from "@/components/browse/StartProjectModal";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 import { loadBrowseHandoff } from "@/lib/browseHandoff";
+import { getCurrentPosition } from "@/lib/geolocation";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -383,6 +385,7 @@ export default function BrowseProperties() {
   const [properties, setProperties] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [compareIds, setCompareIds] = useState(() => new Set());
@@ -665,16 +668,20 @@ export default function BrowseProperties() {
 
     const focusProperty = (lat, lng, address, z = 16) => {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-      setHighlight({ lat, lng, address: address || "" });
+      const zoomLevel = Number.isFinite(z) && z > 0 ? z : 16;
+      // Wider radius for “current location” / area zooms; tighter for a single home pin.
+      const browseRadius = zoomLevel <= 15 ? 4 : 2.5;
+      if (address) setHighlight({ lat, lng, address });
+      else setHighlight(null);
       setPolygon(null);
       setAreaLabel("");
       setDrawMode(false);
       skipNextMoveFetch.current = true;
       setCenter({ lat, lng });
-      setZoom(Number.isFinite(z) && z > 0 ? z : 16);
-      setRadius(2.5);
+      setZoom(zoomLevel);
+      setRadius(browseRadius);
       setFlyToken((t) => t + 1);
-      fetchBrowse({ lat, lng, radius: 2.5, polygon: null });
+      fetchBrowse({ lat, lng, radius: browseRadius, polygon: null });
       return true;
     };
 
@@ -792,6 +799,37 @@ export default function BrowseProperties() {
     }
   };
 
+  const useCurrentLocation = async () => {
+    if (locating || loading) return;
+    setError("");
+    setLocating(true);
+    try {
+      const { lat, lng } = await getCurrentPosition();
+      setPolygon(null);
+      setAreaLabel("");
+      setDraftPoints([]);
+      setDrawMode(false);
+      setHighlight({ lat, lng, address: "Current location" });
+      setPlaceQuery("Current location");
+      skipNextMoveFetch.current = true;
+      setCenter({ lat, lng });
+      setZoom(14);
+      setRadius(4);
+      setFlyToken((t) => t + 1);
+      setView("map");
+      await fetchBrowse({ lat, lng, radius: 4, polygon: null });
+    } catch (err) {
+      const message = err?.message || "Could not get your location.";
+      setError(message);
+      toast({
+        title: "Location unavailable",
+        description: message,
+      });
+    } finally {
+      setLocating(false);
+    }
+  };
+
   const markers = useMemo(
     () =>
       (properties || []).filter(
@@ -838,9 +876,25 @@ export default function BrowseProperties() {
             </div>
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-xl bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold shrink-0"
+              disabled={loading || locating}
+              className="px-4 py-2.5 rounded-xl bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold shrink-0 disabled:opacity-60"
             >
               Search
+            </button>
+            <button
+              type="button"
+              onClick={useCurrentLocation}
+              disabled={locating || loading}
+              title="Use current location"
+              aria-label="Use current location"
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 shrink-0 disabled:opacity-60"
+            >
+              {locating ? (
+                <Loader2 size={14} className="animate-spin text-[#10b981]" />
+              ) : (
+                <LocateFixed size={14} className="text-[#10b981]" />
+              )}
+              <span className="hidden sm:inline">{locating ? "Locating…" : "My location"}</span>
             </button>
           </form>
 
