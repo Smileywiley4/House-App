@@ -39,6 +39,7 @@ import RequireAuth from "@/components/RequireAuth";
 import InviteFriendsPanel from "@/components/profile/InviteFriendsPanel";
 import AppearanceSettings from "@/components/profile/AppearanceSettings";
 import ProfilePhotoPicker from "@/components/profile/ProfilePhotoPicker";
+import PreferenceShareCardPanel from "@/components/profile/PreferenceShareCardPanel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...NEIGHBORHOOD_CATEGORIES, ...OPTIONAL_CATEGORIES];
@@ -951,6 +952,9 @@ function ProfileInner() {
         {/* ─── PREFERENCES TAB ─── */}
         {tab === "preferences" && (
           <div>
+            <div className="mb-8">
+              <PreferenceShareCardPanel />
+            </div>
             <div className="flex items-start justify-between mb-6 gap-4">
               <div>
                 <h2 className="text-lg font-bold text-foreground mb-1">Scoring Weights</h2>
@@ -1015,6 +1019,10 @@ function ProfileInner() {
               >
                 <Sparkles size={14} /> Retake priority quiz
               </button>
+            </div>
+
+            <div className="mb-6">
+              <PreferenceShareCardPanel />
             </div>
 
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mb-6">

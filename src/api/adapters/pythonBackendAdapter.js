@@ -246,6 +246,8 @@ export function createPythonBackendAdapter() {
     auth: {
       me: () => requestAuthProfile('GET', '/api/auth/me'),
       updateMe: (profile) => requestAuthProfile('PATCH', '/api/auth/me', profile),
+      requestLicenseVerification: (payload = {}) =>
+        requestAuthProfile('POST', '/api/auth/me/license/request-verification', payload),
       deleteMe: () => requestAuthProfile('DELETE', '/api/auth/me', { confirmation: 'DELETE' }),
       exportMe: () => requestAuthProfile('GET', '/api/auth/me/export'),
       updateEmail: async (email) => {
@@ -2307,6 +2309,15 @@ export function createPythonBackendAdapter() {
       me: () => request('GET', '/api/referrals/me'),
       validate: (code) => publicGet(`/api/referrals/validate?code=${encodeURIComponent(code)}`),
       claim: (code) => request('POST', '/api/referrals/claim', { code }),
+    },
+    preferenceCards: {
+      preview: () => request('GET', '/api/preference-cards/preview'),
+      enableShare: (body) => request('POST', '/api/preference-cards/share', body || {}),
+      updateShare: (body) => request('PATCH', '/api/preference-cards/share', body || {}),
+      regenerate: () => request('POST', '/api/preference-cards/regenerate'),
+      revokeShare: () => request('DELETE', '/api/preference-cards/share'),
+      getPublic: (token) =>
+        publicGet(`/api/preference-cards/public/${encodeURIComponent(token || '')}`),
     },
     preferences: {
       getLearned: () => request('GET', '/api/preferences/learned'),

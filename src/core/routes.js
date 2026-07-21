@@ -22,6 +22,7 @@ export const ROUTE_KEYS = {
   PRICING: 'Pricing',
   PROFILE: 'Profile',
   SHARED_COMPARISON: 'SharedComparison',
+  PREFERENCE_CARD: 'PreferenceCard',
   EVALUATE: 'Evaluate',
 };
 

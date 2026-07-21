@@ -67,6 +67,7 @@ import SearchByPreset from './pages/SearchByPreset';
 import SharedComparison from './pages/SharedComparison';
 import SharedHomes from './pages/SharedHomes';
 import SideBySide from './pages/SideBySide';
+import PreferenceCard from './pages/PreferenceCard';
 import __Layout from './Layout.jsx';
 
 
@@ -77,6 +78,7 @@ export const PAGES = {
     "Contacts": Contacts,
     "Evaluate": Evaluate,
     "Home": Home,
+    "PreferenceCard": PreferenceCard,
     "Pricing": Pricing,
     "Privacy": Privacy,
     "Support": Support,

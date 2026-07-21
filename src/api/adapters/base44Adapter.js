@@ -616,4 +616,12 @@ export const base44Adapter = {
     validate: () => Promise.reject(new Error('Referrals require Python backend')),
     claim: () => Promise.reject(new Error('Referrals require Python backend')),
   },
+  preferenceCards: {
+    preview: () => Promise.reject(new Error('Preference cards require Python backend')),
+    enableShare: () => Promise.reject(new Error('Preference cards require Python backend')),
+    updateShare: () => Promise.reject(new Error('Preference cards require Python backend')),
+    regenerate: () => Promise.reject(new Error('Preference cards require Python backend')),
+    revokeShare: () => Promise.reject(new Error('Preference cards require Python backend')),
+    getPublic: () => Promise.reject(new Error('Preference cards require Python backend')),
+  },
 };
