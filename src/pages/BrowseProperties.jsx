@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Polygon, Polyline, CircleMarker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polygon, Polyline, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -169,56 +169,171 @@ function MapMoveWatcher({ onMoveEnd, enabled }) {
   return null;
 }
 
-function DrawInteraction({ active, draftPoints, onAddPoint, onFinish }) {
-  useMapEvents({
-    click: (e) => {
-      if (!active) return;
-      onAddPoint([e.latlng.lat, e.latlng.lng]);
-    },
-    dblclick: (e) => {
-      if (!active) return;
-      L.DomEvent.stopPropagation(e);
-      L.DomEvent.preventDefault(e);
-      onFinish();
-    },
-  });
+const FREEHAND_SAMPLE_PX = 6;
+const FREEHAND_MIN_POINTS = 8;
+const FREEHAND_MIN_SPAN_PX = 48;
+
+function freehandTooSmall(points, map) {
+  if (!points || points.length < FREEHAND_MIN_POINTS) return true;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const [lat, lng] of points) {
+    const p = map.latLngToContainerPoint(L.latLng(lat, lng));
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
+  }
+  return Math.hypot(maxX - minX, maxY - minY) < FREEHAND_MIN_SPAN_PX;
+}
+
+/** Freehand drag/touch stroke → closed polygon ring. */
+function DrawInteraction({
+  active,
+  draftPoints,
+  resetKey,
+  onPointsChange,
+  onStrokeComplete,
+  onStrokeReject,
+}) {
+  const map = useMap();
+  const drawingRef = useRef(false);
+  const pointsRef = useRef([]);
+  const lastPxRef = useRef(null);
+  const activeRef = useRef(active);
+  const onPointsChangeRef = useRef(onPointsChange);
+  const onStrokeCompleteRef = useRef(onStrokeComplete);
+  const onStrokeRejectRef = useRef(onStrokeReject);
 
   useEffect(() => {
-    // Leaflet fires dblclick zoom by default — disable while drawing.
+    activeRef.current = active;
   }, [active]);
+  useEffect(() => {
+    onPointsChangeRef.current = onPointsChange;
+  }, [onPointsChange]);
+  useEffect(() => {
+    onStrokeCompleteRef.current = onStrokeComplete;
+  }, [onStrokeComplete]);
+  useEffect(() => {
+    onStrokeRejectRef.current = onStrokeReject;
+  }, [onStrokeReject]);
+
+  useEffect(() => {
+    drawingRef.current = false;
+    pointsRef.current = [];
+    lastPxRef.current = null;
+  }, [active, resetKey]);
+
+  useEffect(() => {
+    if (!active) return undefined;
+
+    const prevent = (e) => {
+      const oe = e?.originalEvent;
+      if (oe) {
+        L.DomEvent.preventDefault(oe);
+        L.DomEvent.stopPropagation(oe);
+      }
+    };
+
+    const appendSample = (latlng) => {
+      const pt = [latlng.lat, latlng.lng];
+      const px = map.latLngToContainerPoint(latlng);
+      if (lastPxRef.current) {
+        const dx = px.x - lastPxRef.current.x;
+        const dy = px.y - lastPxRef.current.y;
+        if (dx * dx + dy * dy < FREEHAND_SAMPLE_PX * FREEHAND_SAMPLE_PX) return;
+      }
+      lastPxRef.current = px;
+      pointsRef.current = [...pointsRef.current, pt];
+      onPointsChangeRef.current?.(pointsRef.current);
+    };
+
+    const onDown = (e) => {
+      if (!activeRef.current) return;
+      if (e.originalEvent?.button != null && e.originalEvent.button !== 0) return;
+      prevent(e);
+      drawingRef.current = true;
+      pointsRef.current = [];
+      lastPxRef.current = null;
+      appendSample(e.latlng);
+    };
+
+    const onMove = (e) => {
+      if (!drawingRef.current) return;
+      prevent(e);
+      appendSample(e.latlng);
+    };
+
+    const finishStroke = () => {
+      if (!drawingRef.current) return;
+      drawingRef.current = false;
+      const pts = pointsRef.current;
+      if (freehandTooSmall(pts, map)) {
+        pointsRef.current = [];
+        lastPxRef.current = null;
+        onPointsChangeRef.current?.([]);
+        onStrokeRejectRef.current?.();
+        return;
+      }
+      onStrokeCompleteRef.current?.(pts);
+      pointsRef.current = [];
+      lastPxRef.current = null;
+    };
+
+    map.on("mousedown", onDown);
+    map.on("mousemove", onMove);
+    map.on("mouseup", finishStroke);
+    map.on("mouseleave", finishStroke);
+    document.addEventListener("mouseup", finishStroke);
+    document.addEventListener("touchend", finishStroke);
+
+    return () => {
+      map.off("mousedown", onDown);
+      map.off("mousemove", onMove);
+      map.off("mouseup", finishStroke);
+      map.off("mouseleave", finishStroke);
+      document.removeEventListener("mouseup", finishStroke);
+      document.removeEventListener("touchend", finishStroke);
+      drawingRef.current = false;
+    };
+  }, [active, map]);
 
   if (!active || draftPoints.length === 0) return null;
+  const closed =
+    draftPoints.length > 2 ? [...draftPoints, draftPoints[0]] : draftPoints;
   return (
-    <>
-      <Polyline
-        positions={draftPoints}
-        pathOptions={{ color: "#047857", weight: 2, dashArray: "6 6" }}
-      />
-      {draftPoints.map((pt, idx) => (
-        <CircleMarker
-          key={`${pt[0]}-${pt[1]}-${idx}`}
-          center={pt}
-          radius={5}
-          pathOptions={{ color: "#065f46", fillColor: "#047857", fillOpacity: 1, weight: 2 }}
-        />
-      ))}
-    </>
+    <Polyline
+      positions={closed}
+      pathOptions={{ color: "#047857", weight: 2.5, dashArray: "6 6" }}
+    />
   );
 }
 
-function DisableDblClickZoom({ active }) {
+function DrawModeMapBehavior({ active }) {
   const map = useMap();
   useEffect(() => {
+    const el = map.getContainer();
     if (active) {
       map.doubleClickZoom.disable();
-      map.getContainer().style.cursor = "crosshair";
+      map.dragging.disable();
+      map.boxZoom.disable();
+      el.style.cursor = "crosshair";
+      el.style.touchAction = "none";
     } else {
       map.doubleClickZoom.enable();
-      map.getContainer().style.cursor = "";
+      map.dragging.enable();
+      map.boxZoom.enable();
+      el.style.cursor = "";
+      el.style.touchAction = "";
     }
     return () => {
       map.doubleClickZoom.enable();
-      map.getContainer().style.cursor = "";
+      map.dragging.enable();
+      map.boxZoom.enable();
+      el.style.cursor = "";
+      el.style.touchAction = "";
     };
   }, [active, map]);
   return null;
@@ -264,6 +379,7 @@ export default function BrowseProperties() {
   const [saveProjectOpen, setSaveProjectOpen] = useState(false);
   const [drawMode, setDrawMode] = useState(false);
   const [draftPoints, setDraftPoints] = useState([]);
+  const [drawResetKey, setDrawResetKey] = useState(0);
   const [polygon, setPolygon] = useState(null); // closed ring [[lat,lng],...]
   const debounceRef = useRef(null);
   const skipNextMoveFetch = useRef(false);
@@ -437,15 +553,17 @@ export default function BrowseProperties() {
     [scheduleFetch, drawMode]
   );
 
-  const finishDrawing = useCallback(() => {
-    setDraftPoints((pts) => {
-      if (pts.length < 3) {
-        setError("Draw at least 3 points to close a search area.");
-        return pts;
+  const applyDrawnRing = useCallback(
+    (ring) => {
+      if (!ring || ring.length < FREEHAND_MIN_POINTS) {
+        setError("Drag a larger area to search — tiny strokes are ignored.");
+        setDraftPoints([]);
+        return;
       }
-      const ring = [...pts];
       setPolygon(ring);
+      setDraftPoints([]);
       setDrawMode(false);
+      setError("");
       const cover = polygonCoverCircle(ring);
       if (cover) {
         setCenter({ lat: cover.lat, lng: cover.lng });
@@ -453,9 +571,14 @@ export default function BrowseProperties() {
         skipNextMoveFetch.current = true;
         fetchBrowse({ lat: cover.lat, lng: cover.lng, radius: cover.radius, polygon: ring });
       }
-      return [];
-    });
-  }, [fetchBrowse]);
+    },
+    [fetchBrowse]
+  );
+
+  const rejectStroke = useCallback(() => {
+    setDraftPoints([]);
+    setError("Drag a larger area to search — tiny strokes are ignored.");
+  }, []);
 
   const clearDrawnArea = () => {
     setPolygon(null);
@@ -467,6 +590,7 @@ export default function BrowseProperties() {
   const startDraw = () => {
     setDrawMode(true);
     setDraftPoints([]);
+    setDrawResetKey((k) => k + 1);
     setPolygon(null);
     setError("");
   };
@@ -584,15 +708,11 @@ export default function BrowseProperties() {
               <div className="inline-flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={finishDrawing}
-                  disabled={draftPoints.length < 3}
-                  className="px-3 py-2 rounded-xl bg-[#10b981] text-white text-xs font-bold disabled:opacity-50"
-                >
-                  Finish
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDraftPoints((p) => p.slice(0, -1))}
+                  onClick={() => {
+                    setDraftPoints([]);
+                    setDrawResetKey((k) => k + 1);
+                    setError("");
+                  }}
                   disabled={!draftPoints.length}
                   className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 disabled:opacity-40"
                 >
@@ -603,6 +723,8 @@ export default function BrowseProperties() {
                   onClick={() => {
                     setDrawMode(false);
                     setDraftPoints([]);
+                    setDrawResetKey((k) => k + 1);
+                    setError("");
                   }}
                   className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600"
                 >
@@ -664,8 +786,8 @@ export default function BrowseProperties() {
         </div>
         {drawMode && (
           <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-slate-500 font-medium">
-            Click the map to add corners. Double-click or press <span className="font-bold text-slate-700">Finish</span>{" "}
-            to close the area — filters apply only inside your shape.
+            Drag on the map to draw a search area. Release to close the shape — filters apply only
+            inside it.
           </p>
         )}
         {polygon && !drawMode && (
@@ -701,12 +823,14 @@ export default function BrowseProperties() {
               />
               <MapController center={center} zoom={zoom} flyToken={flyToken} />
               <MapMoveWatcher onMoveEnd={onMapMoveEnd} enabled={!drawMode && !polygon} />
-              <DisableDblClickZoom active={drawMode} />
+              <DrawModeMapBehavior active={drawMode} />
               <DrawInteraction
                 active={drawMode}
                 draftPoints={draftPoints}
-                onAddPoint={(pt) => setDraftPoints((prev) => [...prev, pt])}
-                onFinish={finishDrawing}
+                resetKey={drawResetKey}
+                onPointsChange={setDraftPoints}
+                onStrokeComplete={applyDrawnRing}
+                onStrokeReject={rejectStroke}
               />
               {polygon && (
                 <Polygon
