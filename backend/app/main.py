@@ -13,7 +13,7 @@ import stripe
 from app.config import get_settings
 from app.stripe_billing import plan_from_subscription_price_ids, stripe_customer_id
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, realtor_assignments, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook, marketing
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, realtor_assignments, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook, marketing, promo
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(marketing.router, prefix="/api")
+app.include_router(promo.router, prefix="/api")
 app.include_router(property_scores.router, prefix="/api/entities")
 app.include_router(clients.router, prefix="/api/entities")
 app.include_router(private_listings.router, prefix="/api/entities")

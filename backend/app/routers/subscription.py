@@ -104,6 +104,8 @@ async def create_checkout_session(body: CreateCheckoutBody, user_id: str = Depen
             "cancel_url": cancel_url,
             "client_reference_id": user_id,
             "consent_collection": {"terms_of_service": "required"},
+            # Lets users enter Stripe promotion codes (e.g. ADMIN = 100% off).
+            "allow_promotion_codes": True,
         }
         if existing_customer_id:
             checkout_kwargs["customer"] = existing_customer_id
