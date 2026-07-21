@@ -34,6 +34,8 @@ import { PremiumGate } from "@/components/PremiumGate";
 import RequireAuth from "@/components/RequireAuth";
 import InviteFriendsPanel from "@/components/profile/InviteFriendsPanel";
 import AppearanceSettings from "@/components/profile/AppearanceSettings";
+import ProfilePhotoPicker from "@/components/profile/ProfilePhotoPicker";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ALL_CATEGORIES = [...MANDATORY_CATEGORIES, ...NEIGHBORHOOD_CATEGORIES, ...OPTIONAL_CATEGORIES];
 const TABS = [
@@ -265,9 +267,14 @@ function ProfileInner() {
         <div className="absolute inset-0 bg-[#1a2234]/75" />
         <div className="relative max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#10b981]/20 flex items-center justify-center">
-              <User size={26} className="text-[#10b981]" />
-            </div>
+            <Avatar className="w-14 h-14 rounded-2xl bg-[#10b981]/20">
+              {user?.avatar_url ? (
+                <AvatarImage src={user.avatar_url} alt="" className="object-cover rounded-2xl" />
+              ) : null}
+              <AvatarFallback className="rounded-2xl bg-transparent">
+                <User size={26} className="text-[#10b981]" />
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h1 className="text-2xl font-bold text-white">{user?.full_name || "My Profile"}</h1>
               <p className="text-slate-400 text-sm">{user?.email}</p>
@@ -373,6 +380,20 @@ function ProfileInner() {
             <p className="text-slate-400 text-sm mb-6">Personal information tied to your account.</p>
 
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
+              {user?.id && (
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Profile photo</label>
+                  <ProfilePhotoPicker
+                    userId={user.id}
+                    avatarUrl={user.avatar_url}
+                    fullName={user.full_name}
+                    onUpdated={(url) => {
+                      setUser((prev) => (prev ? { ...prev, avatar_url: url } : prev));
+                      refreshUser();
+                    }}
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1.5">Full Name</label>
                 <input

@@ -41,6 +41,7 @@ function profileToUser(row) {
     phone: row.phone || "",
     marketing_opt_in: Boolean(row.marketing_opt_in),
     promo_code: row.promo_code || "",
+    avatar_url: row.avatar_url || "",
   };
 }
 
@@ -164,7 +165,15 @@ export async function PATCH(request) {
   try {
     await ensureProfile(url, service, user);
     const updates = {};
-    for (const key of ["full_name", "phone", "marketing_opt_in", "realtor_license", "brokerage", "state"]) {
+    for (const key of [
+      "full_name",
+      "phone",
+      "marketing_opt_in",
+      "realtor_license",
+      "brokerage",
+      "state",
+      "avatar_url",
+    ]) {
       if (Object.prototype.hasOwnProperty.call(body, key)) updates[key] = body[key];
     }
     if (updates.marketing_opt_in === true) {

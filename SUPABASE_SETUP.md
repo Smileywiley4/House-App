@@ -33,6 +33,7 @@ Apply migrations in order (oldest → newest) in **SQL Editor**:
 | 12 | `supabase/migrations/20260709130000_profiles_marketing_fields.sql` | marketing consent fields |
 | 13 | `supabase/migrations/20260709140000_oauth_profile_names.sql` | Google OAuth display names |
 | 14 | `supabase/migrations/20260709150000_restrict_profile_sensitive_updates.sql` | prevent client-side plan, role, and billing changes |
+| … | later migrations (browse, projects, contacts, **avatars**) | see `supabase/migrations/` |
 
 **Steps:**
 

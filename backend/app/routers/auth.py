@@ -36,6 +36,7 @@ class UpdateProfileBody(BaseModel):
     linked_realtor_id: str | None = None
     phone: str | None = Field(default=None, max_length=50)
     marketing_opt_in: bool | None = None
+    avatar_url: str | None = Field(default=None, max_length=2000)
 
 
 class DeleteAccountBody(BaseModel):
@@ -386,6 +387,7 @@ def _profile_to_user(row: dict | None) -> dict | None:
         "phone": row.get("phone") or "",
         "marketing_opt_in": bool(row.get("marketing_opt_in")),
         "promo_code": row.get("promo_code") or "",
+        "avatar_url": row.get("avatar_url") or "",
     }
 
 
@@ -520,6 +522,10 @@ async def update_me(body: UpdateProfileBody, user_id: str = Depends(get_current_
     if "phone" in updates:
         phone = (updates["phone"] or "").strip()
         updates["phone"] = phone or None
+
+    if "avatar_url" in updates:
+        avatar = (updates["avatar_url"] or "").strip()
+        updates["avatar_url"] = avatar or None
 
     supabase.table("profiles").update(updates).eq("id", user_id).execute()
     r = supabase.table("profiles").select("*").eq("id", user_id).execute()

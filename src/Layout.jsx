@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
 import SiteFooter from "@/components/trust/SiteFooter";
 import NotificationsBell from "@/components/NotificationsBell";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,10 +119,19 @@ export default function Layout({ children, currentPageName }) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234]"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234] overflow-hidden"
                     aria-label="Open account menu"
                   >
-                    <UserCircle size={22} strokeWidth={1.75} />
+                    {user?.avatar_url ? (
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.avatar_url} alt="" className="object-cover" />
+                        <AvatarFallback className="bg-transparent text-white">
+                          <UserCircle size={22} strokeWidth={1.75} />
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <UserCircle size={22} strokeWidth={1.75} />
+                    )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={8}>
