@@ -1,4 +1,4 @@
-"""Append marketing opt-in signups to Google Sheets via API v4."""
+"""Account CRM sync to Google Sheets (profile / contact only — never payment data)."""
 from __future__ import annotations
 
 import json
@@ -16,22 +16,76 @@ logger = logging.getLogger(__name__)
 SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets"
 
-MARKETING_SHEET_TAB_NAME = "Marketing signups"
+MARKETING_SHEET_TAB_NAME = "Accounts"
 
-# Row 1 headers — must stay in sync with append row order (A–H).
+# Row 1 headers — must stay in sync with row order (A–P).
+# Intentionally excludes all financial fields (no card data, Stripe IDs, amounts, or billing invoices).
 MARKETING_SHEET_HEADERS = [
-    "Signed up (UTC)",
-    "Email",
+    "Signup date",
+    "Signup time (UTC)",
     "Name",
+    "Email",
     "Phone",
-    "Plan",
+    "Account type",
+    "State",
+    "Brokerage",
+    "Realtor license",
     "Marketing opt-in",
+    "Promo code used",
+    "Promo code",
+    "Account status",
+    "Status updated (UTC)",
     "Source",
     "User ID",
 ]
 
-# Column widths in pixels (A–H).
-MARKETING_COLUMN_WIDTHS = [168, 240, 160, 130, 88, 120, 110, 290]
+USER_ID_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("User ID")  # 0-based
+STATUS_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("Account status")
+STATUS_UPDATED_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("Status updated (UTC)")
+SIGNUP_DATE_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("Signup date")
+SIGNUP_TIME_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("Signup time (UTC)")
+PROMO_USED_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("Promo code used")
+PROMO_CODE_COLUMN_INDEX = MARKETING_SHEET_HEADERS.index("Promo code")
+
+
+def _column_letter(index: int) -> str:
+    """Convert 0-based column index to A1 letter(s)."""
+    n = index + 1
+    letters = ""
+    while n:
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
+
+
+LAST_COLUMN_LETTER = _column_letter(len(MARKETING_SHEET_HEADERS) - 1)
+
+# Column widths in pixels (A–P).
+MARKETING_COLUMN_WIDTHS = [
+    120,  # Signup date
+    130,  # Signup time
+    160,  # Name
+    240,  # Email
+    130,  # Phone
+    110,  # Account type
+    72,   # State
+    150,  # Brokerage
+    130,  # Realtor license
+    120,  # Marketing opt-in
+    120,  # Promo code used
+    120,  # Promo code
+    120,  # Account status
+    168,  # Status updated
+    110,  # Source
+    290,  # User ID
+]
+
+_ACCOUNT_TYPE_LABELS = {
+    "free": "Free",
+    "premium": "Premium",
+    "realtor": "Realtor",
+    "admin": "Admin",
+}
 
 _layout_initialized = False
 
@@ -61,14 +115,83 @@ def _auth_headers() -> dict[str, str]:
     return {"Authorization": f"Bearer {_get_access_token()}"}
 
 
-def _format_signed_up_at(value: datetime | str | None) -> str:
-    if isinstance(value, str) and value.strip():
-        return value.strip()
+def _as_utc_datetime(value: datetime | str | None = None) -> datetime:
     if isinstance(value, datetime):
-        dt = value.astimezone(timezone.utc) if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    else:
-        dt = datetime.now(timezone.utc)
-    return dt.strftime("%Y-%m-%d %H:%M UTC")
+        return value.astimezone(timezone.utc) if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str) and value.strip():
+        raw = value.strip().replace("Z", "+00:00")
+        # Accept already-formatted sheet values like "2026-07-20 14:30 UTC".
+        if raw.endswith(" UTC") and "T" not in raw:
+            try:
+                return datetime.strptime(raw, "%Y-%m-%d %H:%M UTC").replace(tzinfo=timezone.utc)
+            except ValueError:
+                try:
+                    return datetime.strptime(raw, "%Y-%m-%d %H:%M:%S UTC").replace(tzinfo=timezone.utc)
+                except ValueError:
+                    pass
+        try:
+            parsed = datetime.fromisoformat(raw)
+            return parsed.astimezone(timezone.utc) if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
+
+
+def _format_utc(value: datetime | str | None = None) -> str:
+    return _as_utc_datetime(value).strftime("%Y-%m-%d %H:%M UTC")
+
+
+def _format_signup_date(value: datetime | str | None = None) -> str:
+    return _as_utc_datetime(value).strftime("%Y-%m-%d")
+
+
+def _format_signup_time(value: datetime | str | None = None) -> str:
+    return _as_utc_datetime(value).strftime("%H:%M:%S UTC")
+
+
+def _account_type_label(plan: str | None) -> str:
+    key = (plan or "free").strip().lower()
+    return _ACCOUNT_TYPE_LABELS.get(key, key.title() or "Free")
+
+
+def _profile_row(
+    *,
+    user_id: str,
+    email: str | None,
+    full_name: str | None,
+    phone: str | None,
+    plan: str | None,
+    state: str | None,
+    brokerage: str | None,
+    realtor_license: str | None,
+    marketing_opt_in: bool,
+    account_status: str,
+    source: str,
+    signed_up_at: datetime | str | None,
+    status_updated_at: datetime | str | None = None,
+    promo_code: str | None = None,
+    promo_code_used: bool | None = None,
+) -> list[str]:
+    code = (promo_code or "").strip().upper()
+    used = "Yes" if (promo_code_used if promo_code_used is not None else bool(code)) else "No"
+    return [
+        _format_signup_date(signed_up_at),
+        _format_signup_time(signed_up_at),
+        (full_name or "").strip(),
+        (email or "").strip().lower(),
+        (phone or "").strip(),
+        _account_type_label(plan),
+        (state or "").strip(),
+        (brokerage or "").strip(),
+        (realtor_license or "").strip(),
+        "Yes" if marketing_opt_in else "No",
+        used,
+        code,
+        account_status,
+        _format_utc(status_updated_at),
+        (source or "signup").strip(),
+        user_id,
+    ]
 
 
 async def _fetch_spreadsheet(client: httpx.AsyncClient) -> dict:
@@ -93,7 +216,7 @@ async def _first_sheet_id(client: httpx.AsyncClient) -> int:
 async def _read_header_row(client: httpx.AsyncClient) -> list[str]:
     sid = _sheet_id()
     r = await client.get(
-        f"{SHEETS_API}/{sid}/values/A1:H1",
+        f"{SHEETS_API}/{sid}/values/A1:{LAST_COLUMN_LETTER}1",
         headers=_auth_headers(),
     )
     r.raise_for_status()
@@ -101,6 +224,24 @@ async def _read_header_row(client: httpx.AsyncClient) -> list[str]:
     if not rows:
         return []
     return [str(c).strip() for c in rows[0]]
+
+
+async def _find_row_index_by_user_id(client: httpx.AsyncClient, user_id: str) -> int | None:
+    """Return 1-based sheet row number for the user, or None."""
+    target = (user_id or "").strip()
+    if not target:
+        return None
+    col_letter = _column_letter(USER_ID_COLUMN_INDEX)
+    r = await client.get(
+        f"{SHEETS_API}/{_sheet_id()}/values/{col_letter}2:{col_letter}",
+        headers=_auth_headers(),
+    )
+    r.raise_for_status()
+    rows = r.json().get("values") or []
+    for index, row in enumerate(rows):
+        if row and str(row[0]).strip() == target:
+            return index + 2  # header is row 1
+    return None
 
 
 async def ensure_marketing_sheet_layout(*, force: bool = False) -> bool:
@@ -112,7 +253,7 @@ async def ensure_marketing_sheet_layout(*, force: bool = False) -> bool:
     if _layout_initialized and not force:
         return True
     if not marketing_sheets_configured():
-        logger.warning("Marketing sheet layout skipped: Google Sheets env not configured")
+        logger.warning("Account sheet layout skipped: Google Sheets env not configured")
         return False
 
     try:
@@ -124,7 +265,7 @@ async def ensure_marketing_sheet_layout(*, force: bool = False) -> bool:
             if needs_headers:
                 sid = _sheet_id()
                 await client.put(
-                    f"{SHEETS_API}/{sid}/values/A1:H1",
+                    f"{SHEETS_API}/{sid}/values/A1:{LAST_COLUMN_LETTER}1",
                     params={"valueInputOption": "RAW"},
                     json={"values": [MARKETING_SHEET_HEADERS]},
                     headers=_auth_headers(),
@@ -172,14 +313,34 @@ async def ensure_marketing_sheet_layout(*, force: bool = False) -> bool:
                             "sheetId": sheet_gid,
                             "startRowIndex": 1,
                             "endRowIndex": 10000,
-                            "startColumnIndex": 0,
-                            "endColumnIndex": 1,
+                            "startColumnIndex": SIGNUP_DATE_COLUMN_INDEX,
+                            "endColumnIndex": SIGNUP_DATE_COLUMN_INDEX + 1,
                         },
                         "cell": {
                             "userEnteredFormat": {
                                 "numberFormat": {
-                                    "type": "DATE_TIME",
-                                    "pattern": "yyyy-mm-dd hh:mm",
+                                    "type": "DATE",
+                                    "pattern": "yyyy-mm-dd",
+                                },
+                                "horizontalAlignment": "LEFT",
+                            }
+                        },
+                        "fields": "userEnteredFormat(numberFormat,horizontalAlignment)",
+                    }
+                },
+                {
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sheet_gid,
+                            "startRowIndex": 1,
+                            "endRowIndex": 10000,
+                            "startColumnIndex": SIGNUP_TIME_COLUMN_INDEX,
+                            "endColumnIndex": SIGNUP_TIME_COLUMN_INDEX + 1,
+                        },
+                        "cell": {
+                            "userEnteredFormat": {
+                                "numberFormat": {
+                                    "type": "TEXT",
                                 },
                                 "horizontalAlignment": "LEFT",
                             }
@@ -226,13 +387,110 @@ async def ensure_marketing_sheet_layout(*, force: bool = False) -> bool:
             r.raise_for_status()
 
         _layout_initialized = True
-        logger.info("Marketing Google Sheet layout ensured (tab=%s)", MARKETING_SHEET_TAB_NAME)
+        logger.info("Account Google Sheet layout ensured (tab=%s)", MARKETING_SHEET_TAB_NAME)
         return True
     except Exception as exc:
-        logger.warning("Marketing sheet layout failed: %s", exc)
+        logger.warning("Account sheet layout failed: %s", exc)
         return False
 
 
+async def upsert_account_row(
+    *,
+    user_id: str,
+    email: str | None,
+    full_name: str | None,
+    phone: str | None,
+    plan: str | None,
+    state: str | None = None,
+    brokerage: str | None = None,
+    realtor_license: str | None = None,
+    marketing_opt_in: bool = False,
+    account_status: str = "Active",
+    source: str = "signup",
+    signed_up_at: datetime | str | None = None,
+    status_updated_at: datetime | str | None = None,
+    promo_code: str | None = None,
+    promo_code_used: bool | None = None,
+) -> bool:
+    """
+    Create or update the CRM row for an account.
+    Stores contact / account-type fields only — never payment or card data.
+    """
+    target = (user_id or "").strip()
+    if not target:
+        return False
+    if not marketing_sheets_configured():
+        logger.warning(
+            "Google Sheets account sync skipped: set GOOGLE_MARKETING_SHEET_ID and GOOGLE_SHEETS_SA_JSON"
+        )
+        return False
+
+    await ensure_marketing_sheet_layout()
+
+    row = _profile_row(
+        user_id=target,
+        email=email,
+        full_name=full_name,
+        phone=phone,
+        plan=plan,
+        state=state,
+        brokerage=brokerage,
+        realtor_license=realtor_license,
+        marketing_opt_in=marketing_opt_in,
+        account_status=account_status,
+        source=source,
+        signed_up_at=signed_up_at,
+        status_updated_at=status_updated_at or datetime.now(timezone.utc),
+        promo_code=promo_code,
+        promo_code_used=promo_code_used,
+    )
+
+    sheet_id = _sheet_id()
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            existing_row = await _find_row_index_by_user_id(client, target)
+            if existing_row is not None:
+                # Preserve original signup date + time once written.
+                get_r = await client.get(
+                    f"{SHEETS_API}/{sheet_id}/values/A{existing_row}:{LAST_COLUMN_LETTER}{existing_row}",
+                    headers=_auth_headers(),
+                )
+                get_r.raise_for_status()
+                existing_values = (get_r.json().get("values") or [[]])[0]
+                if len(existing_values) > SIGNUP_DATE_COLUMN_INDEX and str(existing_values[SIGNUP_DATE_COLUMN_INDEX]).strip():
+                    row[SIGNUP_DATE_COLUMN_INDEX] = str(existing_values[SIGNUP_DATE_COLUMN_INDEX]).strip()
+                if len(existing_values) > SIGNUP_TIME_COLUMN_INDEX and str(existing_values[SIGNUP_TIME_COLUMN_INDEX]).strip():
+                    row[SIGNUP_TIME_COLUMN_INDEX] = str(existing_values[SIGNUP_TIME_COLUMN_INDEX]).strip()
+                # Preserve promo columns unless this upsert explicitly sets a code.
+                if not (promo_code or "").strip():
+                    if len(existing_values) > PROMO_USED_COLUMN_INDEX and str(existing_values[PROMO_USED_COLUMN_INDEX]).strip():
+                        row[PROMO_USED_COLUMN_INDEX] = str(existing_values[PROMO_USED_COLUMN_INDEX]).strip()
+                    if len(existing_values) > PROMO_CODE_COLUMN_INDEX and str(existing_values[PROMO_CODE_COLUMN_INDEX]).strip():
+                        row[PROMO_CODE_COLUMN_INDEX] = str(existing_values[PROMO_CODE_COLUMN_INDEX]).strip()
+
+                put_r = await client.put(
+                    f"{SHEETS_API}/{sheet_id}/values/A{existing_row}:{LAST_COLUMN_LETTER}{existing_row}",
+                    params={"valueInputOption": "RAW"},
+                    json={"values": [row]},
+                    headers=_auth_headers(),
+                )
+                put_r.raise_for_status()
+            else:
+                append_r = await client.post(
+                    f"{SHEETS_API}/{sheet_id}/values/A:{LAST_COLUMN_LETTER}:append",
+                    params={"valueInputOption": "RAW", "insertDataOption": "INSERT_ROWS"},
+                    json={"values": [row]},
+                    headers=_auth_headers(),
+                )
+                append_r.raise_for_status()
+        logger.info("Account sheet synced for user %s (status=%s)", target, account_status)
+        return True
+    except Exception as exc:
+        logger.warning("Google Sheets account sync failed for user %s: %s", target, exc)
+        return False
+
+
+# Backward-compatible name used by older call sites / docs.
 async def append_marketing_signup(
     *,
     user_id: str,
@@ -243,49 +501,73 @@ async def append_marketing_signup(
     marketing_opt_in: bool,
     source: str = "signup",
     signed_up_at: datetime | str | None = None,
+    state: str | None = None,
+    brokerage: str | None = None,
+    realtor_license: str | None = None,
+    promo_code: str | None = None,
 ) -> bool:
-    """
-    Append a row when marketing_opt_in is true.
-    Returns True if a row was appended; False if skipped or not configured.
-    Never raises — logs warnings on failure.
-    """
-    if not marketing_opt_in:
-        return False
+    return await upsert_account_row(
+        user_id=user_id,
+        email=email,
+        full_name=full_name,
+        phone=phone,
+        plan=plan,
+        state=state,
+        brokerage=brokerage,
+        realtor_license=realtor_license,
+        marketing_opt_in=marketing_opt_in,
+        account_status="Active",
+        source=source,
+        signed_up_at=signed_up_at,
+        promo_code=promo_code,
+    )
+
+
+async def mark_account_cancelled(user_id: str) -> bool:
+    """Mark the CRM row as Deleted when the user cancels / deletes their account."""
+    target = (user_id or "").strip()
+    if not target:
+        return True
     if not marketing_sheets_configured():
-        logger.warning(
-            "Google Sheets marketing sync skipped: set GOOGLE_MARKETING_SHEET_ID and GOOGLE_SHEETS_SA_JSON"
-        )
-        return False
+        return True
 
     await ensure_marketing_sheet_layout()
-
-    plan_label = (plan or "free").strip().lower()
-    row = [
-        _format_signed_up_at(signed_up_at),
-        (email or "").strip().lower(),
-        (full_name or "").strip(),
-        (phone or "").strip(),
-        plan_label,
-        "Yes" if marketing_opt_in else "No",
-        (source or "signup").strip(),
-        user_id,
-    ]
-
-    sheet_id = _sheet_id()
-    url = f"{SHEETS_API}/{sheet_id}/values/A:H:append"
-    params = {"valueInputOption": "USER_ENTERED", "insertDataOption": "INSERT_ROWS"}
+    now = _format_utc()
+    status_letter = _column_letter(STATUS_COLUMN_INDEX)
+    updated_letter = _column_letter(STATUS_UPDATED_COLUMN_INDEX)
 
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.post(
-                url,
-                params=params,
-                json={"values": [row]},
+        async with httpx.AsyncClient(timeout=20) as client:
+            row_number = await _find_row_index_by_user_id(client, target)
+            if row_number is None:
+                # Still create a cancelled stub so the sheet reflects the deletion event.
+                return await upsert_account_row(
+                    user_id=target,
+                    email=None,
+                    full_name=None,
+                    phone=None,
+                    plan=None,
+                    marketing_opt_in=False,
+                    account_status="Deleted",
+                    source="account_deletion",
+                    signed_up_at=now,
+                    status_updated_at=now,
+                )
+
+            response = await client.put(
+                f"{SHEETS_API}/{_sheet_id()}/values/{status_letter}{row_number}:{updated_letter}{row_number}",
+                params={"valueInputOption": "RAW"},
+                json={"values": [["Deleted", now]]},
                 headers=_auth_headers(),
             )
-            r.raise_for_status()
-        logger.info("Marketing signup synced to Google Sheets for user %s", user_id)
+            response.raise_for_status()
+        logger.info("Marked account sheet row Deleted for user %s", target)
         return True
     except Exception as exc:
-        logger.warning("Google Sheets marketing sync failed for user %s: %s", user_id, exc)
+        logger.warning("Failed marking account cancelled for user %s: %s", target, exc)
         return False
+
+
+async def delete_marketing_signup(user_id: str) -> bool:
+    """Compatibility wrapper — account cancellation marks the row Deleted (does not erase history)."""
+    return await mark_account_cancelled(user_id)
