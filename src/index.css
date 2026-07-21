@@ -94,6 +94,12 @@
     @apply bg-background text-foreground font-body;
   }
 
+  /* Keep placeholders readable — browsers often fade them below WCAG. */
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
+  }
+
   h1,
   h2,
   h3,

@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MapPin, Search } from "lucide-react";
 import { api } from "@/api";
+import { cn } from "@/lib/utils";
+import { PP_FIELD_SEARCH } from "@/lib/fieldStyles";
 
 /**
  * Debounced address / place autocomplete (Google Places via /api/property/autocomplete).
@@ -109,7 +111,7 @@ export default function AddressAutocompleteInput({
 
   return (
     <div className="relative flex-1 min-w-0">
-      <Icon className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={15} />
+      <Icon className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[#6B6963]" size={15} />
       <input
         type="text"
         value={value}
@@ -125,7 +127,11 @@ export default function AddressAutocompleteInput({
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={inputClassName}
+        className={cn(
+          "w-full pl-9 pr-3 py-2.5 rounded-xl text-sm",
+          PP_FIELD_SEARCH,
+          inputClassName
+        )}
         role="combobox"
         aria-label={ariaLabel}
         aria-autocomplete="list"

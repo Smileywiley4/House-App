@@ -92,7 +92,7 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search categories..."
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 border border-transparent focus:border-[#106B49]"
+                className="w-full pl-9 pr-4 py-2.5 bg-[#F8F7F4] rounded-xl text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 border border-[#106B49]/50 focus:border-[#106B49]"
               />
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-[#106B49]/20 bg-[#106B49]/5 p-2">
@@ -109,7 +109,7 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
                 }}
                 placeholder="Add custom category"
                 maxLength={80}
-                className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-[#14192E] outline-none placeholder:text-slate-400"
+                className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-[#14192E] outline-none placeholder:text-[#6B6963]"
               />
               <button
                 type="button"

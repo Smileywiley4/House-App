@@ -457,7 +457,7 @@ function AddPropertyPanel({ availableScores, onPick, onClose }) {
           onChange={setAddress}
           onSelect={runSearch}
           placeholder="Search address..."
-          inputClassName="w-full pl-9 pr-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 text-xs focus:outline-none focus:border-[#106B49]"
+          inputClassName="w-full pl-9 pr-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-slate-300 text-xs focus:outline-none focus:border-[#106B49]"
         />
         <button
           type="submit"

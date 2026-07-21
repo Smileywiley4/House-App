@@ -120,7 +120,7 @@ export default function InviteFriendsPanel() {
                 onChange={(e) => setEmails(e.target.value)}
                 rows={4}
                 placeholder={"friend@email.com\nanother@email.com"}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-mono"
+                className="w-full px-4 py-3 rounded-xl border border-[#106B49]/50 bg-[#F8F7F4] text-sm font-mono text-[#14192E]"
               />
             </div>
             <div>
@@ -130,7 +130,7 @@ export default function InviteFriendsPanel() {
                 onChange={(e) => setMsg(e.target.value)}
                 rows={2}
                 placeholder="Join me on Propurty…"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
+                className="w-full px-4 py-3 rounded-xl border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
               />
             </div>
             <button

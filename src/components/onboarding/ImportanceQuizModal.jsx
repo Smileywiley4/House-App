@@ -278,7 +278,7 @@ export default function ImportanceQuizModal({
                   placeholder="City, ZIP, or neighborhood…"
                   ariaLabel="Search city, ZIP, or place"
                   showKindBadge
-                  inputClassName="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-[#14192E] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 focus:border-[#106B49]"
+                  inputClassName="w-full pl-10 pr-3 py-2.5 rounded-xl text-sm"
                 />
               </div>
             </>

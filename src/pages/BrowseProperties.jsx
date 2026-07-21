@@ -1049,12 +1049,12 @@ export default function BrowseProperties() {
               ariaLabel="Search city, neighborhood, ZIP, or address"
               icon="search"
               showKindBadge
-              inputClassName="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand"
+              inputClassName="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm"
             />
             <button
               type="submit"
               disabled={loading || locating}
-              className="px-4 py-2.5 rounded-xl bg-[#0C4F37] hover:bg-[#065f46] text-white text-sm font-bold shrink-0 disabled:opacity-60"
+              className="px-4 py-2.5 rounded-xl bg-[#0C4F37] hover:bg-[#065f46] border border-[#0C4F37] text-white text-sm font-bold shrink-0 disabled:opacity-60"
             >
               Search
             </button>
@@ -1064,7 +1064,7 @@ export default function BrowseProperties() {
               disabled={locating || loading}
               title="Use current location to search nearby homes (only when you tap)"
               aria-label="Use current location to search nearby homes"
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 shrink-0 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#106B49]/45 bg-white text-xs font-bold text-[#14192E] hover:bg-[#F8F7F4] shrink-0 disabled:opacity-60"
             >
               {locating ? (
                 <Loader2 size={14} className="animate-spin text-brand" />
@@ -1076,12 +1076,12 @@ export default function BrowseProperties() {
           </form>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50">
+            <div className="inline-flex rounded-xl border border-[#106B49]/40 p-0.5 bg-[#F8F7F4]">
               <button
                 type="button"
                 onClick={() => setMode("for_sale")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                  mode === "for_sale" ? "bg-white shadow text-navy" : "text-slate-500"
+                  mode === "for_sale" ? "bg-white shadow text-navy border border-[#106B49]/30" : "text-[#6B6963]"
                 }`}
               >
                 For sale
@@ -1090,7 +1090,7 @@ export default function BrowseProperties() {
                 type="button"
                 onClick={() => setMode("off_market")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                  mode === "off_market" ? "bg-white shadow text-navy" : "text-slate-500"
+                  mode === "off_market" ? "bg-white shadow text-navy border border-[#106B49]/30" : "text-[#6B6963]"
                 }`}
               >
                 Off-market est.
@@ -1101,7 +1101,7 @@ export default function BrowseProperties() {
               <button
                 type="button"
                 onClick={startDraw}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#106B49]/45 bg-white text-xs font-bold text-[#14192E] hover:bg-[#F8F7F4]"
               >
                 <Pencil size={14} /> Draw
               </button>
@@ -1115,7 +1115,7 @@ export default function BrowseProperties() {
                     setError("");
                   }}
                   disabled={!draftPoints.length}
-                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 disabled:opacity-40"
+                  className="px-3 py-2 rounded-xl border border-[#106B49]/35 bg-white text-xs font-bold text-[#14192E] disabled:opacity-40"
                 >
                   Undo
                 </button>
@@ -1127,7 +1127,7 @@ export default function BrowseProperties() {
                     setDrawResetKey((k) => k + 1);
                     setError("");
                   }}
-                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600"
+                  className="px-3 py-2 rounded-xl border border-[#106B49]/35 bg-white text-xs font-bold text-[#14192E]"
                 >
                   Cancel
                 </button>
@@ -1147,7 +1147,7 @@ export default function BrowseProperties() {
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#106B49]/45 bg-white text-xs font-bold text-[#14192E] hover:bg-[#F8F7F4]"
             >
               <SlidersHorizontal size={14} /> Filters
               {activeScoreMins > 0 && (
@@ -1157,11 +1157,11 @@ export default function BrowseProperties() {
               )}
             </button>
 
-            <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50">
+            <div className="inline-flex rounded-xl border border-[#106B49]/40 p-0.5 bg-[#F8F7F4]">
               <button
                 type="button"
                 onClick={() => setView("map")}
-                className={`px-2.5 py-1.5 rounded-lg ${view === "map" ? "bg-white shadow" : ""}`}
+                className={`px-2.5 py-1.5 rounded-lg ${view === "map" ? "bg-white shadow border border-[#106B49]/25" : "text-[#6B6963]"}`}
                 aria-label="Map view"
               >
                 <MapIcon size={14} />
@@ -1169,7 +1169,7 @@ export default function BrowseProperties() {
               <button
                 type="button"
                 onClick={() => setView("list")}
-                className={`px-2.5 py-1.5 rounded-lg ${view === "list" ? "bg-white shadow" : ""}`}
+                className={`px-2.5 py-1.5 rounded-lg ${view === "list" ? "bg-white shadow border border-[#106B49]/25" : "text-[#6B6963]"}`}
                 aria-label="List view"
               >
                 <List size={14} />
@@ -1354,7 +1354,7 @@ export default function BrowseProperties() {
                 <button
                   type="button"
                   onClick={runStartProject}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#106B49]/45 bg-white text-xs font-bold text-[#14192E] hover:bg-[#F8F7F4]"
                 >
                   <FolderKanban size={14} />
                   Start project

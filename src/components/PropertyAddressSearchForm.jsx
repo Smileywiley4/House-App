@@ -199,12 +199,12 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
   };
 
   const inputClass = isHero
-    ? "w-full pl-11 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-[#E8A33D] focus:bg-white/15 transition-all text-base"
-    : "w-full pl-11 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:border-[#E8A33D] focus:bg-white/15 transition-all text-sm";
+    ? "w-full pl-11 pr-4 py-4 rounded-xl bg-white/12 border border-white/35 text-white placeholder:text-slate-300 focus:outline-none focus:border-[#E8A33D] focus:bg-white/18 transition-all text-base"
+    : "w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#F8F7F4] border border-[#106B49]/70 text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49] focus:bg-white transition-all text-sm";
 
   const buttonClass = isHero
     ? "px-6 py-4 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
-    : "px-4 py-2.5 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap text-sm";
+    : "px-4 py-2.5 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl border border-[#0C4F37] transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap text-sm";
 
   return (
     <div className={className}>
@@ -214,7 +214,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
       >
         <div className={`relative min-w-0 flex-1 ${isHero ? "z-30" : "z-20"}`}>
           <MapPin
-            className={`absolute left-4 top-1/2 z-10 -translate-y-1/2 ${isHero ? "text-slate-400" : "text-slate-300"}`}
+            className={`absolute left-4 top-1/2 z-10 -translate-y-1/2 ${isHero ? "text-slate-300" : "text-[#6B6963]"}`}
             size={18}
           />
           <input
@@ -301,7 +301,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
         className={
           isHero
             ? "mt-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[#106B49] hover:text-[#34d399] disabled:opacity-60 mx-auto sm:mx-0"
-            : "mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-[#106B49] hover:text-[#34d399] disabled:opacity-60"
+            : "mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-[#106B49] hover:text-[#0C4F37] disabled:opacity-60"
         }
       >
         {locating ? (
@@ -312,7 +312,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
         {locating ? "Getting location…" : "Use current location"}
       </button>
       {error && (
-        <p className={`text-xs mt-1.5 ${isHero ? "text-red-300 text-center sm:text-left" : "text-red-200"}`}>
+        <p className={`text-xs mt-1.5 ${isHero ? "text-red-300 text-center sm:text-left" : "text-red-700"}`}>
           {error}
         </p>
       )}

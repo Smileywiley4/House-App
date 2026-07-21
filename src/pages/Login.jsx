@@ -802,7 +802,7 @@ export default function Login() {
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 12))}
                       placeholder="6-digit code"
                       disabled={loading}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm tracking-[0.35em] text-center font-semibold focus:outline-none focus:border-[#106B49]"
+                      className="w-full px-4 py-3 rounded-xl text-sm tracking-[0.35em] text-center font-semibold bg-[#F8F7F4] text-[#14192E] border border-[#106B49]/50 placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                       required
                     />
                     <p className="text-center text-xs text-slate-500 mt-3">
@@ -898,7 +898,7 @@ export default function Login() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Jane Smith"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
+                      className="w-full px-4 py-3 rounded-xl text-sm bg-[#F8F7F4] text-[#14192E] border border-[#106B49]/50 placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                       autoComplete="name"
                     />
                   </div>
@@ -913,7 +913,7 @@ export default function Login() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(555) 000-0000"
-                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-[#F8F7F4] text-[#14192E] border border-[#106B49]/50 placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                         autoComplete="tel"
                       />
                     </div>
@@ -928,7 +928,7 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-[#F8F7F4] text-[#14192E] border border-[#106B49]/50 placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                       required
                     />
                   </div>
@@ -942,7 +942,7 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-[#F8F7F4] text-[#14192E] border border-[#106B49]/50 placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                       required
                       minLength={mode === "signup" ? 8 : undefined}
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
@@ -959,10 +959,10 @@ export default function Login() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none ${
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-[#F8F7F4] text-[#14192E] placeholder:text-[#6B6963] focus:outline-none ${
                           confirmPassword && confirmPassword !== password
-                            ? "border-red-400 focus:border-red-500"
-                            : "border-slate-200 focus:border-[#106B49]"
+                            ? "border border-red-400 focus:border-red-500"
+                            : "border border-[#106B49]/50 focus:border-[#106B49]"
                         }`}
                         required
                         minLength={8}
@@ -1078,7 +1078,7 @@ export default function Login() {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-[#F8F7F4] text-[#14192E] border border-[#106B49]/50 placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                     required
                   />
                 </div>

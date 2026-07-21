@@ -170,7 +170,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Downtown condos"
-                    className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#106B49]"
+                    className="mt-1 w-full px-3 py-2.5 rounded-xl border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
                     maxLength={200}
                   />
                   {atLimit && (

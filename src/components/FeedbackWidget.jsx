@@ -216,7 +216,7 @@ export default function FeedbackWidget() {
                       ? "What went wrong? What did you expect?"
                       : "What’s on your mind?"
                   }
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-[#14192E] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 resize-y"
+                  className="mt-1 w-full rounded-xl border border-[#106B49]/50 bg-[#F8F7F4] px-3 py-2 text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 focus:border-[#106B49] resize-y"
                 />
               </label>
 

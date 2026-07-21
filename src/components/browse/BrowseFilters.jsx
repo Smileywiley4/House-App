@@ -152,7 +152,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
             placeholder="Min"
             value={f.price_min ?? ""}
             onChange={(e) => set({ price_min: e.target.value === "" ? "" : Number(e.target.value) })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           />
           <input
             type="number"
@@ -160,7 +160,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
             placeholder="Max"
             value={f.price_max ?? ""}
             onChange={(e) => set({ price_max: e.target.value === "" ? "" : Number(e.target.value) })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           />
         </div>
         <div className="space-y-2">
@@ -270,7 +270,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
         <select
           value={f.parking_min ?? ""}
           onChange={(e) => set({ parking_min: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+          className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
         >
           {PARKING_OPTS.map((o) => (
             <option key={o.value || "any"} value={o.value}>
@@ -299,7 +299,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
           <select
             value={f.sqft_min ?? ""}
             onChange={(e) => set({ sqft_min: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           >
             <option value="">No Min</option>
             {SQFT_PRESETS.filter(Boolean).map((v) => (
@@ -312,7 +312,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
           <select
             value={f.sqft_max ?? ""}
             onChange={(e) => set({ sqft_max: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           >
             <option value="">No Max</option>
             {SQFT_PRESETS.filter(Boolean).map((v) => (
@@ -330,7 +330,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
           <select
             value={f.lot_min ?? ""}
             onChange={(e) => set({ lot_min: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           >
             <option value="">No Min</option>
             {LOT_PRESETS.filter(Boolean).map((v) => (
@@ -343,7 +343,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
           <select
             value={f.lot_max ?? ""}
             onChange={(e) => set({ lot_max: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           >
             <option value="">No Max</option>
             {LOT_PRESETS.filter(Boolean).map((v) => (
@@ -363,7 +363,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
             placeholder="No Min"
             value={f.year_built_min ?? ""}
             onChange={(e) => set({ year_built_min: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           />
           <span className="text-slate-300">—</span>
           <input
@@ -371,7 +371,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
             placeholder="No Max"
             value={f.year_built_max ?? ""}
             onChange={(e) => set({ year_built_max: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+            className="w-full px-3 py-2 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] text-sm text-[#14192E] placeholder:text-[#6B6963] focus:outline-none focus:border-[#106B49]"
           />
         </div>
       </div>

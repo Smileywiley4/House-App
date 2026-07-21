@@ -113,7 +113,7 @@ export default function Layout({ children, currentPageName }) {
             {showHeaderSearch && (
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-charcoal transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#106B49]/45 bg-[#F8F7F4] text-[#14192E] transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 aria-label={mobileSearchOpen ? "Close address search" : "Open address search"}
                 aria-expanded={mobileSearchOpen}
                 onClick={() => setMobileSearchOpen((open) => !open)}

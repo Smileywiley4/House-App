@@ -602,7 +602,7 @@ export default function Evaluate() {
               }}
               maxLength={80}
               placeholder="Preset name, e.g. Family Home"
-              className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3 py-2.5 text-sm outline-none ring-brand/30 focus:ring-2"
+              className="min-w-0 flex-1 rounded-lg border border-[#106B49]/50 bg-[#F8F7F4] px-3 py-2.5 text-sm text-[#14192E] placeholder:text-[#6B6963] outline-none focus:border-[#106B49] focus:ring-2 focus:ring-brand/30"
             />
             <button
               type="button"
