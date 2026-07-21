@@ -1,9 +1,15 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEFAULT_LOADING_TIMEOUT_MS, useTimedLoading } from "@/hooks/useTimedLoading";
+import {
+  BrowseListSkeleton,
+  ListSkeleton,
+  ScoreCardSkeleton,
+} from "@/components/ui/skeleton";
 
 /**
- * Spinner while loading; after `timeoutMs` shows a slow-load message + Retry.
+ * Loading UI with optional skeleton; after `timeoutMs` shows slow-load + Retry.
+ * @param {"spinner"|"list"|"cards"|"browse"|null} skeleton
  */
 export default function LoadingWithTimeout({
   isLoading = true,
@@ -14,6 +20,8 @@ export default function LoadingWithTimeout({
   fullPage = false,
   className,
   size = 20,
+  skeleton = null,
+  skeletonRows = 4,
 }) {
   const { timedOut } = useTimedLoading(isLoading, { timeoutMs });
 
@@ -36,12 +44,52 @@ export default function LoadingWithTimeout({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-semibold hover:bg-[#059669] transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-semibold hover:bg-[#059669] transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)]"
           >
             <RefreshCw size={16} aria-hidden />
             Retry
           </button>
         )}
+      </div>
+    );
+  }
+
+  if (skeleton === "browse") {
+    return (
+      <div className={cn(fullPage && "min-h-screen bg-[#fafaf8] px-4 py-8", className)} role="status" aria-busy="true" aria-label={label}>
+        <BrowseListSkeleton rows={skeletonRows} />
+      </div>
+    );
+  }
+
+  if (skeleton === "cards") {
+    return (
+      <div
+        className={cn(
+          "space-y-4",
+          fullPage && "min-h-screen bg-[#fafaf8] px-6 py-8 max-w-5xl mx-auto",
+          className,
+        )}
+        role="status"
+        aria-busy="true"
+        aria-label={label}
+      >
+        {Array.from({ length: skeletonRows }).map((_, i) => (
+          <ScoreCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (skeleton === "list") {
+    return (
+      <div
+        className={cn(fullPage && "min-h-screen bg-[#fafaf8] px-6 py-8 max-w-5xl mx-auto", className)}
+        role="status"
+        aria-busy="true"
+        aria-label={label}
+      >
+        <ListSkeleton rows={skeletonRows} />
       </div>
     );
   }

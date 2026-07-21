@@ -7,6 +7,7 @@ import ShareComparison from "@/components/ShareComparison";
 import RequireAuth from "@/components/RequireAuth";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
 
 export default function SavedProperties() {
   return (
@@ -54,7 +55,8 @@ function SavedPropertiesInner() {
         onRetry={loadScores}
         fullPage
         label="Loading saved properties…"
-        size={32}
+        skeleton="cards"
+        skeletonRows={4}
       />
     ) : (
       <FetchErrorState
@@ -94,17 +96,13 @@ function SavedPropertiesInner() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         {scores.length === 0 ? (
-          <div className="text-center py-24">
-            <HomeIcon className="mx-auto text-slate-200 mb-4" size={48} />
-            <h2 className="text-xl font-bold text-[#1a2234] mb-2">No properties scored yet</h2>
-            <p className="text-slate-400 mb-6">Search for a property and score it to start comparing.</p>
-            <Link
-              to={createPageUrl("Home")}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
-            >
-              Search Properties
-            </Link>
-          </div>
+          <EmptyState
+            icon={HomeIcon}
+            title="No properties scored yet"
+            description="Search for a property and score it to start comparing."
+            actionLabel="Search properties"
+            actionTo={createPageUrl("Home")}
+          />
         ) : (
           <div className="space-y-4">
             {sorted.map((property, index) => (
@@ -127,7 +125,7 @@ function PropertyScoreCard({ property, rank, isWinner, onDelete }) {
   const scoreColor = property.percentage >= 70 ? "#10b981" : property.percentage >= 40 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow hover:shadow-md ${isWinner ? "border-[#10b981]" : "border-slate-100"}`}>
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:shadow-md ${isWinner ? "border-[#10b981]" : "border-slate-100"}`}>
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">

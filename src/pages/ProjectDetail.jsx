@@ -15,6 +15,7 @@ import StartProjectModal from "@/components/browse/StartProjectModal";
 import ExportTourPacketButton from "@/components/ExportTourPacketButton";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
 import { ALL_BROWSE_SCORE_IDS } from "@/components/browse/scoreCategories";
 import { projectPropertyToTourItem } from "@/lib/tourPacketPdf";
 
@@ -148,7 +149,8 @@ function ProjectDetailInner() {
         onRetry={() => (projectId ? load() : loadList())}
         fullPage
         label="Loading…"
-        size={32}
+        skeleton={projectId ? "cards" : "list"}
+        skeletonRows={projectId ? 3 : 4}
       />
     );
   }
@@ -179,16 +181,13 @@ function ProjectDetailInner() {
               <FetchErrorState compact message={error} onRetry={loadList} className="mb-4" />
             )}
             {projectList.length === 0 ? (
-              <div className="text-center py-16">
-                <FolderKanban className="mx-auto text-slate-200 mb-4" size={48} />
-                <h2 className="text-xl font-bold text-[#1a2234] mb-2">No projects yet</h2>
-                <p className="text-slate-400 text-sm mb-6">
-                  Start a project from here or from Search Properties.
-                </p>
-                <Link to={createPageUrl("BrowseProperties")} className="text-[#10b981] font-semibold text-sm">
-                  Search Properties
-                </Link>
-              </div>
+              <EmptyState
+                icon={FolderKanban}
+                title="No projects yet"
+                description="Start a project from here or from Search Properties."
+                actionLabel="Search properties"
+                actionTo={createPageUrl("BrowseProperties")}
+              />
             ) : (
               <ul className="space-y-3">
                 {projectList.map((p) => (
@@ -413,20 +412,13 @@ function ProjectDetailInner() {
         )}
 
         {properties.length === 0 ? (
-          <div className="text-center py-20">
-            <HomeIcon className="mx-auto text-slate-200 mb-4" size={48} />
-            <h2 className="text-xl font-bold text-[#1a2234] mb-2">No properties yet</h2>
-            <p className="text-slate-400 mb-6 text-sm">
-              Select homes on Search Properties and use Save to project, or Start project with a
-              selection.
-            </p>
-            <Link
-              to={createPageUrl("BrowseProperties")}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
-            >
-              Browse homes
-            </Link>
-          </div>
+          <EmptyState
+            icon={HomeIcon}
+            title="No properties yet"
+            description="Select homes on Search Properties and use Save to project, or Start project with a selection."
+            actionLabel="Browse homes"
+            actionTo={createPageUrl("BrowseProperties")}
+          />
         ) : (
           <ul className="space-y-3">
             {properties.map((p) => {

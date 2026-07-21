@@ -19,6 +19,9 @@ export default function AsyncState({
   errorInline = false,
   loadingClassName,
   errorClassName,
+  /** @type {"spinner"|"list"|"cards"|"browse"|null} */
+  skeleton = null,
+  skeletonRows = 4,
 }) {
   const hasError = Boolean(error);
 
@@ -43,6 +46,8 @@ export default function AsyncState({
         label={loadingLabel}
         fullPage={fullPage}
         className={loadingClassName}
+        skeleton={skeleton}
+        skeletonRows={skeletonRows}
       />
     );
   }

@@ -31,6 +31,7 @@ import { compareScoreToTourItem } from "@/lib/tourPacketPdf";
 import { toast } from "@/components/ui/use-toast";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
 
 const VIEW_MODES = [
   { id: "columns", label: "Side by Side", icon: Columns },
@@ -348,34 +349,14 @@ function CompareInner() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {comparing.length < 2 ? (
-          <div className="text-center py-20 text-slate-400">
-            <p className="text-lg font-semibold text-[#1a2234] mb-2">
-              {filledCount === 0 ? "Add properties to compare" : "Add at least one more property"}
-            </p>
-            <p className="text-sm mb-6">
-              Use an empty slot above to search an address, pick a saved score, or browse listings.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {slots.map((id, index) =>
-                id ? null : (
-                  <button
-                    key={`cta-${index}`}
-                    type="button"
-                    onClick={() => setAddSlotIndex(index)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a2234] text-white text-sm font-semibold hover:bg-[#243050]"
-                  >
-                    <Plus size={14} /> Fill slot {index + 1}
-                  </button>
-                )
-              )}
-              <Link
-                to={createPageUrl("BrowseProperties")}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-[#1a2234] text-sm font-semibold hover:bg-white"
-              >
-                Browse listings
-              </Link>
-            </div>
-          </div>
+          <EmptyState
+            icon={Columns}
+            title={filledCount === 0 ? "Add properties to compare" : "Add at least one more property"}
+            description="Use an empty slot above to search an address, pick a saved score, or browse listings."
+            actionLabel="Browse listings"
+            actionTo={createPageUrl("BrowseProperties")}
+            className="py-20 border-0 bg-transparent"
+          />
         ) : (
           <>
             {viewMode === "columns" && (
@@ -476,7 +457,7 @@ function AddPropertyPanel({ availableScores, onPick, onClose }) {
         <button
           type="submit"
           disabled={searching}
-          className="px-3 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-xs font-semibold disabled:opacity-60 flex items-center gap-1"
+          className="px-3 py-2 bg-[#047857] hover:bg-[#065f46] text-white rounded-lg text-xs font-semibold disabled:opacity-60 flex items-center gap-1"
         >
           {searching ? (
             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
