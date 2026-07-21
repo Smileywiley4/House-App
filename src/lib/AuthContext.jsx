@@ -101,12 +101,18 @@ export const AuthProvider = ({ children }) => {
     };
   }, [checkAppState, checkUserAuth]);
 
+  /**
+   * Sign out and hard-redirect to Home (`/`) so guest ad state (`showAds`) applies
+   * immediately — paid users see ads again after logout for AdSense revenue.
+   */
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
     isAuthenticatedRef.current = false;
     if (shouldRedirect) {
-      api.auth.logout(typeof window !== 'undefined' ? window.location.href : undefined);
+      const homeUrl =
+        typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+      api.auth.logout(homeUrl);
     } else {
       api.auth.logout();
     }
