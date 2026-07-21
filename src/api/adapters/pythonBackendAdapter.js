@@ -2260,6 +2260,8 @@ export function createPythonBackendAdapter() {
         request('POST', `/api/library/saved-properties/${encodeURIComponent(savedId)}/share`, body),
       listFolders: () => request('GET', '/api/library/folders'),
       createFolder: (data) => request('POST', '/api/library/folders', data),
+      updateFolder: (id, data) =>
+        request('PATCH', `/api/library/folders/${encodeURIComponent(id)}`, data),
       deleteFolder: (id) => request('DELETE', `/api/library/folders/${encodeURIComponent(id)}`),
       addToFolder: (folderId, savedPropertyId) =>
         request('POST', `/api/library/folders/${encodeURIComponent(folderId)}/items`, { saved_property_id: savedPropertyId }),

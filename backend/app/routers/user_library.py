@@ -93,6 +93,11 @@ class CreateFolderBody(BaseModel):
     sort_order: int = 0
 
 
+class UpdateFolderBody(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=200)
+    sort_order: int | None = None
+
+
 class FolderItemBody(BaseModel):
     saved_property_id: str
 
@@ -535,6 +540,33 @@ async def list_folders(user_id: str = Depends(require_paid_plan)):
             }
         )
     return folders
+
+
+@router.patch("/folders/{folder_id}")
+async def update_folder(folder_id: str, body: UpdateFolderBody, user_id: str = Depends(require_paid_plan)):
+    supabase = get_supabase_admin()
+    _assert_owns_folder(supabase, user_id, folder_id)
+    updates: dict[str, Any] = {}
+    if body.name is not None:
+        updates["name"] = body.name.strip()
+    if body.sort_order is not None:
+        updates["sort_order"] = body.sort_order
+    if not updates:
+        fr = supabase.table("property_folders").select("*").eq("id", folder_id).eq("user_id", user_id).execute()
+        x = fr.data[0]
+        return {"id": str(x["id"]), "name": x["name"], "sort_order": x.get("sort_order") or 0, "created_at": x.get("created_at")}
+    upd = (
+        supabase.table("property_folders")
+        .update(updates)
+        .eq("id", folder_id)
+        .eq("user_id", user_id)
+        .select()
+        .execute()
+    )
+    if not upd.data:
+        raise HTTPException(status_code=500, detail="Could not update folder")
+    x = upd.data[0]
+    return {"id": str(x["id"]), "name": x["name"], "sort_order": x.get("sort_order") or 0, "created_at": x.get("created_at")}
 
 
 @router.delete("/folders/{folder_id}")

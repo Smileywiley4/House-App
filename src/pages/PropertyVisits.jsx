@@ -10,9 +10,11 @@ import {
   Home,
   ChevronRight,
   Users,
+  Pencil,
 } from "lucide-react";
 import { api } from "@/api";
 import RequireAuth from "@/components/RequireAuth";
+import RenameDialog from "@/components/RenameDialog";
 import AsyncState from "@/components/async/AsyncState";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
@@ -63,6 +65,7 @@ function PropertyVisitsInner() {
   const [peerUsers, setPeerUsers] = useState([]);
   const [peerShareMsg, setPeerShareMsg] = useState("");
   const [shareFolderOpen, setShareFolderOpen] = useState(null);
+  const [renamingFolder, setRenamingFolder] = useState(null);
 
   const load = useCallback(async () => {
     if (!isPremium) {
@@ -293,6 +296,15 @@ function PropertyVisitsInner() {
                       {f.name} <span className="text-slate-400">({f.item_count})</span>
                     </span>
                     <div className="flex gap-2 shrink-0">
+                      <button
+                        type="button"
+                        className="text-slate-500 hover:text-[#106B49] p-0.5"
+                        title="Rename"
+                        aria-label={`Rename ${f.name}`}
+                        onClick={() => setRenamingFolder(f)}
+                      >
+                        <Pencil size={13} />
+                      </button>
                       <button
                         type="button"
                         className="text-[#106B49] text-xs font-medium"
@@ -681,6 +693,18 @@ function PropertyVisitsInner() {
           })()}
         </div>
       </div>
+      <RenameDialog
+        open={!!renamingFolder}
+        onOpenChange={(open) => !open && setRenamingFolder(null)}
+        title="Rename folder"
+        label="Folder name"
+        initialValue={renamingFolder?.name || ""}
+        onSave={async (name) => {
+          if (!renamingFolder?.id) return;
+          await api.library.updateFolder(renamingFolder.id, { name });
+          await load();
+        }}
+      />
     </div>
   );
 }

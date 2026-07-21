@@ -557,6 +557,7 @@ export const base44Adapter = {
     shareWithRealtor: () => Promise.reject(new Error('Visit library requires Python backend')),
     listFolders: () => Promise.reject(new Error('Visit library requires Python backend')),
     createFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
+    updateFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
     deleteFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
     addToFolder: () => Promise.reject(new Error('Visit library requires Python backend')),
     removeFromFolder: () => Promise.reject(new Error('Visit library requires Python backend')),

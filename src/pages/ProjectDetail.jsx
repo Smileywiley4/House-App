@@ -7,10 +7,12 @@ import {
   Trash2,
   SlidersHorizontal,
   Home as HomeIcon,
+  Pencil,
 } from "lucide-react";
 import { api } from "@/api";
 import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
+import RenameDialog from "@/components/RenameDialog";
 import StartProjectModal from "@/components/browse/StartProjectModal";
 import ExportTourPacketButton from "@/components/ExportTourPacketButton";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
@@ -60,6 +62,7 @@ function ProjectDetailInner() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [titleEdit, setTitleEdit] = useState("");
   const [startOpen, setStartOpen] = useState(false);
+  const [renamingProject, setRenamingProject] = useState(null);
   const [invites, setInvites] = useState([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteBusy, setInviteBusy] = useState(false);
@@ -142,6 +145,20 @@ function ProjectDetailInner() {
     }
   };
 
+  const renameProject = async (name) => {
+    const targetId = renamingProject?.id || projectId;
+    if (!targetId) return;
+    const updated = await api.projects.update(targetId, { title: name });
+    const nextTitle = updated?.title || name;
+    if (project?.id === targetId) {
+      setProject((p) => (p ? { ...p, ...(updated || {}), title: nextTitle } : updated));
+      setTitleEdit(nextTitle);
+    }
+    setProjectList((prev) =>
+      prev.map((p) => (p.id === targetId ? { ...p, title: nextTitle } : p))
+    );
+  };
+
   if (loading) {
     return (
       <LoadingWithTimeout
@@ -190,20 +207,37 @@ function ProjectDetailInner() {
               />
             ) : (
               <ul className="space-y-3">
-                {projectList.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      to={`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(p.id)}`}
-                      className="block bg-white rounded-2xl border border-slate-100 p-4 hover:border-[#106B49]/40 transition"
+                {projectList.map((p) => {
+                  const canRename = p.membership !== "collaborator";
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-stretch gap-2 bg-white rounded-2xl border border-slate-100 hover:border-[#106B49]/40 transition"
                     >
-                      <div className="font-bold text-[#14192E]">{p.title}</div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        {p.property_count ?? 0} propert{(p.property_count ?? 0) === 1 ? "y" : "ies"}
-                        {p.membership === "collaborator" ? " · shared with you" : ""}
-                      </div>
-                    </Link>
-                  </li>
-                ))}
+                      <Link
+                        to={`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(p.id)}`}
+                        className="flex-1 min-w-0 p-4"
+                      >
+                        <div className="font-bold text-[#14192E] truncate">{p.title}</div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {p.property_count ?? 0} propert{(p.property_count ?? 0) === 1 ? "y" : "ies"}
+                          {p.membership === "collaborator" ? " · shared with you" : ""}
+                        </div>
+                      </Link>
+                      {canRename ? (
+                        <button
+                          type="button"
+                          onClick={() => setRenamingProject(p)}
+                          className="shrink-0 self-center mr-3 w-9 h-9 rounded-xl text-slate-400 hover:text-[#106B49] hover:bg-slate-50 flex items-center justify-center"
+                          title="Rename"
+                          aria-label={`Rename ${p.title || "project"}`}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             )}
 
@@ -260,6 +294,14 @@ function ProjectDetailInner() {
           </div>
         </div>
         <StartProjectModal open={startOpen} onClose={() => setStartOpen(false)} />
+        <RenameDialog
+          open={!!renamingProject}
+          onOpenChange={(open) => !open && setRenamingProject(null)}
+          title="Rename project"
+          label="Project title"
+          initialValue={renamingProject?.title || ""}
+          onSave={renameProject}
+        />
       </>
     );
   }
@@ -300,7 +342,20 @@ function ProjectDetailInner() {
                 <FolderKanban size={14} /> Project
                 {!isOwner && <span className="text-slate-400 font-semibold normal-case">· collaborator</span>}
               </div>
-              <h1 className="text-2xl font-bold text-white">{project.title}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold text-white">{project.title}</h1>
+                {isOwner ? (
+                  <button
+                    type="button"
+                    onClick={() => setRenamingProject(project)}
+                    className="w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center"
+                    title="Rename"
+                    aria-label="Rename project"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                ) : null}
+              </div>
               <p className="text-slate-400 text-sm mt-1">
                 {properties.length} propert{properties.length === 1 ? "y" : "ies"} · scores use this
                 project&apos;s preferences
@@ -528,6 +583,14 @@ function ProjectDetailInner() {
           </div>
         </div>
       )}
+      <RenameDialog
+        open={!!renamingProject}
+        onOpenChange={(open) => !open && setRenamingProject(null)}
+        title="Rename project"
+        label="Project title"
+        initialValue={renamingProject?.title || ""}
+        onSave={renameProject}
+      />
     </div>
   );
 }

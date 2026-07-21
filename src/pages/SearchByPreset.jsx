@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Bookmark, Lock, Sparkles } from "lucide-react";
+import { Search, MapPin, Bookmark, Lock, Sparkles, Pencil } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { ForSaleBadge } from "@/components/ForSaleBadge";
 import RequireAuth from "@/components/RequireAuth";
+import RenameDialog from "@/components/RenameDialog";
 import { loadUserPresets } from "@/lib/loadUserPresets";
 import { presetDisplayName } from "@/lib/formatFilterSummary";
 
@@ -32,6 +33,7 @@ function SearchByPresetInner() {
   const [source, setSource] = useState(urlSource === "private" ? "private" : "public");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const [renamingPreset, setRenamingPreset] = useState(null);
 
   useEffect(() => {
     loadUserPresets({ clientId: clientId || null })
@@ -51,6 +53,22 @@ function SearchByPresetInner() {
   const loadPreset = (p) => {
     setPreset(p);
     setFilters(p.filters || {});
+  };
+
+  const renamePreset = async (name) => {
+    if (!renamingPreset?.id || renamingPreset.kind === "suggested") return;
+    const updated = await api.entities.Preset.update(renamingPreset.id, { name });
+    const nextName = updated?.name || name;
+    setPresets((prev) =>
+      prev.map((x) =>
+        x.id === renamingPreset.id && x.kind !== "suggested"
+          ? { ...x, ...(updated || {}), name: nextName, displayName: nextName }
+          : x
+      )
+    );
+    if (preset?.id === renamingPreset.id) {
+      setPreset((p) => (p ? { ...p, name: nextName, displayName: nextName } : p));
+    }
   };
 
   const handleSearch = async () => {
@@ -111,23 +129,40 @@ function SearchByPresetInner() {
             <div className="flex flex-wrap gap-2 mb-6">
               {presets.map((p) => {
                 const label = p.displayName || presetDisplayName(p);
+                const canRename = p.kind !== "suggested";
                 return (
-                  <button
-                    key={`${p.kind || "preset"}-${p.id}`}
-                    type="button"
-                    onClick={() => loadPreset(p)}
-                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition ${
-                      preset?.id === p.id
-                        ? "bg-[#106B49] text-white"
-                        : p.kind === "suggested"
-                          ? "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                    title={label}
-                  >
-                    {p.kind === "suggested" ? <Sparkles size={14} /> : null}
-                    {label}
-                  </button>
+                  <div key={`${p.kind || "preset"}-${p.id}`} className="inline-flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => loadPreset(p)}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        preset?.id === p.id
+                          ? "bg-[#106B49] text-white"
+                          : p.kind === "suggested"
+                            ? "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      } ${canRename ? "rounded-r-none" : ""}`}
+                      title={label}
+                    >
+                      {p.kind === "suggested" ? <Sparkles size={14} /> : null}
+                      {label}
+                    </button>
+                    {canRename ? (
+                      <button
+                        type="button"
+                        onClick={() => setRenamingPreset(p)}
+                        className={`px-2 py-2 rounded-xl rounded-l-none text-sm transition ${
+                          preset?.id === p.id
+                            ? "bg-[#0C4F37] text-white hover:bg-[#0a4330]"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-[#106B49]"
+                        }`}
+                        title="Rename"
+                        aria-label={`Rename ${label}`}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    ) : null}
+                  </div>
                 );
               })}
             </div>
@@ -212,6 +247,15 @@ function SearchByPresetInner() {
           </div>
         )}
       </div>
+
+      <RenameDialog
+        open={!!renamingPreset}
+        onOpenChange={(open) => !open && setRenamingPreset(null)}
+        title="Rename preset"
+        label="Preset name"
+        initialValue={renamingPreset?.name || renamingPreset?.displayName || ""}
+        onSave={renamePreset}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   Sparkles,
   Bookmark,
   Plus,
+  Pencil,
   UserPlus,
   LayoutDashboard,
   Shield,
@@ -24,6 +25,7 @@ import {
   Download,
 } from "lucide-react";
 import { api } from "@/api";
+import RenameDialog from "@/components/RenameDialog";
 import { usePlan } from "@/core/hooks/usePlan";
 import { useAuth } from "@/lib/AuthContext";
 import { getSharedSupabase } from "@/lib/supabase";
@@ -158,6 +160,7 @@ function ProfileInner() {
 
   const [presets, setPresets] = useState([]);
   const [presetName, setPresetName] = useState("");
+  const [renamingPreset, setRenamingPreset] = useState(null);
   const [presetFilters, setPresetFilters] = useState({});
   const [savingPreset, setSavingPreset] = useState(false);
 
@@ -425,6 +428,14 @@ function ProfileInner() {
   const deletePreset = async (id) => {
     await api.entities.Preset.delete(id);
     setPresets(prev => prev.filter(x => x.id !== id));
+  };
+
+  const renamePreset = async (name) => {
+    if (!renamingPreset?.id) return;
+    const updated = await api.entities.Preset.update(renamingPreset.id, { name });
+    setPresets((prev) =>
+      prev.map((x) => (x.id === renamingPreset.id ? { ...x, ...(updated || {}), name } : x))
+    );
   };
 
   const scoreColor = (pct) => pct >= 70 ? "#106B49" : pct >= 40 ? "#f59e0b" : "#ef4444";
@@ -1126,6 +1137,15 @@ function ProfileInner() {
                         Load
                       </button>
                       <button
+                        type="button"
+                        onClick={() => setRenamingPreset(p)}
+                        className="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-[#106B49] flex items-center justify-center"
+                        title="Rename"
+                        aria-label="Rename preset"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
                         onClick={() => deletePreset(p.id)}
                         className="w-9 h-9 rounded-xl bg-slate-50 hover:bg-red-50 hover:text-red-500 text-slate-300 flex items-center justify-center"
                       >
@@ -1136,6 +1156,14 @@ function ProfileInner() {
                 ))}
               </div>
             )}
+            <RenameDialog
+              open={!!renamingPreset}
+              onOpenChange={(open) => !open && setRenamingPreset(null)}
+              title="Rename preset"
+              label="Preset name"
+              initialValue={renamingPreset?.name || ""}
+              onSave={renamePreset}
+            />
           </div>
         )}
 

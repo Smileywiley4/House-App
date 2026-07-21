@@ -3,12 +3,13 @@ import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Users, Home as HomeIcon, Plus, Lock, ChevronRight,
-  Phone, Mail, DollarSign, FileText, Trash2, Building2, BadgeCheck, X, Bookmark, Search, Share2, BarChart3
+  Phone, Mail, DollarSign, FileText, Trash2, Building2, BadgeCheck, X, Bookmark, Search, Share2, BarChart3, Pencil
 } from "lucide-react";
 import { api } from "@/api";
 import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
 import AIListingDescription from "@/components/ai/AIListingDescription";
 import RequireAuth from "@/components/RequireAuth";
+import RenameDialog from "@/components/RenameDialog";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import ClientComparisonReport from "@/components/realtor/ClientComparisonReport";
 import LicenseVerifiedEmblem, { LicenseStatusBanner } from "@/components/trust/LicenseVerifiedEmblem";
@@ -698,6 +699,7 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
   const [expanded, setExpanded] = useState(false);
   const [presets, setPresets] = useState([]);
   const [showPresetForm, setShowPresetForm] = useState(false);
+  const [renamingPreset, setRenamingPreset] = useState(null);
 
   useEffect(() => {
     if (expanded) {
@@ -804,14 +806,25 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
           ) : (
             <div className="space-y-2">
               {presets.map(p => (
-                <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-xl">
-                  <span className="text-sm font-medium text-[#14192E]">{p.name}</span>
-                  <Link
-                    to={createPageUrl("SearchByPreset") + `?client_id=${client.id}&preset_id=${p.id}&source=private`}
-                    className="flex items-center gap-1 text-xs font-semibold text-[#106B49] hover:underline"
-                  >
-                    <Search size={11} /> Search private listings
-                  </Link>
+                <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-xl gap-2">
+                  <span className="text-sm font-medium text-[#14192E] truncate">{p.name}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setRenamingPreset(p)}
+                      className="text-slate-400 hover:text-[#106B49] p-1"
+                      title="Rename"
+                      aria-label={`Rename ${p.name}`}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <Link
+                      to={createPageUrl("SearchByPreset") + `?client_id=${client.id}&preset_id=${p.id}&source=private`}
+                      className="flex items-center gap-1 text-xs font-semibold text-[#106B49] hover:underline"
+                    >
+                      <Search size={11} /> Search private listings
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -836,6 +849,22 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
           onClose={() => setShowPresetForm(false)}
         />
       )}
+      <RenameDialog
+        open={!!renamingPreset}
+        onOpenChange={(open) => !open && setRenamingPreset(null)}
+        title="Rename preset"
+        label="Preset name"
+        initialValue={renamingPreset?.name || ""}
+        onSave={async (name) => {
+          if (!renamingPreset?.id) return;
+          const updated = await api.entities.Preset.update(renamingPreset.id, { name });
+          setPresets((prev) =>
+            prev.map((x) =>
+              x.id === renamingPreset.id ? { ...x, ...(updated || {}), name } : x
+            )
+          );
+        }}
+      />
     </div>
   );
 }

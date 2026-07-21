@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Bookmark, Loader2, Sparkles, X } from "lucide-react";
+import { Bell, Bookmark, Loader2, Pencil, Sparkles, X } from "lucide-react";
 import { api } from "@/api";
+import RenameDialog from "@/components/RenameDialog";
 import { loadUserPresets } from "@/lib/loadUserPresets";
 import { presetDisplayName } from "@/lib/formatFilterSummary";
 
@@ -33,6 +34,7 @@ export default function BrowsePresetsBar({
   const [message, setMessage] = useState("");
   const [presetName, setPresetName] = useState("");
   const [showSave, setShowSave] = useState(false);
+  const [renamingPreset, setRenamingPreset] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,6 +86,14 @@ export default function BrowsePresetsBar({
       setSaving(false);
       setTimeout(() => setMessage(""), 2500);
     }
+  };
+
+  const renamePreset = async (name) => {
+    if (!renamingPreset?.id || renamingPreset.kind === "suggested") return;
+    await api.entities.Preset.update(renamingPreset.id, { name });
+    setMessage("Preset renamed");
+    await load();
+    setTimeout(() => setMessage(""), 2000);
   };
 
   const createAlert = async () => {
@@ -148,21 +158,36 @@ export default function BrowsePresetsBar({
           ) : (
             chips.slice(0, 6).map((chip) => {
               const label = chip.displayName || presetDisplayName(chip);
+              const canRename = chip.kind !== "suggested";
               return (
-                <button
-                  key={`${chip.kind}-${chip.id}`}
-                  type="button"
-                  onClick={() => apply(chip.filters)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition max-w-[200px] truncate ${
-                    chip.kind === "suggested"
-                      ? "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"
-                      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
-                  }`}
-                  title={label}
-                >
-                  {chip.kind === "suggested" ? <Sparkles size={11} /> : <Bookmark size={11} />}
-                  <span className="truncate">{label}</span>
-                </button>
+                <div key={`${chip.kind}-${chip.id}`} className="inline-flex items-center max-w-[220px]">
+                  <button
+                    type="button"
+                    onClick={() => apply(chip.filters)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold border transition truncate ${
+                      canRename ? "rounded-l-lg border-r-0" : "rounded-lg"
+                    } ${
+                      chip.kind === "suggested"
+                        ? "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                    }`}
+                    title={label}
+                  >
+                    {chip.kind === "suggested" ? <Sparkles size={11} /> : <Bookmark size={11} />}
+                    <span className="truncate">{label}</span>
+                  </button>
+                  {canRename ? (
+                    <button
+                      type="button"
+                      onClick={() => setRenamingPreset(chip)}
+                      className="px-1.5 py-1 rounded-r-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-[#106B49]"
+                      title="Rename"
+                      aria-label={`Rename ${label}`}
+                    >
+                      <Pencil size={11} />
+                    </button>
+                  ) : null}
+                </div>
               );
             })
           )}
@@ -208,6 +233,15 @@ export default function BrowsePresetsBar({
           </button>
         </div>
       </div>
+
+      <RenameDialog
+        open={!!renamingPreset}
+        onOpenChange={(open) => !open && setRenamingPreset(null)}
+        title="Rename preset"
+        label="Preset name"
+        initialValue={renamingPreset?.name || renamingPreset?.displayName || ""}
+        onSave={renamePreset}
+      />
     </div>
   );
 }
