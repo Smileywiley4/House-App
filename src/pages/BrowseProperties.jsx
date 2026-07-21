@@ -46,6 +46,8 @@ import { getCurrentPosition } from "@/lib/geolocation";
 import { getPropertyByAddress } from "@/core/propertyService";
 import SharePropertyButton from "@/components/SharePropertyButton";
 import { OFF_MARKET_ESTIMATE_DISCLAIMER } from "@/core/companyConfig";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -1343,15 +1345,20 @@ export default function BrowseProperties() {
             </div>
 
             {error && (
-              <p className="mx-4 mt-3 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                {error}
-              </p>
+              <FetchErrorState
+                compact
+                message={error}
+                onRetry={() => fetchBrowse()}
+                className="mx-4 mt-3"
+              />
             )}
 
             {loading && properties.length === 0 ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-slate-400 text-sm">
-                <Loader2 className="animate-spin" size={18} /> Loading homes…
-              </div>
+              <LoadingWithTimeout
+                isLoading
+                onRetry={() => fetchBrowse()}
+                label="Loading homes…"
+              />
             ) : properties.length === 0 ? (
               <p className="text-sm text-slate-500 p-8 text-center">
                 No homes matched these filters in this area. Zoom out, redraw, or clear filters.

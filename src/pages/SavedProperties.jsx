@@ -5,6 +5,8 @@ import { ChevronLeft, Trash2, Trophy, Home as HomeIcon, Plus } from "lucide-reac
 import { api } from "@/api";
 import ShareComparison from "@/components/ShareComparison";
 import RequireAuth from "@/components/RequireAuth";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 
 export default function SavedProperties() {
   return (
@@ -17,15 +19,24 @@ export default function SavedProperties() {
 function SavedPropertiesInner() {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadScores();
   }, []);
 
   const loadScores = async () => {
-    const data = await api.entities.PropertyScore.list("-created_date");
-    setScores(data);
-    setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.entities.PropertyScore.list("-created_date");
+      setScores(data);
+    } catch (e) {
+      setError(e?.message || "Could not load saved properties");
+      setScores([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteScore = async (id) => {
@@ -36,11 +47,22 @@ function SavedPropertiesInner() {
   const sorted = [...scores].sort((a, b) => b.percentage - a.percentage);
   const winner = sorted[0];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
-      </div>
+  if (loading || (error && scores.length === 0)) {
+    return loading ? (
+      <LoadingWithTimeout
+        isLoading
+        onRetry={loadScores}
+        fullPage
+        label="Loading saved properties…"
+        size={32}
+      />
+    ) : (
+      <FetchErrorState
+        fullPage
+        title="Couldn’t load properties"
+        message={error}
+        onRetry={loadScores}
+      />
     );
   }
 

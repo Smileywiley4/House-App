@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ExternalLink, Home, Inbox, Loader2, Send } from "lucide-react";
+import { ExternalLink, Home, Inbox, Send } from "lucide-react";
 import { api } from "@/api";
 import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 import { saveCurrentProperty } from "@/core/currentProperty";
 import { usePlan } from "@/core/hooks/usePlan";
 import {
@@ -140,12 +142,10 @@ function SharedHomesInner() {
         )}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <FetchErrorState compact message={error} onRetry={load} className="mb-2" />}
 
       {loading ? (
-        <div className="flex justify-center py-12 text-slate-400">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingWithTimeout isLoading onRetry={load} label="Loading shared homes…" />
       ) : list.length === 0 ? (
         <p className="text-center text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl py-10 px-4">
           {tab === "sent"

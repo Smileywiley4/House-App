@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { usePlan } from "@/core/hooks/usePlan";
 import { APP_NAME } from "@/core/constants";
 import { SUPPORT_EMAIL } from "@/core/companyConfig";
+import FetchErrorState from "@/components/async/FetchErrorState";
 
 const PLAN_RANK = { free: 0, premium: 1, realtor: 2, admin: 3 };
 
@@ -166,9 +167,12 @@ export default function Pricing() {
       {/* Plans */}
       <div className="max-w-5xl mx-auto px-6 py-16">
         {checkoutError && (
-          <p className="max-w-3xl mx-auto mb-8 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-center">
-            {checkoutError}
-          </p>
+          <FetchErrorState
+            compact
+            message={checkoutError}
+            onRetry={() => setCheckoutError("")}
+            className="max-w-3xl mx-auto mb-8"
+          />
         )}
 
         <div className="grid md:grid-cols-3 gap-6">

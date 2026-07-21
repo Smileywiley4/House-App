@@ -13,6 +13,8 @@ import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
 import StartProjectModal from "@/components/browse/StartProjectModal";
 import ExportTourPacketButton from "@/components/ExportTourPacketButton";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 import { ALL_BROWSE_SCORE_IDS } from "@/components/browse/scoreCategories";
 import { projectPropertyToTourItem } from "@/lib/tourPacketPdf";
 
@@ -141,9 +143,13 @@ function ProjectDetailInner() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center gap-2 text-slate-400">
-        <Loader2 className="animate-spin" size={20} /> Loading…
-      </div>
+      <LoadingWithTimeout
+        isLoading
+        onRetry={() => (projectId ? load() : loadList())}
+        fullPage
+        label="Loading…"
+        size={32}
+      />
     );
   }
 
@@ -170,9 +176,7 @@ function ProjectDetailInner() {
           </div>
           <div className="max-w-5xl mx-auto px-6 py-8">
             {error && (
-              <p className="mb-4 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                {error}
-              </p>
+              <FetchErrorState compact message={error} onRetry={loadList} className="mb-4" />
             )}
             {projectList.length === 0 ? (
               <div className="text-center py-16">
@@ -264,8 +268,12 @@ function ProjectDetailInner() {
   if (!project) {
     return (
       <div className="min-h-screen bg-[#fafaf8] flex flex-col items-center justify-center px-6">
-        <p className="text-slate-500 mb-4">{error || "Project not found"}</p>
-        <Link to={createPageUrl("ProjectDetail")} className="text-[#10b981] font-semibold text-sm">
+        <FetchErrorState
+          title="Project not found"
+          message={error || "This project may have been deleted or you no longer have access."}
+          onRetry={loadList}
+        />
+        <Link to={createPageUrl("ProjectDetail")} className="text-[#10b981] font-semibold text-sm -mt-2">
           Back to projects
         </Link>
       </div>
@@ -336,9 +344,7 @@ function ProjectDetailInner() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         {error && (
-          <p className="mb-4 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-            {error}
-          </p>
+          <FetchErrorState compact message={error} onRetry={load} className="mb-4" />
         )}
 
         {isOwner && (

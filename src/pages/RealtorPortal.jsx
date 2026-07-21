@@ -16,6 +16,8 @@ import {
   shareDisplayStatus,
   shareStatusBadgeClass,
 } from "@/lib/shareStatus";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 
 const TABS = ["Profile", "Clients", "Private Listings", "Shared visits"];
 
@@ -35,6 +37,7 @@ function RealtorPortalInner() {
   const [contacts, setContacts] = useState([]);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [profile, setProfile] = useState({ realtor_license: "", brokerage: "", state: "" });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -46,7 +49,9 @@ function RealtorPortalInner() {
   const [sharesLoading, setSharesLoading] = useState(false);
   const reportClientId = searchParams.get("report") === "1" ? (searchParams.get("client") || "").trim() : "";
 
-  useEffect(() => {
+  const loadPortal = () => {
+    setLoading(true);
+    setLoadError(null);
     api.auth.me().then(u => {
       setUser(u);
       setProfile({
@@ -55,9 +60,16 @@ function RealtorPortalInner() {
         state: u.state || ""
       });
       setLoading(false);
+    }).catch((e) => {
+      setLoadError(e?.message || "Could not load portal");
+      setLoading(false);
     });
-    api.entities.Client.list("-created_date").then(setClients);
-    api.entities.PrivateListing.list("-created_date").then(setListings);
+    api.entities.Client.list("-created_date").then(setClients).catch(() => setClients([]));
+    api.entities.PrivateListing.list("-created_date").then(setListings).catch(() => setListings([]));
+  };
+
+  useEffect(() => {
+    loadPortal();
   }, []);
 
   const isRealtor = user?.role === "realtor" || user?.role === "admin" || user?.plan === "realtor" || user?.plan === "admin";
@@ -148,11 +160,24 @@ function RealtorPortalInner() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading || loadError) {
+    return loading ? (
+      <LoadingWithTimeout
+        isLoading
+        onRetry={loadPortal}
+        fullPage
+        label="Loading portal…"
+        size={32}
+      />
+    ) : (
+      <FetchErrorState
+        fullPage
+        title="Couldn’t load portal"
+        message={loadError}
+        onRetry={loadPortal}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -462,9 +487,18 @@ function RealtorPortalInner() {
                     </Link>
                   </div>
                   {sharesLoading ? (
-                    <div className="flex justify-center py-12">
-                      <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
-                    </div>
+                    <LoadingWithTimeout
+                      isLoading
+                      onRetry={() => {
+                        setSharesLoading(true);
+                        api.shares
+                          .sent()
+                          .then((rows) => setSentShares(Array.isArray(rows) ? rows : []))
+                          .catch(() => setSentShares([]))
+                          .finally(() => setSharesLoading(false));
+                      }}
+                      label="Loading shares…"
+                    />
                   ) : sentShares.length === 0 ? (
                     <EmptyState
                       icon={Share2}
@@ -521,9 +555,18 @@ function RealtorPortalInner() {
                     </div>
                   </div>
                   {inboxLoading ? (
-                    <div className="flex justify-center py-16">
-                      <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
-                    </div>
+                    <LoadingWithTimeout
+                      isLoading
+                      onRetry={() => {
+                        setInboxLoading(true);
+                        api.library
+                          .realtorInbox()
+                          .then((rows) => setInbox(Array.isArray(rows) ? rows : []))
+                          .catch(() => setInbox([]))
+                          .finally(() => setInboxLoading(false));
+                      }}
+                      label="Loading visit shares…"
+                    />
                   ) : inbox.length === 0 ? (
                     <EmptyState
                       icon={Share2}

@@ -29,6 +29,8 @@ import PaywallModal from "@/components/PaywallModal";
 import { browseListingToCompareRow, loadBrowseCompareSelection } from "@/lib/browseCompare";
 import { compareScoreToTourItem } from "@/lib/tourPacketPdf";
 import { toast } from "@/components/ui/use-toast";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 
 const VIEW_MODES = [
   { id: "columns", label: "Side by Side", icon: Columns },
@@ -64,6 +66,8 @@ export default function Compare() {
 function CompareInner() {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [viewMode, setViewMode] = useState("columns");
   /** Slot ids: property score id, or null for an empty slot */
   const [slots, setSlots] = useState([null, null]);
@@ -76,38 +80,50 @@ function CompareInner() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const incoming = loadBrowseCompareSelection({ consume: true }).map(browseListingToCompareRow);
-      const data = await api.entities.PropertyScore.list("-created_date");
-      if (cancelled) return;
-      const merged = [...incoming];
-      for (const s of data || []) {
-        if (!merged.some((m) => m.id === s.id || m.property_address === s.property_address)) {
-          merged.push(s);
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const incoming = loadBrowseCompareSelection({ consume: true }).map(browseListingToCompareRow);
+        const data = await api.entities.PropertyScore.list("-created_date");
+        if (cancelled) return;
+        const merged = [...incoming];
+        for (const s of data || []) {
+          if (!merged.some((m) => m.id === s.id || m.property_address === s.property_address)) {
+            merged.push(s);
+          }
         }
+        setScores(merged);
+        if (incoming.length) {
+          const ids = incoming.slice(0, maxCompareCount).map((s) => s.id);
+          // Pad to at least 2 slots so empty add targets remain available
+          while (ids.length < Math.min(2, maxCompareCount)) ids.push(null);
+          setSlots(ids);
+          toast({
+            title: "Compare ready",
+            description: `${incoming.slice(0, maxCompareCount).length} listing${
+              incoming.length === 1 ? "" : "s"
+            } loaded from Search Properties.`,
+          });
+        } else {
+          const initial = (data || []).slice(0, Math.min(2, maxCompareCount)).map((s) => s.id);
+          while (initial.length < Math.min(2, maxCompareCount)) initial.push(null);
+          setSlots(initial);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(e?.message || "Could not load comparison");
+          setScores([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setScores(merged);
-      if (incoming.length) {
-        const ids = incoming.slice(0, maxCompareCount).map((s) => s.id);
-        // Pad to at least 2 slots so empty add targets remain available
-        while (ids.length < Math.min(2, maxCompareCount)) ids.push(null);
-        setSlots(ids);
-        toast({
-          title: "Compare ready",
-          description: `${incoming.slice(0, maxCompareCount).length} listing${
-            incoming.length === 1 ? "" : "s"
-          } loaded from Search Properties.`,
-        });
-      } else {
-        const initial = (data || []).slice(0, Math.min(2, maxCompareCount)).map((s) => s.id);
-        while (initial.length < Math.min(2, maxCompareCount)) initial.push(null);
-        setSlots(initial);
-      }
-      setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [maxCompareCount]);
+  }, [maxCompareCount, reloadKey]);
+
+  const retryLoad = () => setReloadKey((k) => k + 1);
 
   const comparing = slots.map((id) => (id ? scores.find((s) => s.id === id) : null)).filter(Boolean);
   const sorted = [...comparing].sort((a, b) => b.percentage - a.percentage);
@@ -156,11 +172,22 @@ function CompareInner() {
     setAddSlotIndex(null);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
-      </div>
+  if (loading || loadError) {
+    return loading ? (
+      <LoadingWithTimeout
+        isLoading
+        onRetry={retryLoad}
+        fullPage
+        label="Loading comparison…"
+        size={32}
+      />
+    ) : (
+      <FetchErrorState
+        fullPage
+        title="Couldn’t load comparison"
+        message={loadError}
+        onRetry={retryLoad}
+      />
     );
   }
 

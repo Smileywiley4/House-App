@@ -21,6 +21,8 @@ import { usePlan } from "@/core/hooks/usePlan";
 import { readCurrentProperty } from "@/core/currentProperty";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 import { PROPERTY_SCORE_DISCLAIMER } from "@/core/companyConfig";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -423,8 +425,14 @@ export default function Evaluate() {
               <Columns size={15} /> Compare
             </button>
             {isLoadingAuth ? (
-              <span className="flex items-center gap-2 px-4 py-2 text-slate-400 text-sm min-w-[8rem] justify-center">
-                <span className="w-4 h-4 border-2 border-[#10b981]/30 border-t-[#10b981] rounded-full animate-spin" aria-hidden />
+              <span className="inline-flex min-w-[8rem] justify-center">
+                <LoadingWithTimeout
+                  isLoading
+                  onRetry={() => window.location.reload()}
+                  label=""
+                  size={16}
+                  className="!py-2 !px-4"
+                />
               </span>
             ) : isAuthenticated ? (
               saved ? (
@@ -467,7 +475,17 @@ export default function Evaluate() {
               </Link>
             )}
           </div>
-          {saveError && <p className="w-full text-sm text-red-600 font-medium">{saveError}</p>}
+          {saveError && (
+            <FetchErrorState
+              compact
+              message={saveError}
+              onRetry={() => {
+                setSaveError("");
+                saveScore();
+              }}
+              className="w-full"
+            />
+          )}
           {!canSaveScore && isAuthenticated && !saved && (
             <p className="w-full text-sm text-slate-500">{saveGateMessage}</p>
           )}

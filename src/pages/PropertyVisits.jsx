@@ -7,15 +7,15 @@ import {
   Trash2,
   Share2,
   ImagePlus,
-  Loader2,
   Home,
   ChevronRight,
   Users,
-  AlertCircle,
-  RefreshCw,
 } from "lucide-react";
 import { api } from "@/api";
 import RequireAuth from "@/components/RequireAuth";
+import AsyncState from "@/components/async/AsyncState";
+import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
+import FetchErrorState from "@/components/async/FetchErrorState";
 import { usePlan } from "@/core/hooks/usePlan";
 
 const LOAD_TIMEOUT_MS = 25000;
@@ -184,31 +184,16 @@ function PropertyVisitsInner() {
     );
   }
 
-  if (loading) {
+  if (loading || (err && saved.length === 0 && folders.length === 0)) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#10b981] animate-spin" aria-label="Loading visits" />
-      </div>
-    );
-  }
-
-  if (err && saved.length === 0 && folders.length === 0) {
-    return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center px-4">
-        <div className="max-w-sm w-full text-center">
-          <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-3" />
-          <h1 className="text-xl font-bold text-slate-900 mb-2">Couldn’t load visits</h1>
-          <p className="text-sm text-slate-600 mb-6">{err}</p>
-          <button
-            type="button"
-            onClick={() => load()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white font-semibold hover:bg-[#059669]"
-          >
-            <RefreshCw size={16} />
-            Retry
-          </button>
-        </div>
-      </div>
+      <AsyncState
+        isLoading={loading}
+        error={err && saved.length === 0 && folders.length === 0 ? err : null}
+        onRetry={load}
+        fullPage
+        loadingLabel="Loading visits…"
+        errorTitle="Couldn’t load visits"
+      />
     );
   }
 
@@ -235,16 +220,7 @@ function PropertyVisitsInner() {
             Saved properties
           </h2>
           {err && (
-            <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
-              <p className="text-sm text-red-700">{err}</p>
-              <button
-                type="button"
-                onClick={() => load()}
-                className="shrink-0 text-xs font-semibold text-red-800 underline"
-              >
-                Retry
-              </button>
-            </div>
+            <FetchErrorState compact message={err} onRetry={load} />
           )}
 
           <div className="flex gap-2">
@@ -458,22 +434,19 @@ function PropertyVisitsInner() {
             <p className="text-slate-500 text-sm">Select a property or add an address to manage visit photos and scores.</p>
           )}
           {selectedId && detailLoading && (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-[#10b981] animate-spin" aria-label="Loading details" />
-            </div>
+            <LoadingWithTimeout
+              isLoading
+              onRetry={() => fetchDetail(selectedId)}
+              label="Loading details…"
+              size={32}
+            />
           )}
           {selectedId && !detailLoading && detailErr && !detail && (
-            <div className="py-8 text-center space-y-3">
-              <p className="text-sm text-red-600">{detailErr}</p>
-              <button
-                type="button"
-                onClick={() => fetchDetail(selectedId)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium"
-              >
-                <RefreshCw size={14} />
-                Retry
-              </button>
-            </div>
+            <FetchErrorState
+              title="Couldn’t load details"
+              message={detailErr}
+              onRetry={() => fetchDetail(selectedId)}
+            />
           )}
           {selectedId && detail && !detailLoading && (() => {
             const isOwner = !detail.access || detail.access === "owner";
