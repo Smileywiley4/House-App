@@ -11,6 +11,8 @@ import AIListingDescription from "@/components/ai/AIListingDescription";
 import RequireAuth from "@/components/RequireAuth";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import ClientComparisonReport from "@/components/realtor/ClientComparisonReport";
+import LicenseVerifiedEmblem, { LicenseStatusBanner } from "@/components/trust/LicenseVerifiedEmblem";
+import { US_STATE_OPTIONS, licenseLookupUrl, licenseVerificationStatus } from "@/lib/licenseVerification";
 import {
   formatShareWhen,
   shareDisplayStatus,
@@ -18,6 +20,7 @@ import {
 } from "@/lib/shareStatus";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
 
 const TABS = ["Profile", "Clients", "Private Listings", "Shared visits"];
 
@@ -38,9 +41,11 @@ function RealtorPortalInner() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [profile, setProfile] = useState({ realtor_license: "", brokerage: "", state: "" });
+  const [profile, setProfile] = useState({ license_number: "", license_state: "", brokerage_name: "" });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
   const [showListingForm, setShowListingForm] = useState(false);
   const [inbox, setInbox] = useState([]);
@@ -55,9 +60,9 @@ function RealtorPortalInner() {
     api.auth.me().then(u => {
       setUser(u);
       setProfile({
-        realtor_license: u.realtor_license || "",
-        brokerage: u.brokerage || "",
-        state: u.state || ""
+        license_number: u.license_number || u.realtor_license || "",
+        license_state: u.license_state || "",
+        brokerage_name: u.brokerage_name || u.brokerage || "",
       });
       setLoading(false);
     }).catch((e) => {
@@ -153,11 +158,27 @@ function RealtorPortalInner() {
   };
 
   const saveProfile = async () => {
-    setSaving(true);
-    await api.auth.updateMe(profile);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaving(true); setVerifyMsg("");
+    try {
+      const updated = await api.auth.updateMe({
+        license_number: profile.license_number, license_state: profile.license_state,
+        brokerage_name: profile.brokerage_name, realtor_license: profile.license_number, brokerage: profile.brokerage_name,
+      });
+      setUser(updated); setSaved(true); setTimeout(() => setSaved(false), 2500);
+    } catch (e) { setVerifyMsg(e?.message || "Could not save profile"); }
+    finally { setSaving(false); }
+  };
+
+  const requestVerification = async () => {
+    setVerifying(true); setVerifyMsg("");
+    try {
+      const updated = await (api.auth.requestLicenseVerification
+        ? api.auth.requestLicenseVerification(profile)
+        : api.licenseVerification?.request?.(profile));
+      if (updated) setUser(updated);
+      setVerifyMsg("Verification requested — status is pending until we confirm against the state board.");
+    } catch (e) { setVerifyMsg(e?.message || "Could not request verification"); }
+    finally { setVerifying(false); }
   };
 
   if (loading || loadError) {
@@ -190,8 +211,14 @@ function RealtorPortalInner() {
               <Building2 size={20} className="text-[#10b981]" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Realtor Portal</h1>
-              <p className="text-slate-400 text-sm">Manage your clients, private listings, and comparisons</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white">Realtor Portal</h1>
+                <LicenseVerifiedEmblem profile={user} size={20} />
+              </div>
+              <p className="text-slate-400 text-sm flex items-center gap-1.5">
+                {user?.full_name || "Your portal"}
+                <LicenseVerifiedEmblem profile={user} size={14} showSelfReported />
+              </p>
             </div>
           </div>
         </div>
@@ -225,31 +252,46 @@ function RealtorPortalInner() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl border border-slate-100 p-7 shadow-sm">
               <h2 className="font-bold text-[#1a2234] text-lg mb-1">Professional Information</h2>
-              <p className="text-slate-400 text-sm mb-6">This info is used to verify your realtor access and personalize your experience.</p>
-
+              <p className="text-slate-400 text-sm mb-4">
+                License and brokerage are <span className="font-semibold text-slate-600">self-reported</span> until verified.
+                Portal access comes from your Realtor plan — not from typing a license number.
+              </p>
+              <LicenseStatusBanner profile={user} className="mb-5" />
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-500 block mb-1.5">Brokerage Name</label>
-                  <input value={profile.brokerage} onChange={e => setProfile(p => ({ ...p, brokerage: e.target.value }))}
+                  <input value={profile.brokerage_name} onChange={e => setProfile(p => ({ ...p, brokerage_name: e.target.value }))}
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition"
                     placeholder="e.g. Keller Williams, Compass..." />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 block mb-1.5">Realtor License #</label>
-                  <input value={profile.realtor_license} onChange={e => setProfile(p => ({ ...p, realtor_license: e.target.value }))}
+                  <label className="text-xs font-semibold text-slate-500 block mb-1.5">License number</label>
+                  <input value={profile.license_number} onChange={e => setProfile(p => ({ ...p, license_number: e.target.value }))}
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition"
                     placeholder="License number" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 block mb-1.5">State of Practice</label>
-                  <input value={profile.state} onChange={e => setProfile(p => ({ ...p, state: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition"
-                    placeholder="e.g. California" />
+                  <label className="text-xs font-semibold text-slate-500 block mb-1.5">License state</label>
+                  <select value={profile.license_state} onChange={e => setProfile(p => ({ ...p, license_state: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition bg-white">
+                    <option value="">Select state…</option>
+                    {US_STATE_OPTIONS.map((code) => (<option key={code} value={code}>{code}</option>))}
+                  </select>
+                  {licenseLookupUrl(profile.license_state) && (
+                    <a href={licenseLookupUrl(profile.license_state)} target="_blank" rel="noopener noreferrer"
+                      className="inline-block mt-1.5 text-xs font-semibold text-[#10b981] hover:underline">Look up your license on the official state site →</a>
+                  )}
                 </div>
-                <button onClick={saveProfile} disabled={saving}
-                  className="w-full py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition disabled:opacity-60 mt-2">
+                <button type="button" onClick={saveProfile} disabled={saving}
+                  className="w-full py-3 bg-[#1a2234] hover:bg-[#243050] text-white font-bold rounded-xl text-sm transition disabled:opacity-60 mt-2">
                   {saved ? "✓ Saved!" : saving ? "Saving..." : "Save Profile"}
                 </button>
+                <button type="button" onClick={requestVerification}
+                  disabled={verifying || licenseVerificationStatus(user) === "verified"}
+                  className="w-full py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition disabled:opacity-60">
+                  {licenseVerificationStatus(user) === "verified" ? "License verified" : verifying ? "Submitting…" : "Request verification"}
+                </button>
+                {verifyMsg && <p className="text-xs text-slate-500 leading-relaxed">{verifyMsg}</p>}
               </div>
             </div>
 
@@ -318,7 +360,7 @@ function RealtorPortalInner() {
                     <p className="text-slate-400 text-sm">{clients.length} client{clients.length !== 1 ? "s" : ""}</p>
                   </div>
                   <button onClick={() => setShowClientForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition">
+                    className="flex items-center gap-2 px-4 py-2 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
                     <Plus size={15} /> Add Client
                   </button>
                 </div>
@@ -381,7 +423,7 @@ function RealtorPortalInner() {
                 </div>
 
                 {clients.length === 0 ? (
-                  <EmptyState icon={Users} title="No clients yet" desc="Add your first client to start managing their home search." />
+                  <EmptyState icon={Users} title="No clients yet" description="Add your first client to start managing their home search." actionLabel="Add client" onAction={() => setShowClientForm(true)} />
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                     {clients.map(c => (
@@ -433,13 +475,13 @@ function RealtorPortalInner() {
                     <p className="text-slate-400 text-sm">Off-market & private properties for your clients</p>
                   </div>
                   <button onClick={() => setShowListingForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition">
+                    className="flex items-center gap-2 px-4 py-2 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
                     <Plus size={15} /> Add Listing
                   </button>
                 </div>
 
                 {listings.length === 0 ? (
-                  <EmptyState icon={HomeIcon} title="No private listings yet" desc="Add off-market or private properties to score and share with clients." />
+                  <EmptyState icon={HomeIcon} title="No private listings yet" description="Add off-market or private properties to score and share with clients." />
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                     {listings.map(l => <ListingCard key={l.id} listing={l} clients={clients} onDelete={id => {
@@ -503,7 +545,9 @@ function RealtorPortalInner() {
                     <EmptyState
                       icon={Share2}
                       title="No outbound shares yet"
-                      desc="From Evaluate, use “Send to client for scoring” to track Sent → Viewed → Scored here."
+                      description="From Evaluate, use “Send to client for scoring” to track Sent → Viewed → Scored here."
+                      actionLabel="Score an address"
+                      actionTo={createPageUrl("Home")}
                     />
                   ) : (
                     <div className="space-y-3">
@@ -571,7 +615,7 @@ function RealtorPortalInner() {
                     <EmptyState
                       icon={Share2}
                       title="No shared visits yet"
-                      desc="When a client shares a property from Visits, it will appear here with their score and photos."
+                      description="When a client shares a property from Visits, it will appear here with their score and photos."
                     />
                   ) : (
                     <div className="space-y-6">
@@ -643,19 +687,9 @@ function UpgradeGate({ plan }) {
         This feature requires a Realtor account. Upgrade to access client management, private listings, and comparison sharing tools.
       </p>
       <Link to={createPageUrl("Pricing")}
-        className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition">
+        className="inline-flex items-center gap-2 px-6 py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">
         View Realtor Plans <ChevronRight size={15} />
       </Link>
-    </div>
-  );
-}
-
-function EmptyState({ icon: Icon, title, desc }) {
-  return (
-    <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
-      <Icon size={36} className="mx-auto text-slate-200 mb-4" />
-      <h3 className="font-bold text-[#1a2234] mb-1">{title}</h3>
-      <p className="text-slate-400 text-sm">{desc}</p>
     </div>
   );
 }
@@ -828,7 +862,7 @@ function ClientPresetForm({ client, onSave, onClose }) {
         <div className="flex gap-2">
           <button
             onClick={() => onSave({ name, weights, filters })}
-            className="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm"
+            className="px-4 py-2 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm"
           >
             Save preset
           </button>
@@ -956,7 +990,7 @@ function ClientForm({ onSave, onClose }) {
           <textarea name="notes" value={form.notes} onChange={set} rows={3} placeholder="Preferences, requirements, notes..."
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 resize-none" />
         </div>
-        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition">Add Client</button>
+        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">Add Client</button>
       </div>
     </Modal>
   );
@@ -1013,7 +1047,7 @@ function ListingForm({ clients, onSave, onClose }) {
           <textarea name="notes" value={form.notes} onChange={set} rows={2}
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 resize-none" />
         </div>
-        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition">Add Listing</button>
+        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">Add Listing</button>
       </div>
     </Modal>
   );

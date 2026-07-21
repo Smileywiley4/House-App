@@ -40,6 +40,8 @@ import InviteFriendsPanel from "@/components/profile/InviteFriendsPanel";
 import AppearanceSettings from "@/components/profile/AppearanceSettings";
 import NotificationSettings from "@/components/profile/NotificationSettings";
 import ProfilePhotoPicker from "@/components/profile/ProfilePhotoPicker";
+import LicenseVerifiedEmblem, { LicenseStatusBanner } from "@/components/trust/LicenseVerifiedEmblem";
+import { US_STATE_OPTIONS, licenseLookupUrl } from "@/lib/licenseVerification";
 import PreferenceShareCardPanel from "@/components/profile/PreferenceShareCardPanel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -127,6 +129,8 @@ function ProfileInner() {
   const [realtorLicense, setRealtorLicense] = useState("");
   const [brokerage, setBrokerage] = useState("");
   const [stateVal, setStateVal] = useState("");
+  const [licenseState, setLicenseState] = useState("");
+  const [verifyingLicense, setVerifyingLicense] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -162,9 +166,10 @@ function ProfileInner() {
       setUser(u);
       setFullName(u.full_name || "");
       setEmail(u.email || "");
-      setRealtorLicense(u.realtor_license || "");
-      setBrokerage(u.brokerage || "");
+      setRealtorLicense(u.license_number || u.realtor_license || "");
+      setBrokerage(u.brokerage_name || u.brokerage || "");
       setStateVal(u.state || "");
+      setLicenseState(u.license_state || "");
       const savedW = u.default_weights || {};
       const initial = {};
       ALL_CATEGORIES.forEach(c => {
@@ -236,10 +241,15 @@ function ProfileInner() {
     try {
       await api.auth.updateMe({
         full_name: fullName,
+        license_number: realtorLicense,
         realtor_license: realtorLicense,
+        brokerage_name: brokerage,
         brokerage,
         state: stateVal,
+        license_state: licenseState,
       });
+      const refreshed = await api.auth.me();
+      setUser(refreshed);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -437,7 +447,10 @@ function ProfileInner() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-2xl font-bold text-white">{user?.full_name || "My Profile"}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white">{user?.full_name || "My Profile"}</h1>
+                <LicenseVerifiedEmblem profile={user} size={20} />
+              </div>
               <p className="text-slate-400 text-sm">{user?.email}</p>
             </div>
           </div>
@@ -596,36 +609,57 @@ function ProfileInner() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">State</label>
-                <input
-                  type="text"
-                  value={stateVal}
-                  onChange={(e) => setStateVal(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
-                  placeholder="e.g. CA"
-                />
+                <label className="block text-sm font-semibold text-foreground mb-1.5">State (practice / location)</label>
+                <input type="text" value={stateVal} onChange={(e) => setStateVal(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition" placeholder="e.g. CA" />
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Realtor License (optional)</label>
-                <input
-                  type="text"
-                  value={realtorLicense}
-                  onChange={(e) => setRealtorLicense(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
-                  placeholder="License number"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">Brokerage (optional)</label>
-                <input
-                  type="text"
-                  value={brokerage}
-                  onChange={(e) => setBrokerage(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
-                  placeholder="Brokerage name"
-                />
+              <div className="border-t border-border pt-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Realtor license</h3>
+                  <p className="text-xs text-muted-foreground mt-1 mb-3">
+                    Optional. Shown as <span className="font-semibold">self-reported</span> until verified. Typing a number alone never shows a verified check.
+                  </p>
+                  <LicenseStatusBanner profile={user} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">License number</label>
+                  <input type="text" value={realtorLicense} onChange={(e) => setRealtorLicense(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition" placeholder="License number" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">License state</label>
+                  <select value={licenseState} onChange={(e) => setLicenseState(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition">
+                    <option value="">Select state…</option>
+                    {US_STATE_OPTIONS.map((code) => (<option key={code} value={code}>{code}</option>))}
+                  </select>
+                  {licenseLookupUrl(licenseState) && (
+                    <a href={licenseLookupUrl(licenseState)} target="_blank" rel="noopener noreferrer"
+                      className="inline-block mt-1.5 text-xs font-semibold text-[#10b981] hover:underline">Official state license lookup →</a>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">Brokerage</label>
+                  <input type="text" value={brokerage} onChange={(e) => setBrokerage(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition" placeholder="Brokerage name" />
+                </div>
+                <button type="button" disabled={verifyingLicense || (user?.license_verification_status === "verified")}
+                  onClick={async () => {
+                    setVerifyingLicense(true);
+                    try {
+                      await api.auth.updateMe({ license_number: realtorLicense, license_state: licenseState, brokerage_name: brokerage });
+                      const updated = await (api.auth.requestLicenseVerification
+                        ? api.auth.requestLicenseVerification({ license_number: realtorLicense, license_state: licenseState, brokerage_name: brokerage })
+                        : api.licenseVerification?.request?.({ license_number: realtorLicense, license_state: licenseState, brokerage_name: brokerage }));
+                      if (updated) setUser(updated);
+                      toast({ title: "Verification requested", description: "Status is pending until we confirm against the state board." });
+                    } catch (err) {
+                      toast({ title: "Could not request verification", description: err?.message || "Try again.", variant: "destructive" });
+                    } finally { setVerifyingLicense(false); }
+                  }}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#10b981]/15 text-[#059669] hover:bg-[#10b981]/25 disabled:opacity-50">
+                  {user?.license_verification_status === "verified" ? "License verified" : verifyingLicense ? "Submitting…" : "Request verification"}
+                </button>
               </div>
 
               <div className="pt-1">

@@ -25,6 +25,8 @@ def _profile_public(row: dict) -> dict:
         "email": row.get("email"),
         "username": row.get("username"),
         "plan": row.get("plan") or "free",
+        "license_verification_status": row.get("license_verification_status") or "self_reported",
+        "brokerage_name": row.get("brokerage_name") or row.get("brokerage") or "",
     }
 
 
@@ -66,7 +68,7 @@ async def search_users(q: str = "", user_id: str = Depends(get_current_user_id))
         return []
     r = (
         supabase.table("profiles")
-        .select("id, full_name, email, username, plan")
+        .select("id, full_name, email, username, plan, license_verification_status, brokerage_name, brokerage")
         .limit(120)
         .execute()
     )
@@ -117,7 +119,7 @@ async def list_contacts(user_id: str = Depends(get_current_user_id)):
     if ids:
         pr = (
             supabase.table("profiles")
-            .select("id, full_name, email, username, plan")
+            .select("id, full_name, email, username, plan, license_verification_status, brokerage_name, brokerage")
             .in_("id", list(ids))
             .execute()
         )
@@ -273,7 +275,7 @@ async def add_contact(body: AddContactBody, user_id: str = Depends(get_current_u
         raise HTTPException(status_code=500, detail="Could not create contact")
     pr = (
         supabase.table("profiles")
-        .select("id, full_name, email, username, plan")
+        .select("id, full_name, email, username, plan, license_verification_status, brokerage_name, brokerage")
         .eq("id", target_id)
         .limit(1)
         .execute()

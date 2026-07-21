@@ -34,6 +34,9 @@ class UpdateProfileBody(BaseModel):
     realtor_license: str | None = Field(default=None, max_length=100)
     brokerage: str | None = Field(default=None, max_length=200)
     state: str | None = Field(default=None, max_length=100)
+    license_number: str | None = Field(default=None, max_length=100)
+    license_state: str | None = Field(default=None, max_length=2)
+    brokerage_name: str | None = Field(default=None, max_length=200)
     linked_realtor_id: str | None = None
     phone: str | None = Field(default=None, max_length=50)
     marketing_opt_in: bool | None = None
@@ -377,25 +380,36 @@ async def sign_up_legacy_removed():
 def _profile_to_user(row: dict | None) -> dict | None:
     if not row:
         return None
-    return {
+    license_number = (row.get("license_number") or row.get("realtor_license") or "") or ""
+    brokerage_name = (row.get("brokerage_name") or row.get("brokerage") or "") or ""
+    license_state = (row.get("license_state") or "") or ""
+    out = {
         "id": str(row["id"]),
         "email": row.get("email"),
         "full_name": row.get("full_name"),
         "default_weights": row.get("default_weights") or {},
         "role": row.get("role") or "user",
         "plan": row.get("plan") or "free",
-        "realtor_license": row.get("realtor_license") or "",
-        "brokerage": row.get("brokerage") or "",
+        "realtor_license": license_number,
+        "license_number": license_number,
+        "brokerage": brokerage_name,
+        "brokerage_name": brokerage_name,
         "state": row.get("state") or "",
+        "license_state": license_state,
+        "license_verification_status": row.get("license_verification_status") or "self_reported",
+        "license_verified_at": row.get("license_verified_at"),
+        "license_verification_notes": row.get("license_verification_notes") or "",
         "linked_realtor_id": str(row["linked_realtor_id"]) if row.get("linked_realtor_id") else None,
         "phone": row.get("phone") or "",
         "marketing_opt_in": bool(row.get("marketing_opt_in")),
-        "preset_digest_opt_in": bool(row.get("preset_digest_opt_in")),
         "promo_code": row.get("promo_code") or "",
         "avatar_url": row.get("avatar_url") or "",
         "has_seen_onboarding_quiz": bool(row.get("has_seen_onboarding_quiz")),
         "has_seen_client_priority_quiz": bool(row.get("has_seen_client_priority_quiz")),
     }
+    if "preset_digest_opt_in" in row or True:
+        out["preset_digest_opt_in"] = bool(row.get("preset_digest_opt_in"))
+    return out
 
 
 def _auth_user_metadata(supabase, user_id: str) -> dict:
@@ -538,6 +552,29 @@ async def update_me(body: UpdateProfileBody, user_id: str = Depends(get_current_
     if "avatar_url" in updates:
         avatar = (updates["avatar_url"] or "").strip()
         updates["avatar_url"] = avatar or None
+
+    # Align license fields; never accept client-set verification via PATCH /me.
+    if "license_number" in updates or "realtor_license" in updates:
+        number = (updates.get("license_number") or updates.get("realtor_license") or "").strip()
+        updates["license_number"] = number or None
+        updates["realtor_license"] = number or None
+    if "brokerage_name" in updates or "brokerage" in updates:
+        brokerage = (updates.get("brokerage_name") or updates.get("brokerage") or "").strip()
+        updates["brokerage_name"] = brokerage or None
+        updates["brokerage"] = brokerage or None
+    if "license_state" in updates and updates["license_state"] is not None:
+        updates["license_state"] = (updates["license_state"] or "").strip().upper()[:2] or None
+    if any(k in updates for k in ("license_number", "realtor_license", "license_state")):
+        existing_row = existing.data[0] if existing.data else {}
+        prev_num = (existing_row.get("license_number") or existing_row.get("realtor_license") or "")
+        prev_state = (existing_row.get("license_state") or "")
+        new_num = updates.get("license_number", prev_num) or ""
+        new_state = updates.get("license_state", prev_state) or ""
+        if new_num != prev_num or new_state != prev_state:
+            updates["license_verification_status"] = "self_reported"
+            updates["license_verified_at"] = None
+            updates["license_verification_notes"] = None
+            updates["license_verification_source"] = None
 
     supabase.table("profiles").update(updates).eq("id", user_id).execute()
     r = supabase.table("profiles").select("*").eq("id", user_id).execute()

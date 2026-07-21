@@ -119,11 +119,12 @@ class Settings(BaseSettings):
     cron_secret: str = ""
     # Comma-separated Supabase user UUIDs allowed to run publisher revenue sync etc. (in addition to profiles.plan=admin)
     platform_admin_user_ids: str = ""
+    admin_user_ids: str = ""
     port: int = 8000
 
     @property
     def platform_admin_id_set(self) -> frozenset[str]:
-        return frozenset(x.strip() for x in self.platform_admin_user_ids.split(",") if x.strip())
+        return frozenset(x.strip() for x in f"{self.platform_admin_user_ids},{self.admin_user_ids}".split(",") if x.strip())
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

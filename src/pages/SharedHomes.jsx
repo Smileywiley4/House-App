@@ -6,6 +6,7 @@ import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
 import { saveCurrentProperty } from "@/core/currentProperty";
 import { usePlan } from "@/core/hooks/usePlan";
 import {
@@ -14,6 +15,8 @@ import {
   shareNeedsScoring,
   shareStatusBadgeClass,
 } from "@/lib/shareStatus";
+import LicenseVerifiedEmblem from "@/components/trust/LicenseVerifiedEmblem";
+import { isLicenseVerified } from "@/lib/licenseVerification";
 
 export default function SharedHomes() {
   return (
@@ -145,13 +148,20 @@ function SharedHomesInner() {
       {error && <FetchErrorState compact message={error} onRetry={load} className="mb-2" />}
 
       {loading ? (
-        <LoadingWithTimeout isLoading onRetry={load} label="Loading shared homes…" />
+        <LoadingWithTimeout isLoading onRetry={load} label="Loading shared homes…" skeleton="list" skeletonRows={4} />
       ) : list.length === 0 ? (
-        <p className="text-center text-sm text-slate-500 border border-dashed border-slate-200 rounded-2xl py-10 px-4">
-          {tab === "sent"
-            ? "No outbound shares yet. From Evaluate, use “Send to client for scoring”."
-            : "Nothing shared with you yet."}
-        </p>
+        <EmptyState
+          compact
+          icon={tab === "sent" ? Send : Inbox}
+          title={tab === "sent" ? "No outbound shares yet" : "Nothing shared with you yet"}
+          description={
+            tab === "sent"
+              ? "From Evaluate, use “Send to client for scoring”."
+              : "When a realtor or contact shares a home, it will show up here."
+          }
+          actionLabel={tab === "sent" ? "Score an address" : "Browse homes"}
+          actionTo={createPageUrl(tab === "sent" ? "Home" : "BrowseProperties")}
+        />
       ) : (
         <ul className="space-y-3">
           {list.map((item) => {
@@ -186,9 +196,12 @@ function SharedHomesInner() {
                         {label}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {tab === "sent" ? "To" : "From"} {peer || "Contact"}
-                      {when ? ` · ${when}` : ""}
+                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1 flex-wrap">
+                      <span>{tab === "sent" ? "To" : "From"} {peer || "Contact"}</span>
+                      {tab !== "sent" && isLicenseVerified(item.from_user) && (
+                        <LicenseVerifiedEmblem profile={item.from_user} size={13} />
+                      )}
+                      {when ? <span>· {when}</span> : null}
                     </p>
                     {item.message && (
                       <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.message}</p>
@@ -242,8 +255,11 @@ function ShareDetail({ item, isSentTab, onClose, onScore, onRefresh }) {
             >
               {label}
             </span>
-            <span>
+            <span className="inline-flex items-center gap-1">
               {isSentTab ? "To" : "From"} {peer || "Contact"}
+              {!isSentTab && isLicenseVerified(item.from_user) && (
+                <LicenseVerifiedEmblem profile={item.from_user} size={13} />
+              )}
             </span>
             {item.created_at && <span>· Sent {formatShareWhen(item.created_at)}</span>}
             {item.viewed_at && <span>· Viewed {formatShareWhen(item.viewed_at)}</span>}

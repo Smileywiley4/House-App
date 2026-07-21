@@ -96,7 +96,7 @@ const PLANS = [
       "Client management tools",
       "Share scorecards with clients",
       "Score off-market properties",
-      "Realtor profile & license verification",
+      "Realtor profile (license & brokerage — self-reported until verified)",
       "Client comparison reports",
       "MLS integration (coming soon)",
     ],

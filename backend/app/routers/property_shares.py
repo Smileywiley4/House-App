@@ -101,7 +101,7 @@ def _share_row(row: dict, extra: dict | None = None) -> dict:
 def _profile_brief(supabase, uid: str) -> dict:
     r = (
         supabase.table("profiles")
-        .select("id, full_name, email, username")
+        .select("id, full_name, email, username, license_verification_status, brokerage_name, brokerage, plan")
         .eq("id", uid)
         .limit(1)
         .execute()
@@ -112,6 +112,9 @@ def _profile_brief(supabase, uid: str) -> dict:
         "full_name": p.get("full_name"),
         "email": p.get("email"),
         "username": p.get("username"),
+        "plan": p.get("plan") or "free",
+        "license_verification_status": p.get("license_verification_status") or "self_reported",
+        "brokerage_name": p.get("brokerage_name") or p.get("brokerage") or "",
     }
 
 

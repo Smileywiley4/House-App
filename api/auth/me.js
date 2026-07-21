@@ -27,22 +27,19 @@ function env() {
 
 function profileToUser(row) {
   if (!row) return null;
+  const license_number = row.license_number || row.realtor_license || "";
+  const brokerage_name = row.brokerage_name || row.brokerage || "";
   return {
-    id: String(row.id),
-    email: row.email || null,
-    full_name: row.full_name || null,
-    default_weights: row.default_weights || {},
-    role: row.role || "user",
-    plan: row.plan || "free",
-    realtor_license: row.realtor_license || "",
-    brokerage: row.brokerage || "",
-    state: row.state || "",
+    id: String(row.id), email: row.email || null, full_name: row.full_name || null,
+    default_weights: row.default_weights || {}, role: row.role || "user", plan: row.plan || "free",
+    realtor_license: license_number, license_number, brokerage: brokerage_name, brokerage_name,
+    state: row.state || "", license_state: row.license_state || "",
+    license_verification_status: row.license_verification_status || "self_reported",
+    license_verified_at: row.license_verified_at || null,
+    license_verification_notes: row.license_verification_notes || "",
     linked_realtor_id: row.linked_realtor_id ? String(row.linked_realtor_id) : null,
-    phone: row.phone || "",
-    marketing_opt_in: Boolean(row.marketing_opt_in),
-    preset_digest_opt_in: Boolean(row.preset_digest_opt_in),
-    promo_code: row.promo_code || "",
-    avatar_url: row.avatar_url || "",
+    phone: row.phone || "", marketing_opt_in: Boolean(row.marketing_opt_in),
+    promo_code: row.promo_code || "", avatar_url: row.avatar_url || "",
     has_seen_onboarding_quiz: Boolean(row.has_seen_onboarding_quiz),
     has_seen_client_priority_quiz: Boolean(row.has_seen_client_priority_quiz),
   };
@@ -174,8 +171,11 @@ export async function PATCH(request) {
       "marketing_opt_in",
       "preset_digest_opt_in",
       "realtor_license",
+      "license_number",
       "brokerage",
+      "brokerage_name",
       "state",
+      "license_state",
       "avatar_url",
       "default_weights",
       "linked_realtor_id",
@@ -184,6 +184,15 @@ export async function PATCH(request) {
     ]) {
       if (Object.prototype.hasOwnProperty.call(body, key)) updates[key] = body[key];
     }
+    if (updates.license_number != null) updates.realtor_license = updates.license_number;
+    else if (updates.realtor_license != null) updates.license_number = updates.realtor_license;
+    if (updates.brokerage_name != null) updates.brokerage = updates.brokerage_name;
+    else if (updates.brokerage != null) updates.brokerage_name = updates.brokerage;
+    if (updates.license_state != null) updates.license_state = String(updates.license_state).trim().toUpperCase().slice(0, 2) || null;
+    delete updates.license_verification_status;
+    delete updates.license_verified_at;
+    delete updates.license_verification_notes;
+    delete updates.license_verification_source;
     if (updates.marketing_opt_in === true) {
       updates.marketing_opt_in_at = new Date().toISOString();
     }

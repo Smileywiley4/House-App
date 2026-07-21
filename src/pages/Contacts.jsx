@@ -4,8 +4,11 @@ import { Check, Loader2, Search, UserPlus, Users, X } from "lucide-react";
 import { api } from "@/api";
 import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
+import LicenseVerifiedEmblem from "@/components/trust/LicenseVerifiedEmblem";
+import { isLicenseVerified } from "@/lib/licenseVerification";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
 
 const ROLES = [
   { id: "client", label: "Client" },
@@ -220,7 +223,7 @@ function ContactsInner() {
       </section>
 
       {loading ? (
-        <LoadingWithTimeout isLoading onRetry={load} label="Loading contacts…" />
+        <LoadingWithTimeout isLoading onRetry={load} label="Loading contacts…" skeleton="list" skeletonRows={4} />
       ) : (
         <>
           {data.pending_incoming?.length > 0 && (
@@ -265,9 +268,13 @@ function ContactsInner() {
           <section className="space-y-2">
             <h2 className="text-sm font-bold text-[#1a2234]">Your contacts</h2>
             {data.accepted?.length === 0 ? (
-              <p className="text-sm text-slate-500 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
-                No contacts yet. Search above to add a client or colleague.
-              </p>
+              <EmptyState
+                compact
+                icon={Users}
+                title="No contacts yet"
+                description="Search above to add a client or colleague."
+                className="border-slate-200"
+              />
             ) : (
               data.accepted.map((c) => (
                 <div
@@ -275,8 +282,11 @@ function ContactsInner() {
                   className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">
+                    <p className="text-sm font-semibold truncate flex items-center gap-1.5">
                       {c.contact?.full_name || c.label || c.contact?.email || "Contact"}
+                      {(c.contact_role === "realtor" || c.contact?.plan === "realtor" || isLicenseVerified(c.contact)) && (
+                        <LicenseVerifiedEmblem profile={c.contact} size={14} />
+                      )}
                     </p>
                     <p className="text-xs text-slate-500">
                       {[c.contact_role, c.contact?.email].filter(Boolean).join(" · ")}

@@ -17,18 +17,13 @@ function profileToUser(row) {
   const license_number = row.license_number ?? row.realtor_license ?? '';
   const brokerage_name = row.brokerage_name ?? row.brokerage ?? '';
   return {
-    id: row.id,
-    email: row.email,
+    id: row.id, email: row.email,
     full_name: row.full_name ?? row.raw_user_meta_data?.full_name,
     default_weights: row.default_weights ?? {},
-    role: row.role ?? 'user',
-    plan: row.plan ?? 'free',
-    realtor_license: license_number,
-    license_number,
-    brokerage: brokerage_name,
-    brokerage_name,
-    state: row.state ?? '',
-    license_state: row.license_state ?? '',
+    role: row.role ?? 'user', plan: row.plan ?? 'free',
+    realtor_license: license_number, license_number,
+    brokerage: brokerage_name, brokerage_name,
+    state: row.state ?? '', license_state: row.license_state ?? '',
     license_verification_status: row.license_verification_status ?? 'self_reported',
     license_verified_at: row.license_verified_at ?? null,
     license_verification_notes: row.license_verification_notes ?? '',
