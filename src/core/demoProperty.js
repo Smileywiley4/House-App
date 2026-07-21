@@ -30,7 +30,7 @@ export const DEMO_PROPERTY = {
     { id: 'highway_access', label: 'Highway Access', importance: 7, score: 8, scoreSource: 'manual' },
     { id: 'roof_quality', label: 'Roof Quality', importance: 8, score: 7, scoreSource: 'manual' },
   ],
-  /** Extra browse-list neighbors for the map/list preview (fictional). */
+  /** Extra browse-list neighbors for the map/list preview (fictional coords near demo). */
   demoBrowseNeighbors: [
     {
       address: '1901 Barton Hills Blvd',
@@ -41,6 +41,8 @@ export const DEMO_PROPERTY = {
       bathrooms: 3,
       sqft: 2200,
       on_market: true,
+      lat: 30.2512,
+      lng: -97.7768,
     },
     {
       address: '412 S Lamar Blvd',
@@ -51,6 +53,8 @@ export const DEMO_PROPERTY = {
       bathrooms: 2,
       sqft: 1650,
       on_market: true,
+      lat: 30.2555,
+      lng: -97.7631,
     },
   ],
 };

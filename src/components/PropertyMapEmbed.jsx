@@ -2,18 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
+import { brand } from "@/design-tokens";
 
 const GOOGLE_EMBED_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY;
+const BRAND_PIN = brand.primary;
+
+function brandDotIcon() {
+  const size = 12;
+  return L.divIcon({
+    className: "browse-map-pin",
+    html: `<div role="img" aria-label="Property location" style="
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${BRAND_PIN};
+      border:2px solid #fff;
+      box-shadow:0 1px 3px rgba(15,23,42,.28);
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
 
 function buildAddressQuery({ address, city, state, zip }) {
   return [address, city, state, zip].filter(Boolean).join(", ");
@@ -38,28 +45,30 @@ async function geocodeAddress(query) {
   return { lat: Number(hit.lat), lng: Number(hit.lon) };
 }
 
-function OsmMap({ lat, lng }) {
+/** CARTO Positron + brand pin — same visual language as BrowseProperties. */
+function PositronMap({ lat, lng }) {
   const center = useMemo(() => [lat, lng], [lat, lng]);
+  const icon = useMemo(() => brandDotIcon(), []);
   return (
     <MapContainer
       center={center}
       zoom={15}
       scrollWheelZoom={false}
-      className="h-full w-full z-0"
+      className="browse-map-muted h-full w-full z-0"
       attributionControl
     >
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
-      <Marker position={center} />
+      <Marker position={center} icon={icon} />
     </MapContainer>
   );
 }
 
 /**
  * Property location map — Google Maps Embed API when VITE_GOOGLE_MAPS_EMBED_KEY is set,
- * otherwise OpenStreetMap via Leaflet (no API key required).
+ * otherwise CARTO Positron via Leaflet (matches Browse map look).
  */
 export default function PropertyMapEmbed({ address, city, state, zip, lat, lng, className = "h-56" }) {
   const query = buildAddressQuery({ address, city, state, zip });
@@ -127,7 +136,7 @@ export default function PropertyMapEmbed({ address, city, state, zip, lat, lng, 
           {error}
         </div>
       )}
-      {coords && !loading && <OsmMap lat={coords.lat} lng={coords.lng} />}
+      {coords && !loading && <PositronMap lat={coords.lat} lng={coords.lng} />}
     </div>
   );
 }

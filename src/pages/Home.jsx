@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { DEMO_PROPERTY } from "@/core/demoProperty";
 import PropertyLocationMap from "@/components/PropertyLocationMap";
+import BrowseDemoMap from "@/components/browse/BrowseDemoMap";
 import PropertyAddressSearchForm from "@/components/PropertyAddressSearchForm";
 import { ForSaleBadge } from "@/components/ForSaleBadge";
 import { AdSlot } from "@/components/AdSlot";
@@ -378,37 +379,12 @@ function BrowseDemoPreview({ property }) {
         </div>
 
         <div className="grid lg:grid-cols-2">
-          {/* Stylized map panel with brand price pills (same visual language as Browse pins) */}
-          <div className="relative min-h-[220px] bg-[#E8EEE9] border-b lg:border-b-0 lg:border-r border-slate-100 overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-40"
-              aria-hidden
-              style={{
-                backgroundImage:
-                  "linear-gradient(#c5d4cb 1px, transparent 1px), linear-gradient(90deg, #c5d4cb 1px, transparent 1px)",
-                backgroundSize: "28px 28px",
-              }}
-            />
-            <div className="relative z-10 h-full min-h-[220px] p-6 flex flex-col justify-between">
-              <div className="flex flex-wrap gap-2">
-                {listings.map((p, i) => (
-                  <span
-                    key={p.address}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold text-white border-[1.5px] border-white shadow-sm"
-                    style={{
-                      background: i === 0 ? brand.primaryHover : brand.primary,
-                      marginLeft: i === 1 ? "2.5rem" : i === 2 ? "1rem" : 0,
-                      marginTop: i === 1 ? "2.5rem" : i === 2 ? "4rem" : 0,
-                    }}
-                  >
-                    {formatCompactPrice(p.price)}
-                  </span>
-                ))}
-              </div>
-              <p className="text-[11px] font-semibold text-[#0C4F37]/80">
-                Brand-green price pins · zoom in on Search for live map
-              </p>
-            </div>
+          {/* Live Leaflet + Positron mock — same tiles/pins as BrowseProperties */}
+          <div className="relative min-h-[220px] border-b lg:border-b-0 lg:border-r border-slate-100 overflow-hidden">
+            <BrowseDemoMap listings={listings} className="h-full min-h-[220px] w-full" />
+            <p className="pointer-events-none absolute bottom-2 left-2 z-[500] rounded-md bg-white/90 px-2 py-1 text-[11px] font-semibold text-[#0C4F37]/90 shadow-sm">
+              Brand-green pins · same map style as Search
+            </p>
           </div>
 
           <ul className="divide-y divide-slate-100">
