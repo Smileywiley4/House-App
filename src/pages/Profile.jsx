@@ -557,6 +557,14 @@ function ProfileInner() {
               </div>
               {isPremium ? (
                 <>
+                  {(plan || "").toLowerCase() === "premium" && (
+                    <Link
+                      to={`${createPageUrl("Pricing")}?plan=realtor`}
+                      className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#1a2234] hover:bg-[#243049] text-white"
+                    >
+                      Upgrade to Realtor
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={async () => {
@@ -576,7 +584,9 @@ function ProfileInner() {
                     {portalLoading ? "Opening…" : "Open billing portal"}
                   </button>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    In the Stripe portal you can update payment methods, view invoices, and cancel your subscription. If you cancel, charges stop after the current billing period ends.
+                    {(plan || "").toLowerCase() === "premium"
+                      ? "Upgrade to Realtor anytime from Pricing — we’ll prorate the difference on your current subscription. Use the billing portal to update payment methods, view invoices, or cancel."
+                      : "In the Stripe portal you can update payment methods, view invoices, and cancel your subscription. If you cancel, charges stop after the current billing period ends."}
                   </p>
                 </>
               ) : (

@@ -2132,7 +2132,15 @@ export function createPythonBackendAdapter() {
       logUserInApp: () => Promise.resolve(),
     },
     subscription: {
-      createCheckoutSession: (options) => request('POST', '/api/subscription/create-checkout-session', options).then((r) => ({ url: r?.url })),
+      createCheckoutSession: (options) =>
+        request('POST', '/api/subscription/create-checkout-session', options).then((r) => ({
+          url: r?.url,
+          upgraded: Boolean(r?.upgraded),
+          already_on_plan: Boolean(r?.already_on_plan),
+          plan: r?.plan,
+          previous_plan: r?.previous_plan,
+          message: r?.message,
+        })),
       getPortalUrl: () => request('GET', '/api/subscription/portal').then((r) => ({ url: r?.url })),
     },
     promo: {

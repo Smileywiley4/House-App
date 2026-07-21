@@ -4,8 +4,43 @@ import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
+import { usePlan } from "@/core/hooks/usePlan";
 import { APP_NAME } from "@/core/constants";
 import { SUPPORT_EMAIL } from "@/core/companyConfig";
+
+const PLAN_RANK = { free: 0, premium: 1, realtor: 2, admin: 3 };
+
+async function startPlanChange({ planId, interval, onSetError, refreshUser }) {
+  const base = typeof window !== "undefined" ? window.location.origin : "";
+  const result = await api.subscription.createCheckoutSession({
+    planId,
+    interval,
+    successUrl: `${base}/Profile?upgraded=1&tab=billing`,
+    cancelUrl: `${base}/Pricing`,
+  });
+  if (result?.upgraded || result?.already_on_plan) {
+    try {
+      await refreshUser?.();
+    } catch {
+      /* webhook / profile refresh best-effort */
+    }
+  }
+  if (result?.url) {
+    window.location.href = result.url;
+    return;
+  }
+  onSetError?.(result?.message || "Checkout is unavailable. Billing may not be configured on the server.");
+}
+
+function planCtaLabel(planId, currentPlan) {
+  const current = (currentPlan || "free").toLowerCase();
+  if (planId === "free") return "Get Started Free";
+  if (current === "admin" || current === planId) return "Current plan";
+  if (PLAN_RANK[planId] > (PLAN_RANK[current] ?? 0)) {
+    return planId === "realtor" ? "Upgrade to Realtor" : "Upgrade to Premium";
+  }
+  return planId === "premium" ? "Switch to Premium" : "Switch plan";
+}
 
 const PLANS = [
   {
@@ -75,7 +110,8 @@ const COMING_SOON = [
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, refreshUser } = useAuth();
+  const { plan: currentPlan } = usePlan();
   const [checkoutError, setCheckoutError] = useState("");
   const [searchParams] = useSearchParams();
   const [highlightPlan, setHighlightPlan] = useState(null);
@@ -143,6 +179,8 @@ export default function Pricing() {
               annual={annual}
               interval={interval}
               isAuthenticated={isAuthenticated}
+              currentPlan={currentPlan}
+              refreshUser={refreshUser}
               onSetError={setCheckoutError}
               highlighted={highlightPlan === plan.id}
               cardRef={(el) => { planRefs.current[plan.id] = el; }}
@@ -201,28 +239,26 @@ export default function Pricing() {
                   setCheckoutError("");
                   if (!isAuthenticated) {
                     const base = typeof window !== "undefined" ? window.location.origin : "";
-                    window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing`)}`;
+                    window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing?plan=realtor`)}`;
                     return;
                   }
-                  const base = typeof window !== "undefined" ? window.location.origin : "";
-                  const { url } = await api.subscription.createCheckoutSession({
+                  await startPlanChange({
                     planId: "realtor",
                     interval,
-                    successUrl: `${base}/Profile?upgraded=1&tab=billing`,
-                    cancelUrl: `${base}/Pricing`,
+                    onSetError: setCheckoutError,
+                    refreshUser,
                   });
-                  if (!url) {
-                    setCheckoutError("Checkout is unavailable. Billing may not be configured on the server.");
-                    return;
-                  }
-                  window.location.href = url;
                 } catch (err) {
                   console.error(err);
                   setCheckoutError(err?.message || "Could not start checkout. Try again or contact support.");
                 }
               }}
-              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl text-sm hover:bg-white/5 transition">
-              Upgrade to Realtor — ${annual ? "199.99/yr" : "19.99/mo"}
+              disabled={(currentPlan || "").toLowerCase() === "realtor" || (currentPlan || "").toLowerCase() === "admin"}
+              className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl text-sm hover:bg-white/5 transition disabled:opacity-50"
+            >
+              {(currentPlan || "").toLowerCase() === "realtor" || (currentPlan || "").toLowerCase() === "admin"
+                ? "You're on Realtor"
+                : `Upgrade to Realtor — $${annual ? "199.99/yr" : "19.99/mo"}`}
             </button>
           </div>
         </div>
@@ -239,12 +275,27 @@ export default function Pricing() {
   );
 }
 
-function PlanCard({ plan, annual, interval, isAuthenticated, onSetError, highlighted, cardRef }) {
+function PlanCard({
+  plan,
+  annual,
+  interval,
+  isAuthenticated,
+  currentPlan,
+  refreshUser,
+  onSetError,
+  highlighted,
+  cardRef,
+}) {
   const [loading, setLoading] = useState(false);
   const price = annual && plan.annual > 0
     ? plan.annual
     : plan.monthly;
   const period = annual && plan.annual > 0 ? "/yr" : "/mo";
+  const cta = planCtaLabel(plan.id, currentPlan);
+  const isCurrent =
+    plan.id !== "free" &&
+    ((currentPlan || "").toLowerCase() === plan.id ||
+      (currentPlan || "").toLowerCase() === "admin");
 
   const base = plan.dark
     ? "bg-[#1a2234] border-[#10b981]/20 text-white"
@@ -290,26 +341,21 @@ function PlanCard({ plan, annual, interval, isAuthenticated, onSetError, highlig
         <button
           onClick={async () => {
             if (plan.id === "free") { window.location.href = "/"; return; }
+            if (isCurrent) return;
             onSetError?.("");
             if (!isAuthenticated) {
-              const base = typeof window !== "undefined" ? window.location.origin : "";
-              window.location.href = `${base}/login?redirect=${encodeURIComponent(`${base}/Pricing`)}`;
+              const origin = typeof window !== "undefined" ? window.location.origin : "";
+              window.location.href = `${origin}/login?redirect=${encodeURIComponent(`${origin}/Pricing?plan=${plan.id}`)}`;
               return;
             }
             setLoading(true);
             try {
-              const base = typeof window !== "undefined" ? window.location.origin : "";
-              const { url } = await api.subscription.createCheckoutSession({
+              await startPlanChange({
                 planId: plan.id,
                 interval,
-                successUrl: `${base}/Profile?upgraded=1&tab=billing`,
-                cancelUrl: `${base}/Pricing`,
+                onSetError,
+                refreshUser,
               });
-              if (!url) {
-                onSetError?.("Checkout is unavailable. Billing may not be configured on the server.");
-                return;
-              }
-              window.location.href = url;
             } catch (err) {
               console.error(err);
               onSetError?.(err?.message || "Could not start checkout. Try again or contact support.");
@@ -317,9 +363,11 @@ function PlanCard({ plan, annual, interval, isAuthenticated, onSetError, highlig
               setLoading(false);
             }
           }}
-          disabled={loading}
+          disabled={loading || isCurrent}
           className={`w-full py-3 rounded-xl font-bold text-sm transition mb-7 flex items-center justify-center gap-2 ${
-            plan.accent
+            isCurrent
+              ? "bg-slate-100 text-slate-500 cursor-default"
+              : plan.accent
               ? "bg-[#10b981] hover:bg-[#059669] text-white"
               : plan.dark
               ? "bg-[#10b981] hover:bg-[#059669] text-white"
@@ -327,7 +375,7 @@ function PlanCard({ plan, annual, interval, isAuthenticated, onSetError, highlig
           } disabled:opacity-60`}
         >
           {loading ? <Loader2 size={18} className="animate-spin shrink-0" /> : null}
-          {plan.cta}
+          {cta}
         </button>
 
         <ul className="space-y-2.5">
