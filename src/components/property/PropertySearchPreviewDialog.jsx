@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Columns3,
   Home,
+  Map as MapIcon,
   MapPin,
   Ruler,
   UserRound,
@@ -22,6 +23,7 @@ import PropertyLocationMap from "@/components/PropertyLocationMap";
 import { saveCurrentProperty } from "@/core/currentProperty";
 import { createPageUrl } from "@/utils";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
+import { browsePropertyUrl, storePropertyHandoff } from "@/lib/browseHandoff";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -126,6 +128,13 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
     saveCurrentProperty(property);
     onOpenChange(false);
     navigate(evaluationUrl(property));
+  };
+
+  const viewOnMap = () => {
+    saveCurrentProperty(property);
+    storePropertyHandoff(property);
+    onOpenChange(false);
+    navigate(browsePropertyUrl(property));
   };
 
   const addToCompare = () => {
@@ -303,6 +312,13 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
               className="mt-5 flex w-full items-center justify-between rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
             >
               Score This Property <ArrowRight size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={viewOnMap}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100"
+            >
+              <MapIcon size={17} /> View on map
             </button>
             <button
               type="button"

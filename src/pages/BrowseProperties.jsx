@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polygon, Polyline, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -28,6 +28,7 @@ import BrowsePresetsBar from "@/components/browse/BrowsePresetsBar";
 import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
 import StartProjectModal from "@/components/browse/StartProjectModal";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
+import { loadBrowseHandoff } from "@/lib/browseHandoff";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -140,6 +141,30 @@ function MapController({ center, zoom, flyToken }) {
     map.flyTo([center.lat, center.lng], zoom ?? map.getZoom(), { duration: 0.6 });
   }, [center, zoom, flyToken, map]);
   return null;
+}
+
+function FitBoundsToRing({ ring, token }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!ring || ring.length < 3 || !token) return;
+    const bounds = L.latLngBounds(ring.map(([lat, lng]) => [lat, lng]));
+    if (!bounds.isValid()) return;
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 14, animate: true });
+  }, [ring, token, map]);
+  return null;
+}
+
+function highlightIcon() {
+  return L.divIcon({
+    className: "",
+    html: `<div style="
+      width:18px;height:18px;border-radius:50%;
+      background:#10b981;border:3px solid #fff;
+      box-shadow:0 2px 10px rgba(0,0,0,.35);
+    "></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
 }
 
 function MapMoveWatcher({ onMoveEnd, enabled }) {
@@ -339,26 +364,11 @@ function DrawModeMapBehavior({ active }) {
   return null;
 }
 
-async function geocodePlace(query) {
-  const params = new URLSearchParams({
-    format: "json",
-    limit: "1",
-    q: `${query}, USA`,
-  });
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  const hit = data?.[0];
-  if (!hit) return null;
-  return { lat: Number(hit.lat), lng: Number(hit.lon), label: hit.display_name };
-}
-
 export default function BrowseProperties() {
   const { isAuthenticated } = useAuth();
   const { maxCompareCount, isPremium } = usePlan();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState("for_sale");
   const [view, setView] = useState("split");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -369,6 +379,7 @@ export default function BrowseProperties() {
   const [radius, setRadius] = useState(5);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [flyToken, setFlyToken] = useState(0);
+  const [fitToken, setFitToken] = useState(0);
   const [properties, setProperties] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -381,10 +392,15 @@ export default function BrowseProperties() {
   const [draftPoints, setDraftPoints] = useState([]);
   const [drawResetKey, setDrawResetKey] = useState(0);
   const [polygon, setPolygon] = useState(null); // closed ring [[lat,lng],...]
+  const [areaLabel, setAreaLabel] = useState("");
+  const [highlight, setHighlight] = useState(null); // { lat, lng, address }
   const debounceRef = useRef(null);
   const skipNextMoveFetch = useRef(false);
   const listRef = useRef(null);
   const polygonRef = useRef(null);
+  const handoffDone = useRef(false);
+  const [bootstrapped, setBootstrapped] = useState(false);
+  const skipNextFilterFetch = useRef(true);
 
   const requireAuth = (message) => {
     const redirect = encodeURIComponent(
@@ -517,6 +533,11 @@ export default function BrowseProperties() {
   );
 
   useEffect(() => {
+    if (!bootstrapped) return;
+    if (skipNextFilterFetch.current) {
+      skipNextFilterFetch.current = false;
+      return;
+    }
     const ring = polygonRef.current;
     if (ring?.length >= 3) {
       const cover = polygonCoverCircle(ring);
@@ -526,7 +547,7 @@ export default function BrowseProperties() {
       }
     }
     fetchBrowse({ polygon: null });
-  }, [mode, filters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, filters, bootstrapped]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scheduleFetch = useCallback(
     (next) => {
@@ -561,6 +582,7 @@ export default function BrowseProperties() {
         return;
       }
       setPolygon(ring);
+      setAreaLabel("");
       setDraftPoints([]);
       setDrawMode(false);
       setError("");
@@ -575,6 +597,29 @@ export default function BrowseProperties() {
     [fetchBrowse]
   );
 
+  /** Place boundary / handoff ring — no freehand min-point requirement. */
+  const applyBoundaryRing = useCallback(
+    (ring, label = "") => {
+      if (!ring || ring.length < 3) return false;
+      setPolygon(ring);
+      setAreaLabel(label || "");
+      setDraftPoints([]);
+      setDrawMode(false);
+      setHighlight(null);
+      setError("");
+      const cover = polygonCoverCircle(ring);
+      if (cover) {
+        setCenter({ lat: cover.lat, lng: cover.lng });
+        setRadius(cover.radius);
+        skipNextMoveFetch.current = true;
+        setFitToken((t) => t + 1);
+        fetchBrowse({ lat: cover.lat, lng: cover.lng, radius: cover.radius, polygon: ring });
+      }
+      return true;
+    },
+    [fetchBrowse]
+  );
+
   const rejectStroke = useCallback(() => {
     setDraftPoints([]);
     setError("Drag a larger area to search — tiny strokes are ignored.");
@@ -582,6 +627,7 @@ export default function BrowseProperties() {
 
   const clearDrawnArea = () => {
     setPolygon(null);
+    setAreaLabel("");
     setDraftPoints([]);
     setDrawMode(false);
     fetchBrowse({ polygon: null });
@@ -592,29 +638,153 @@ export default function BrowseProperties() {
     setDraftPoints([]);
     setDrawResetKey((k) => k + 1);
     setPolygon(null);
+    setAreaLabel("");
     setError("");
   };
+
+  const clearHandoffParams = useCallback(() => {
+    const keys = ["lat", "lng", "zoom", "highlightAddress", "area", "q"];
+    if (!keys.some((k) => searchParams.has(k))) return;
+    const next = new URLSearchParams(searchParams);
+    keys.forEach((k) => next.delete(k));
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Home / header search handoff: property focus or place boundary.
+  useEffect(() => {
+    if (handoffDone.current) return;
+    handoffDone.current = true;
+
+    const handoff = loadBrowseHandoff({ consume: true });
+    const latParam = Number(searchParams.get("lat"));
+    const lngParam = Number(searchParams.get("lng"));
+    const zoomParam = Number(searchParams.get("zoom"));
+    const highlightAddress = (searchParams.get("highlightAddress") || "").trim();
+    const wantsArea = searchParams.get("area") === "1";
+    const qParam = (searchParams.get("q") || "").trim();
+
+    const focusProperty = (lat, lng, address, z = 16) => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+      setHighlight({ lat, lng, address: address || "" });
+      setPolygon(null);
+      setAreaLabel("");
+      setDrawMode(false);
+      skipNextMoveFetch.current = true;
+      setCenter({ lat, lng });
+      setZoom(Number.isFinite(z) && z > 0 ? z : 16);
+      setRadius(2.5);
+      setFlyToken((t) => t + 1);
+      fetchBrowse({ lat, lng, radius: 2.5, polygon: null });
+      return true;
+    };
+
+    (async () => {
+      try {
+        if (handoff?.type === "boundary" && Array.isArray(handoff.ring) && handoff.ring.length >= 3) {
+          if (handoff.label) setPlaceQuery(handoff.label.split(",")[0] || handoff.label);
+          applyBoundaryRing(handoff.ring, handoff.label || "");
+          clearHandoffParams();
+          return;
+        }
+
+        if (handoff?.type === "property") {
+          const lat = Number(handoff.lat);
+          const lng = Number(handoff.lng);
+          if (focusProperty(lat, lng, handoff.address, handoff.zoom)) {
+            clearHandoffParams();
+            return;
+          }
+        }
+
+        if (Number.isFinite(latParam) && Number.isFinite(lngParam)) {
+          focusProperty(
+            latParam,
+            lngParam,
+            highlightAddress || handoff?.address || "",
+            Number.isFinite(zoomParam) ? zoomParam : 16
+          );
+          clearHandoffParams();
+          return;
+        }
+
+        if (wantsArea || qParam) {
+          const query = qParam || placeQuery;
+          if (query && api.geo?.boundary) {
+            setLoading(true);
+            try {
+              const boundary = await api.geo.boundary(query);
+              if (boundary?.ring?.length >= 3) {
+                setPlaceQuery(boundary.label?.split(",")[0] || query);
+                applyBoundaryRing(boundary.ring, boundary.label || query);
+              } else if (Number.isFinite(boundary?.lat) && Number.isFinite(boundary?.lng)) {
+                skipNextMoveFetch.current = true;
+                setCenter({ lat: boundary.lat, lng: boundary.lng });
+                setZoom(12);
+                setFlyToken((t) => t + 1);
+                setRadius(6);
+                await fetchBrowse({
+                  lat: boundary.lat,
+                  lng: boundary.lng,
+                  radius: 6,
+                  polygon: null,
+                });
+              } else {
+                setError("Could not find that place.");
+                await fetchBrowse({ polygon: null });
+              }
+            } catch (err) {
+              setError(err?.message || "Place search failed.");
+              await fetchBrowse({ polygon: null });
+            } finally {
+              setLoading(false);
+            }
+            clearHandoffParams();
+            return;
+          }
+        }
+
+        // Default map load
+        await fetchBrowse({ polygon: null });
+        clearHandoffParams();
+      } finally {
+        setBootstrapped(true);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const runPlaceSearch = async (e) => {
     e?.preventDefault?.();
     const q = placeQuery.trim();
     if (!q) return;
     setLoading(true);
+    setError("");
     try {
-      const hit = await geocodePlace(q);
-      if (!hit) {
-        setError("Could not find that place. Try a city and state (e.g. Austin, TX).");
+      if (!api.geo?.boundary) {
+        setError("Place search is unavailable.");
         return;
       }
-      setPolygon(null);
-      setDraftPoints([]);
-      setDrawMode(false);
-      skipNextMoveFetch.current = true;
-      setCenter({ lat: hit.lat, lng: hit.lng });
-      setZoom(12);
-      setFlyToken((t) => t + 1);
-      setRadius(6);
-      await fetchBrowse({ lat: hit.lat, lng: hit.lng, radius: 6, polygon: null });
+      const boundary = await api.geo.boundary(q);
+      if (boundary?.ring?.length >= 3) {
+        setPlaceQuery(boundary.label?.split(",")[0] || q);
+        applyBoundaryRing(boundary.ring, boundary.label || q);
+        return;
+      }
+      if (Number.isFinite(boundary?.lat) && Number.isFinite(boundary?.lng)) {
+        setPolygon(null);
+        setAreaLabel("");
+        setDraftPoints([]);
+        setDrawMode(false);
+        setHighlight(null);
+        skipNextMoveFetch.current = true;
+        setCenter({ lat: boundary.lat, lng: boundary.lng });
+        setZoom(12);
+        setFlyToken((t) => t + 1);
+        setRadius(6);
+        await fetchBrowse({ lat: boundary.lat, lng: boundary.lng, radius: 6, polygon: null });
+        return;
+      }
+      setError("Could not find that place. Try a city and state (e.g. Austin, TX).");
     } catch (err) {
       setError(err?.message || "Place search failed.");
     } finally {
@@ -792,7 +962,14 @@ export default function BrowseProperties() {
         )}
         {polygon && !drawMode && (
           <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-[#059669] font-semibold">
-            Custom search area active — pan is locked to this shape. Clear area to browse the full map again.
+            {areaLabel
+              ? `Area: ${areaLabel.split(",").slice(0, 3).join(",")} — filters apply inside this boundary. Clear area to browse the full map.`
+              : "Custom search area active — pan is locked to this shape. Clear area to browse the full map again."}
+          </p>
+        )}
+        {highlight?.address && !polygon && (
+          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-[#059669] font-semibold">
+            Focused on {highlight.address}
           </p>
         )}
         {scoreMeta?.score_filter_applied && (
@@ -822,6 +999,7 @@ export default function BrowseProperties() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
               />
               <MapController center={center} zoom={zoom} flyToken={flyToken} />
+              <FitBoundsToRing ring={polygon} token={fitToken} />
               <MapMoveWatcher onMoveEnd={onMapMoveEnd} enabled={!drawMode && !polygon} />
               <DrawModeMapBehavior active={drawMode} />
               <DrawInteraction
@@ -843,6 +1021,15 @@ export default function BrowseProperties() {
                   }}
                 />
               )}
+              {highlight &&
+                Number.isFinite(highlight.lat) &&
+                Number.isFinite(highlight.lng) && (
+                  <Marker
+                    position={[highlight.lat, highlight.lng]}
+                    icon={highlightIcon()}
+                    zIndexOffset={1000}
+                  />
+                )}
               {markers.map((p) => (
                 <Marker
                   key={p.id || `${p.lat},${p.lng},${p.address}`}
@@ -885,7 +1072,7 @@ export default function BrowseProperties() {
                 </h1>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Results sync with map markers
-                  {polygon ? " inside your drawn area" : ""}. Select homes to compare or start a
+                  {polygon ? " inside the active area" : ""}. Select homes to compare or start a
                   project.
                 </p>
               </div>

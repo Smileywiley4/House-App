@@ -28,8 +28,31 @@ def _api_key() -> str | None:
     return get_settings().google_places_api_key or None
 
 
+def _prediction_kind(types: list | None, *, default: str = "property") -> str:
+    """Classify Places autocomplete types as property vs place (city/zip/neighborhood)."""
+    tset = {str(t).lower() for t in (types or [])}
+    place_types = {
+        "locality",
+        "postal_code",
+        "postal_town",
+        "neighborhood",
+        "sublocality",
+        "sublocality_level_1",
+        "administrative_area_level_1",
+        "administrative_area_level_2",
+        "administrative_area_level_3",
+        "colloquial_area",
+    }
+    property_types = {"street_address", "premise", "subpremise", "route"}
+    if tset & place_types and not (tset & property_types):
+        return "place"
+    if tset & property_types:
+        return "property"
+    return default
+
+
 async def autocomplete_addresses(query: str) -> list[dict]:
-    """Return US street-address predictions from Places API (New)."""
+    """Return US street-address and place predictions from Places API (New)."""
     key = _api_key()
     text = (query or "").strip()
     if not key or len(text) < 3:
@@ -39,7 +62,7 @@ async def autocomplete_addresses(query: str) -> list[dict]:
         "X-Goog-Api-Key": key,
     }
 
-    async def _request(body: dict) -> list[dict]:
+    async def _request(body: dict, *, kind_default: str) -> list[dict]:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(PLACES_V1_AUTOCOMPLETE_URL, json=body, headers=headers)
         if response.status_code >= 400:
@@ -55,32 +78,58 @@ async def autocomplete_addresses(query: str) -> list[dict]:
             full_text = (prediction.get("text") or {}).get("text")
             if not full_text:
                 continue
+            types = prediction.get("types") or []
             predictions.append({
                 "place_id": prediction.get("placeId"),
                 "address": full_text,
                 "main_text": main_text or full_text,
                 "secondary_text": secondary_text or "",
+                "kind": _prediction_kind(types, default=kind_default),
+                "types": types,
             })
         return predictions
 
-    # Prefer street/building matches; fall back to broader geocode if empty so
-    # partial typing (city + street start) still shows a dropdown.
+    # Street/building first; also fetch cities/ZIPs/neighborhoods for area browse.
     primary = {
         "input": text,
         "includedPrimaryTypes": ["street_address", "premise", "subpremise"],
         "regionCode": "US",
         "languageCode": "en",
     }
+    places = {
+        "input": text,
+        "includedPrimaryTypes": [
+            "locality",
+            "postal_code",
+            "neighborhood",
+            "sublocality",
+            "administrative_area_level_3",
+        ],
+        "regionCode": "US",
+        "languageCode": "en",
+    }
     try:
-        predictions = await _request(primary)
-        if predictions:
-            return predictions
-        return await _request({
-            "input": text,
-            "includedPrimaryTypes": ["geocode"],
-            "regionCode": "US",
-            "languageCode": "en",
-        })
+        street = await _request(primary, kind_default="property")
+        place_hits = await _request(places, kind_default="place")
+        if not street:
+            street = await _request({
+                "input": text,
+                "includedPrimaryTypes": ["geocode"],
+                "regionCode": "US",
+                "languageCode": "en",
+            }, kind_default="property")
+
+        merged: list[dict] = []
+        seen: set[str] = set()
+        for item in [*street, *place_hits]:
+            key_id = item.get("place_id") or item.get("address")
+            if not key_id or key_id in seen:
+                continue
+            seen.add(key_id)
+            merged.append(item)
+            if len(merged) >= 8:
+                break
+        return merged
     except Exception as exc:
         logger.error("Places autocomplete error: %s", exc)
         return []

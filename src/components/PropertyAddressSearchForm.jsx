@@ -1,14 +1,25 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Loader2 } from "lucide-react";
 import { api } from "@/api";
 import { getPropertyByAddress } from "@/core/propertyService";
 import PropertySearchPreviewDialog from "@/components/property/PropertySearchPreviewDialog";
+import {
+  browseAreaUrl,
+  browsePropertyUrl,
+  looksLikePlaceQuery,
+  storeBoundaryHandoff,
+  storePropertyHandoff,
+} from "@/lib/browseHandoff";
 
 /**
- * Shared address search — used in the Home hero and the global header bar.
+ * Shared address / place search — Home hero and sticky header.
+ * Property match → preview bubble + navigate to Browse map centered on the home.
+ * Place (city/ZIP/neighborhood) → Browse map with place boundary polygon active.
  * @param {"hero"|"header"} variant
  */
 export default function PropertyAddressSearchForm({ variant = "header", className = "" }) {
+  const navigate = useNavigate();
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,8 +31,15 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const suppressAutocomplete = useRef("");
   const autocompleteRequest = useRef(0);
+  const navTimer = useRef(null);
   const listboxId = useId();
   const isHero = variant === "hero";
+
+  useEffect(() => {
+    return () => {
+      if (navTimer.current) window.clearTimeout(navTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     const requestId = ++autocompleteRequest.current;
@@ -57,7 +75,36 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
     };
   }, [address]);
 
-  const searchAddress = async (rawAddress) => {
+  const goToPlaceBoundary = async (rawQuery) => {
+    const value = (rawQuery || "").trim();
+    if (!value) return;
+    if (!api.geo?.boundary) {
+      setError("Place search needs the API. Try again in a moment.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const boundary = await api.geo.boundary(value);
+      if (!boundary?.ring?.length && !(Number.isFinite(boundary?.lat) && Number.isFinite(boundary?.lng))) {
+        setError("Could not find that place. Try a city and state or ZIP.");
+        return;
+      }
+      storeBoundaryHandoff({
+        ring: boundary.ring || [],
+        label: boundary.label || value,
+        lat: boundary.lat,
+        lng: boundary.lng,
+      });
+      navigate(browseAreaUrl({ label: boundary.label || value }));
+    } catch (err) {
+      setError(err?.message || "Could not load that place. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const searchProperty = async (rawAddress) => {
     const value = (rawAddress || "").trim();
     if (!value) return;
 
@@ -73,11 +120,39 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
       const data = await getPropertyByAddress(value);
       setProperty(data);
       setPreviewOpen(true);
+      storePropertyHandoff(data);
+      if (navTimer.current) window.clearTimeout(navTimer.current);
+      // Brief preview bubble, then open the interactive map on this home.
+      navTimer.current = window.setTimeout(() => {
+        navigate(browsePropertyUrl(data));
+      }, 700);
     } catch (err) {
+      // If address lookup fails but query looks like a place, try boundary.
+      if (looksLikePlaceQuery(value)) {
+        setLoading(false);
+        await goToPlaceBoundary(value);
+        return;
+      }
       setError(err?.message || "Could not load property. Try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const searchAddress = async (rawAddress, kindHint) => {
+    const value = (rawAddress || "").trim();
+    if (!value) return;
+
+    if (kindHint === "place" || (kindHint !== "property" && looksLikePlaceQuery(value))) {
+      autocompleteRequest.current += 1;
+      suppressAutocomplete.current = value;
+      setAddress(value);
+      setSuggestionsOpen(false);
+      setSuggestions([]);
+      await goToPlaceBoundary(value);
+      return;
+    }
+    await searchProperty(value);
   };
 
   const submit = (e) => {
@@ -87,7 +162,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
 
   const chooseSuggestion = (suggestion) => {
     suppressAutocomplete.current = suggestion.address;
-    searchAddress(suggestion.address);
+    searchAddress(suggestion.address, suggestion.kind);
   };
 
   const handleInputKeyDown = (event) => {
@@ -138,9 +213,9 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
             }}
             onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 180)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Enter a property address..."
+            placeholder="Address, city, or ZIP…"
             className={inputClass}
-            aria-label="Search property by address"
+            aria-label="Search property address or place"
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={suggestionsOpen && (suggestions.length > 0 || suggestionsLoading)}
@@ -156,7 +231,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
             >
               {suggestionsLoading && suggestions.length === 0 ? (
                 <div className="flex items-center gap-2 px-4 py-3 text-sm text-slate-500">
-                  <Loader2 size={15} className="animate-spin text-[#10b981]" /> Finding addresses...
+                  <Loader2 size={15} className="animate-spin text-[#10b981]" /> Finding matches...
                 </div>
               ) : (
                 suggestions.map((suggestion, index) => (
@@ -175,9 +250,16 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
                     <MapPin size={16} className="mt-0.5 shrink-0 text-[#10b981]" />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-[#1a2234]">{suggestion.main_text}</span>
-                      {suggestion.secondary_text && (
-                        <span className="block truncate text-xs text-slate-500">{suggestion.secondary_text}</span>
-                      )}
+                      <span className="flex items-center gap-2">
+                        {suggestion.secondary_text && (
+                          <span className="block truncate text-xs text-slate-500">{suggestion.secondary_text}</span>
+                        )}
+                        {suggestion.kind === "place" && (
+                          <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            Area
+                          </span>
+                        )}
+                      </span>
                     </span>
                   </button>
                 ))

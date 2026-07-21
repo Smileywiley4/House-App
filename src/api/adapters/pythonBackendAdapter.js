@@ -307,6 +307,11 @@ export function createPythonBackendAdapter() {
           fieldMask ? { 'X-Goog-FieldMask': fieldMask } : undefined,
         ),
     },
+    geo: {
+      /** Nominatim place boundary (city/ZIP/neighborhood) → { ring, label, lat, lng } */
+      boundary: (query, signal) =>
+        publicGet(`/api/geo/boundary?q=${encodeURIComponent(query)}`, signal),
+    },
     browsePrefs: {
       remember: (body) => request('POST', '/api/browse-prefs/remember', body),
       getSuggested: () => request('GET', '/api/browse-prefs/suggested'),
