@@ -307,6 +307,28 @@ export function createPythonBackendAdapter() {
           fieldMask ? { 'X-Goog-FieldMask': fieldMask } : undefined,
         ),
     },
+    browsePrefs: {
+      remember: (body) => request('POST', '/api/browse-prefs/remember', body),
+      getSuggested: () => request('GET', '/api/browse-prefs/suggested'),
+    },
+    listingAlerts: {
+      list: () => request('GET', '/api/listing-alerts'),
+      create: (data) => request('POST', '/api/listing-alerts', data),
+      update: (id, data) => request('PATCH', `/api/listing-alerts/${id}`, data),
+      delete: (id) => request('DELETE', `/api/listing-alerts/${id}`),
+    },
+    notifications: {
+      list: (params = {}) => {
+        const q = new URLSearchParams();
+        if (params.unread_only) q.set('unread_only', 'true');
+        if (params.limit != null) q.set('limit', String(params.limit));
+        const qs = q.toString();
+        return request('GET', `/api/notifications${qs ? `?${qs}` : ''}`);
+      },
+      unreadCount: () => request('GET', '/api/notifications/unread-count'),
+      markRead: (id) => request('POST', `/api/notifications/${id}/read`),
+      markAllRead: () => request('POST', '/api/notifications/read-all'),
+    },
     integrations: {
       invokeLLM: (options) => request('POST', '/api/integrations/llm/invoke', {
         prompt: options.prompt,

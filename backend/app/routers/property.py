@@ -15,6 +15,8 @@ from app.llm import get_property_by_address_llm, has_llm_provider, active_provid
 from app.google_places import autocomplete_addresses, get_property_via_google, get_autoscore_data, places_v1_search_nearby
 from app.rentcast import browse_rentcast, get_rentcast_property, is_sparse_property
 from app.rentcast_refresh import get_cached_browse, upsert_region_cache
+from app.browse_scores import enrich_and_filter_by_scores, has_score_filters, strip_score_filters
+from app.listing_alerts import record_browse_preference
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
@@ -581,8 +583,10 @@ async def browse_properties(
 
     mode = (body.mode or "for_sale").strip().lower()
     filters = body.filters or {}
+    rentcast_filters = strip_score_filters(filters)
+    score_filtering = has_score_filters(filters)
     # Serve morning-refreshed metro cache for default (unfiltered) map pans.
-    use_cache = not filters
+    use_cache = not rentcast_filters and not score_filtering
 
     if use_cache:
         cached = get_cached_browse(
@@ -595,6 +599,11 @@ async def browse_properties(
         if cached and (cached.get("properties") or []):
             return cached
 
+    # When score mins are set, pull a larger candidate page then enrich+filter.
+    fetch_limit = body.limit
+    if score_filtering:
+        fetch_limit = min(100, max(int(body.limit or 40), 60))
+
     result = await browse_rentcast(
         mode=mode,
         latitude=body.latitude,
@@ -603,12 +612,28 @@ async def browse_properties(
         city=(body.city or "").strip() or None,
         state=(body.state or "").strip() or None,
         zip_code=(body.zip or "").strip() or None,
-        filters=filters,
-        limit=body.limit,
+        filters=rentcast_filters,
+        limit=fetch_limit,
         offset=body.offset,
     )
     if result.get("error") == "RentCast is not configured":
         raise HTTPException(status_code=503, detail="Property browse is not configured.")
+
+    if score_filtering and not result.get("error"):
+        props, score_meta = await enrich_and_filter_by_scores(
+            result.get("properties") or [],
+            filters,
+        )
+        result["properties"] = props[: int(body.limit or 40)]
+        result["total"] = len(props)
+        result["score_meta"] = score_meta
+
+    # Soft preference memory for logged-in users with meaningful filters.
+    if user_id and (rentcast_filters or score_filtering):
+        try:
+            record_browse_preference(user_id, filters)
+        except Exception:
+            logger.debug("browse preference record skipped", exc_info=True)
 
     # Write-through cache for unfiltered city/metro views (keeps site fresh after live fetches too).
     if use_cache and body.city and body.state and not result.get("error"):

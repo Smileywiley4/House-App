@@ -5,6 +5,7 @@ import { LayoutSeo } from "@/components/SeoHelmet";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
 import SiteFooter from "@/components/trust/SiteFooter";
+import NotificationsBell from "@/components/NotificationsBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,7 +101,7 @@ export default function Layout({ children, currentPageName }) {
             <span className="ml-0.5 text-[10px] font-bold shrink-0" style={{ color: t.gold }}>✦</span>
           </Link>
 
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center shrink-0 gap-2">
             {isLoadingAuth ? (
               <span
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5"
@@ -109,7 +110,9 @@ export default function Layout({ children, currentPageName }) {
                 <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
               </span>
             ) : isAuthenticated ? (
-              <DropdownMenu>
+              <>
+                <NotificationsBell />
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
@@ -163,6 +166,7 @@ export default function Layout({ children, currentPageName }) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
               <Link
                 to="/login"

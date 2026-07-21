@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, Header, HTTPException
 
 from app.config import get_settings
+from app.listing_alerts import process_listing_alerts
 from app.rentcast_refresh import refresh_all_metros
 
 router = APIRouter(prefix="/cron", tags=["cron"])
@@ -35,6 +36,7 @@ async def rentcast_daily_refresh(
     """
     7am America/New_York job: refresh RentCast browse cache for all 50 states
     and clear stale address property_cache so the site picks up updates.
+    Then match listing alert subscriptions and create in-app notifications.
     """
     _authorize(authorization, x_cron_secret)
     logger.info("Starting daily RentCast metro refresh")
@@ -45,4 +47,21 @@ async def rentcast_daily_refresh(
         summary.get("failed"),
         summary.get("property_cache_cleared"),
     )
+    try:
+        alert_summary = await process_listing_alerts()
+        summary["listing_alerts"] = alert_summary
+        logger.info("Listing alerts: %s", alert_summary)
+    except Exception:
+        logger.exception("listing alert matching failed after refresh")
+        summary["listing_alerts"] = {"error": "failed"}
     return summary
+
+
+@router.post("/listing-alerts-match")
+async def listing_alerts_match(
+    authorization: str | None = Header(default=None),
+    x_cron_secret: str | None = Header(default=None, alias="X-Cron-Secret"),
+):
+    """Standalone alert matching (optional separate schedule)."""
+    _authorize(authorization, x_cron_secret)
+    return await process_listing_alerts()

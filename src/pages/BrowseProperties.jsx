@@ -9,7 +9,9 @@ import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { Filter, List, Map as MapIcon, Loader2, Pencil, Search, SlidersHorizontal, X } from "lucide-react";
 import { api } from "@/api";
 import { createPageUrl } from "@/utils";
+import { useAuth } from "@/lib/AuthContext";
 import BrowseFilters from "@/components/browse/BrowseFilters";
+import BrowsePresetsBar from "@/components/browse/BrowsePresetsBar";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -223,10 +225,12 @@ async function geocodePlace(query) {
 }
 
 export default function BrowseProperties() {
+  const { isAuthenticated } = useAuth();
   const [mode, setMode] = useState("for_sale");
   const [view, setView] = useState("split");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({});
+  const [scoreMeta, setScoreMeta] = useState(null);
   const [placeQuery, setPlaceQuery] = useState("");
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [radius, setRadius] = useState(5);
@@ -283,6 +287,7 @@ export default function BrowseProperties() {
         }
         setProperties(list);
         setTotal(ring ? list.length : result?.total ?? list.length);
+        setScoreMeta(result?.score_meta || null);
       } catch (err) {
         console.error(err);
         setError(err?.message || "Could not load properties for this area.");
@@ -408,8 +413,23 @@ export default function BrowseProperties() {
         ? "grid-cols-1"
         : "lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,420px)]";
 
+  const activeScoreMins =
+    filters?.score_mins && typeof filters.score_mins === "object"
+      ? Object.keys(filters.score_mins).length
+      : 0;
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#f7f7f5] flex flex-col">
+      {isAuthenticated && (
+        <BrowsePresetsBar
+          filters={filters}
+          onApplyFilters={setFilters}
+          mode={mode}
+          center={center}
+          radius={radius}
+          placeQuery={placeQuery}
+        />
+      )}
       <div className="border-b border-slate-200 bg-white px-4 py-3 sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex flex-col gap-3 lg:flex-row lg:items-center">
           <form onSubmit={runPlaceSearch} className="flex-1 flex gap-2 min-w-0">
@@ -507,6 +527,11 @@ export default function BrowseProperties() {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
               <SlidersHorizontal size={14} /> Filters
+              {activeScoreMins > 0 && (
+                <span className="ml-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#10b981] text-[10px] text-white flex items-center justify-center">
+                  {activeScoreMins}
+                </span>
+              )}
             </button>
 
             <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 lg:hidden">
@@ -546,6 +571,17 @@ export default function BrowseProperties() {
         {polygon && !drawMode && (
           <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-[#059669] font-semibold">
             Custom search area active — pan is locked to this shape. Clear area to browse the full map again.
+          </p>
+        )}
+        {scoreMeta?.score_filter_applied && (
+          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-slate-500">
+            Auto-score filter applied
+            {scoreMeta.cache_hits != null
+              ? ` · ${scoreMeta.cache_hits} cached, ${scoreMeta.live_lookups || 0} live lookups`
+              : ""}
+            {scoreMeta.scores_unavailable
+              ? " · location scores unavailable for this area (try again later or clear score filters)"
+              : ""}
           </p>
         )}
       </div>
