@@ -76,12 +76,12 @@ function priceIcon(price, selected) {
   return L.divIcon({
     className: "",
     html: `<div style="
-      background:${selected ? "#059669" : "#1a2234"};
+      background:${selected ? "#047857" : "#0f172a"};
       color:#fff;
       font:700 11px/1 system-ui,sans-serif;
       padding:6px 8px;
       border-radius:999px;
-      box-shadow:0 2px 8px rgba(0,0,0,.25);
+      box-shadow:0 2px 8px rgba(0,0,0,.28);
       white-space:nowrap;
       border:2px solid #fff;
     ">${label}</div>`,
@@ -192,14 +192,14 @@ function DrawInteraction({ active, draftPoints, onAddPoint, onFinish }) {
     <>
       <Polyline
         positions={draftPoints}
-        pathOptions={{ color: "#10b981", weight: 2, dashArray: "6 6" }}
+        pathOptions={{ color: "#047857", weight: 2, dashArray: "6 6" }}
       />
       {draftPoints.map((pt, idx) => (
         <CircleMarker
           key={`${pt[0]}-${pt[1]}-${idx}`}
           center={pt}
           radius={5}
-          pathOptions={{ color: "#059669", fillColor: "#10b981", fillOpacity: 1, weight: 2 }}
+          pathOptions={{ color: "#065f46", fillColor: "#047857", fillOpacity: 1, weight: 2 }}
         />
       ))}
     </>
@@ -696,8 +696,8 @@ export default function BrowseProperties() {
               scrollWheelZoom
             >
               <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
               />
               <MapController center={center} zoom={zoom} flyToken={flyToken} />
               <MapMoveWatcher onMoveEnd={onMapMoveEnd} enabled={!drawMode && !polygon} />
@@ -712,10 +712,10 @@ export default function BrowseProperties() {
                 <Polygon
                   positions={polygon}
                   pathOptions={{
-                    color: "#10b981",
+                    color: "#047857",
                     weight: 2,
-                    fillColor: "#10b981",
-                    fillOpacity: 0.12,
+                    fillColor: "#059669",
+                    fillOpacity: 0.14,
                   }}
                 />
               )}
