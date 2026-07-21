@@ -6,6 +6,12 @@ import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
 import { saveCurrentProperty } from "@/core/currentProperty";
 import { usePlan } from "@/core/hooks/usePlan";
+import {
+  formatShareWhen,
+  shareDisplayStatus,
+  shareNeedsScoring,
+  shareStatusBadgeClass,
+} from "@/lib/shareStatus";
 
 export default function SharedHomes() {
   return (
@@ -49,14 +55,15 @@ function SharedHomesInner() {
 
   useEffect(() => {
     const shareId = params.get("id");
-    if (!shareId || !inbox.length) return;
-    const found = inbox.find((x) => x.id === shareId);
+    if (!shareId) return;
+    const pool = [...inbox, ...sent];
+    const found = pool.find((x) => x.id === shareId);
     if (found) setActive(found);
-  }, [params, inbox]);
+  }, [params, inbox, sent]);
 
   const list = tab === "sent" ? sent : inbox;
   const pending = useMemo(
-    () => inbox.filter((x) => x.status === "pending_score").length,
+    () => inbox.filter((x) => shareNeedsScoring(x)).length,
     [inbox],
   );
 
@@ -74,6 +81,20 @@ function SharedHomesInner() {
     navigate(
       `${createPageUrl("Evaluate")}?address=${encodeURIComponent(address)}&shareId=${encodeURIComponent(item.id)}`,
     );
+  };
+
+  const openItem = async (item) => {
+    setActive(item);
+    // Recipient opening a share marks Viewed
+    if (tab === "inbox" && shareNeedsScoring(item) && !item.viewed_at) {
+      try {
+        const updated = await api.shares.markViewed(item.id);
+        setInbox((prev) => prev.map((x) => (x.id === item.id ? { ...x, ...updated } : x)));
+        setActive((cur) => (cur?.id === item.id ? { ...cur, ...updated } : cur));
+      } catch {
+        /* ignore */
+      }
+    }
   };
 
   return (
@@ -114,7 +135,7 @@ function SharedHomesInner() {
                 : "border-transparent text-slate-500"
             }`}
           >
-            Sent
+            Sent{sent.length ? ` (${sent.length})` : ""}
           </button>
         )}
       </div>
@@ -141,20 +162,33 @@ function SharedHomesInner() {
               tab === "sent"
                 ? item.to_user?.full_name || item.to_user?.email
                 : item.from_user?.full_name || item.from_user?.email;
+            const label = shareDisplayStatus(item);
+            const when =
+              tab === "sent"
+                ? formatShareWhen(item.created_at)
+                : formatShareWhen(item.updated_at || item.created_at);
             return (
               <li key={item.id}>
                 <button
                   type="button"
-                  onClick={() => setActive(item)}
+                  onClick={() => openItem(item)}
                   className="w-full text-left rounded-2xl border border-slate-100 bg-white p-4 hover:border-[#10b981]/30 transition flex gap-3"
                 >
                   <div className="w-10 h-10 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0">
                     <Home size={18} className="text-[#10b981]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-[#1a2234] text-sm truncate">{address}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-[#1a2234] text-sm truncate">{address}</p>
+                      <span
+                        className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${shareStatusBadgeClass(label)}`}
+                      >
+                        {label}
+                      </span>
+                    </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {peer || "Contact"} · {item.status?.replace("_", " ")}
+                      {tab === "sent" ? "To" : "From"} {peer || "Contact"}
+                      {when ? ` · ${when}` : ""}
                     </p>
                     {item.message && (
                       <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.message}</p>
@@ -170,7 +204,7 @@ function SharedHomesInner() {
       {active && (
         <ShareDetail
           item={active}
-          isRecipient={active.to_user_id && String(active.to_user_id)}
+          isSentTab={tab === "sent"}
           onClose={() => setActive(null)}
           onScore={() => openScore(active)}
           onRefresh={load}
@@ -180,13 +214,17 @@ function SharedHomesInner() {
   );
 }
 
-function ShareDetail({ item, onClose, onScore, onRefresh }) {
+function ShareDetail({ item, isSentTab, onClose, onScore, onRefresh }) {
   const prop = item.property_payload || {};
   const address =
     prop.address || prop.formattedAddress || prop.property_address || "Property";
   const media = item.media_urls || [];
-  const isPending = item.status === "pending_score";
-  const isReturned = item.status === "returned" || item.status === "scored";
+  const canScore = !isSentTab && shareNeedsScoring(item);
+  const isReturned = shareDisplayStatus(item) === "Scored";
+  const label = shareDisplayStatus(item);
+  const peer = isSentTab
+    ? item.to_user?.full_name || item.to_user?.email
+    : item.from_user?.full_name || item.from_user?.email;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
@@ -198,6 +236,19 @@ function ShareDetail({ item, onClose, onScore, onRefresh }) {
           </button>
         </div>
         <div className="p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${shareStatusBadgeClass(label)}`}
+            >
+              {label}
+            </span>
+            <span>
+              {isSentTab ? "To" : "From"} {peer || "Contact"}
+            </span>
+            {item.created_at && <span>· Sent {formatShareWhen(item.created_at)}</span>}
+            {item.viewed_at && <span>· Viewed {formatShareWhen(item.viewed_at)}</span>}
+            {item.scored_at && <span>· Scored {formatShareWhen(item.scored_at)}</span>}
+          </div>
           {media[0] && (
             <img
               src={media[0]}
@@ -226,7 +277,7 @@ function ShareDetail({ item, onClose, onScore, onRefresh }) {
               </pre>
             </div>
           )}
-          {isPending && (
+          {canScore && (
             <button
               type="button"
               onClick={onScore}
@@ -235,7 +286,7 @@ function ShareDetail({ item, onClose, onScore, onRefresh }) {
               <Send size={16} /> Score this home
             </button>
           )}
-          {item.status === "pending_score" && item.from_user_id && (
+          {isSentTab && shareNeedsScoring(item) && (
             <button
               type="button"
               onClick={async () => {
@@ -249,7 +300,7 @@ function ShareDetail({ item, onClose, onScore, onRefresh }) {
               }}
               className="w-full text-xs text-slate-400 hover:text-red-600"
             >
-              Cancel share (sender)
+              Cancel share
             </button>
           )}
         </div>

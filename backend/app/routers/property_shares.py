@@ -1,4 +1,4 @@
-"""Property shares: send to client for scoring, inbox, return scores."""
+"""Property shares: send to client for scoring, inbox, return scores, view tracking."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -13,7 +13,7 @@ from app.dependencies import get_current_user_id, get_supabase_admin, require_re
 
 router = APIRouter(prefix="/shares", tags=["property-shares"])
 
-# future: gamify mobile share/score loop
+# Display lifecycle: Sent → Viewed → Scored (maps pending_score/viewed/returned|scored)
 
 
 def _now_iso() -> str:
@@ -64,6 +64,18 @@ def _extract_media(payload: dict) -> list[str]:
     return out[:12]
 
 
+def _display_status(row: dict) -> str:
+    """User-facing lifecycle: Sent → Viewed → Scored."""
+    status = (row.get("status") or "").strip()
+    if status == "cancelled":
+        return "Cancelled"
+    if status in ("returned", "scored") or row.get("scored_at"):
+        return "Scored"
+    if status == "viewed" or row.get("viewed_at"):
+        return "Viewed"
+    return "Sent"
+
+
 def _share_row(row: dict, extra: dict | None = None) -> dict:
     out = {
         "id": str(row["id"]),
@@ -74,7 +86,10 @@ def _share_row(row: dict, extra: dict | None = None) -> dict:
         "private_listing_url": row.get("private_listing_url"),
         "message": row.get("message"),
         "status": row.get("status"),
+        "display_status": _display_status(row),
         "scores": row.get("scores") or {},
+        "viewed_at": row.get("viewed_at"),
+        "scored_at": row.get("scored_at"),
         "created_at": row.get("created_at"),
         "updated_at": row.get("updated_at"),
     }
@@ -196,7 +211,7 @@ async def shared_inbox(user_id: str = Depends(get_current_user_id)):
         supabase.table("property_shares")
         .select("*")
         .eq("to_user_id", user_id)
-        .in_("status", ["pending_score", "scored", "returned"])
+        .in_("status", ["pending_score", "viewed", "scored", "returned"])
         .order("created_at", desc=True)
         .limit(50)
         .execute()
@@ -234,11 +249,133 @@ async def pending_count(user_id: str = Depends(get_current_user_id)):
         supabase.table("property_shares")
         .select("id", count="exact")
         .eq("to_user_id", user_id)
-        .eq("status", "pending_score")
+        .in_("status", ["pending_score", "viewed"])
         .execute()
     )
     count = r.count if r.count is not None else len(r.data or [])
     return {"count": count}
+
+
+def _payload_address(payload: dict) -> str:
+    return (
+        payload.get("address")
+        or payload.get("formattedAddress")
+        or payload.get("formatted_address")
+        or payload.get("property_address")
+        or "Unknown address"
+    )
+
+
+def _payload_price(payload: dict) -> float | int | None:
+    for key in ("price", "list_price", "listPrice", "asking_price"):
+        v = payload.get(key)
+        if isinstance(v, (int, float)):
+            return v
+        if isinstance(v, str) and v.strip():
+            try:
+                return float(v.replace(",", "").replace("$", "").strip())
+            except ValueError:
+                continue
+    return None
+
+
+def _score_percentage(scores: Any) -> int | None:
+    if not isinstance(scores, dict):
+        return None
+    for key in ("percentage", "overall_percentage", "score"):
+        v = scores.get(key)
+        if isinstance(v, (int, float)):
+            return int(round(v))
+        if isinstance(v, str) and v.strip():
+            try:
+                return int(round(float(v)))
+            except ValueError:
+                continue
+    return None
+
+
+@router.get("/client-report")
+async def client_comparison_report(
+    contact_user_id: str,
+    user_id: str = Depends(require_realtor_plan),
+):
+    """
+    All properties a contact scored and returned to this realtor (shared scorecards).
+    Efficient: indexed filter on from_user_id + to_user_id + status.
+    """
+    contact_id = (contact_user_id or "").strip()
+    if not contact_id:
+        raise HTTPException(status_code=400, detail="contact_user_id required")
+    if contact_id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot report on yourself")
+
+    supabase = get_supabase_admin()
+    contact = (
+        supabase.table("user_contacts")
+        .select("id, status, contact_role, label")
+        .eq("user_id", user_id)
+        .eq("contact_user_id", contact_id)
+        .eq("status", "accepted")
+        .limit(1)
+        .execute()
+    )
+    if not contact.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Contact not found — add them as an accepted contact first",
+        )
+
+    r = (
+        supabase.table("property_shares")
+        .select("*")
+        .eq("from_user_id", user_id)
+        .eq("to_user_id", contact_id)
+        .in_("status", ["returned", "scored"])
+        .order("updated_at", desc=True)
+        .limit(200)
+        .execute()
+    )
+
+    properties = []
+    for row in r.data or []:
+        payload = row.get("property_payload") or {}
+        scores = row.get("scores") or {}
+        if not isinstance(payload, dict):
+            payload = {}
+        if not isinstance(scores, dict):
+            scores = {}
+        properties.append(
+            {
+                "share_id": str(row["id"]),
+                "address": _payload_address(payload),
+                "price": _payload_price(payload),
+                "score": _score_percentage(scores),
+                "date_scored": row.get("scored_at") or row.get("updated_at") or row.get("created_at"),
+                "status": row.get("status"),
+                "display_status": _display_status(row),
+                "message": scores.get("_client_note") or row.get("message"),
+            }
+        )
+
+    properties.sort(
+        key=lambda p: (
+            p["score"] is None,
+            -(p["score"] if p["score"] is not None else 0),
+            p.get("date_scored") or "",
+        ),
+    )
+
+    return {
+        "ok": True,
+        "client": _profile_brief(supabase, contact_id),
+        "contact": {
+            "id": str(contact.data[0]["id"]),
+            "contact_role": contact.data[0].get("contact_role"),
+            "label": contact.data[0].get("label"),
+        },
+        "properties": properties,
+        "count": len(properties),
+    }
 
 
 @router.get("/{share_id}")
@@ -257,6 +394,46 @@ async def get_share(share_id: str, user_id: str = Depends(get_current_user_id)):
             "to_user": _profile_brief(supabase, str(row["to_user_id"])),
         },
     )
+
+
+
+@router.post("/{share_id}/view")
+async def mark_viewed(share_id: str, user_id: str = Depends(get_current_user_id)):
+    """Recipient opened the shared home (detail sheet or Evaluate). Idempotent."""
+    supabase = get_supabase_admin()
+    r = supabase.table("property_shares").select("*").eq("id", share_id).limit(1).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Share not found")
+    row = r.data[0]
+    if str(row["to_user_id"]) != user_id:
+        raise HTTPException(status_code=403, detail="Only the recipient can mark viewed")
+    if row.get("status") == "cancelled":
+        raise HTTPException(status_code=400, detail="Share was cancelled")
+
+    if row.get("status") in ("returned", "scored") or row.get("scored_at"):
+        return _share_row(row)
+    if row.get("viewed_at") or row.get("status") == "viewed":
+        return _share_row(row)
+
+    now = _now_iso()
+    upd = (
+        supabase.table("property_shares")
+        .update(
+            {
+                "viewed_at": now,
+                "status": "viewed",
+                "updated_at": now,
+            }
+        )
+        .eq("id", share_id)
+        .eq("status", "pending_score")
+        .select()
+        .execute()
+    )
+    if upd.data:
+        return _share_row(upd.data[0])
+    again = supabase.table("property_shares").select("*").eq("id", share_id).limit(1).execute()
+    return _share_row(again.data[0] if again.data else row)
 
 
 @router.post("/{share_id}/return")
@@ -282,15 +459,19 @@ async def return_scores(
     if note:
         scores = {**scores, "_client_note": note}
 
+    now = _now_iso()
+    patch: dict[str, Any] = {
+        "scores": scores,
+        "status": "returned",
+        "scored_at": now,
+        "updated_at": now,
+    }
+    if not row.get("viewed_at"):
+        patch["viewed_at"] = now
+
     upd = (
         supabase.table("property_shares")
-        .update(
-            {
-                "scores": scores,
-                "status": "returned",
-                "updated_at": _now_iso(),
-            }
-        )
+        .update(patch)
         .eq("id", share_id)
         .select()
         .execute()

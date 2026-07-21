@@ -1,15 +1,21 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Users, Home as HomeIcon, Plus, Lock, ChevronRight,
-  Phone, Mail, DollarSign, FileText, Trash2, Building2, BadgeCheck, X, Bookmark, Search, Share2
+  Phone, Mail, DollarSign, FileText, Trash2, Building2, BadgeCheck, X, Bookmark, Search, Share2, BarChart3
 } from "lucide-react";
 import { api } from "@/api";
 import AIPropertyInsights from "@/components/ai/AIPropertyInsights";
 import AIListingDescription from "@/components/ai/AIListingDescription";
 import RequireAuth from "@/components/RequireAuth";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
+import ClientComparisonReport from "@/components/realtor/ClientComparisonReport";
+import {
+  formatShareWhen,
+  shareDisplayStatus,
+  shareStatusBadgeClass,
+} from "@/lib/shareStatus";
 
 const TABS = ["Profile", "Clients", "Private Listings", "Shared visits"];
 
@@ -22,9 +28,11 @@ export default function RealtorPortal() {
 }
 
 function RealtorPortalInner() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("Profile");
   const [clients, setClients] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({ realtor_license: "", brokerage: "", state: "" });
@@ -34,6 +42,9 @@ function RealtorPortalInner() {
   const [showListingForm, setShowListingForm] = useState(false);
   const [inbox, setInbox] = useState([]);
   const [inboxLoading, setInboxLoading] = useState(false);
+  const [sentShares, setSentShares] = useState([]);
+  const [sharesLoading, setSharesLoading] = useState(false);
+  const reportClientId = searchParams.get("report") === "1" ? (searchParams.get("client") || "").trim() : "";
 
   useEffect(() => {
     api.auth.me().then(u => {
@@ -53,6 +64,31 @@ function RealtorPortalInner() {
   const isPremiumOrRealtor = user?.plan === "premium" || isRealtor;
 
   useEffect(() => {
+    if (reportClientId && isRealtor) setTab("Clients");
+  }, [reportClientId, isRealtor]);
+
+  useEffect(() => {
+    if (!isRealtor) return;
+    api.contacts
+      .list()
+      .then((rows) => {
+        const accepted = (Array.isArray(rows) ? rows : []).filter((c) => c.status === "accepted");
+        setContacts(accepted);
+      })
+      .catch(() => setContacts([]));
+  }, [isRealtor]);
+
+  useEffect(() => {
+    if (!isRealtor) return;
+    setSharesLoading(true);
+    api.shares
+      .sent()
+      .then((rows) => setSentShares(Array.isArray(rows) ? rows : []))
+      .catch(() => setSentShares([]))
+      .finally(() => setSharesLoading(false));
+  }, [isRealtor, tab]);
+
+  useEffect(() => {
     if (tab !== "Shared visits" || !isRealtor) return;
     setInboxLoading(true);
     api.library
@@ -61,6 +97,48 @@ function RealtorPortalInner() {
       .catch(() => setInbox([]))
       .finally(() => setInboxLoading(false));
   }, [tab, isRealtor]);
+
+  const sharesByClientEmail = useMemo(() => {
+    const map = {};
+    for (const s of sentShares) {
+      const email = (s.to_user?.email || "").trim().toLowerCase();
+      if (!email) continue;
+      if (!map[email]) map[email] = [];
+      map[email].push(s);
+    }
+    return map;
+  }, [sentShares]);
+
+  const sharesByContactUserId = useMemo(() => {
+    const map = {};
+    for (const s of sentShares) {
+      const uid = s.to_user_id || s.to_user?.id;
+      if (!uid) continue;
+      if (!map[uid]) map[uid] = [];
+      map[uid].push(s);
+    }
+    return map;
+  }, [sentShares]);
+
+  const reportableContacts = useMemo(() => {
+    const sorted = [...contacts];
+    sorted.sort((a, b) => {
+      const roleRank = (c) => (c.contact_role === "client" ? 0 : 1);
+      const name = (c) => (c.contact?.full_name || c.contact?.email || "").toLowerCase();
+      return roleRank(a) - roleRank(b) || name(a).localeCompare(name(b));
+    });
+    return sorted;
+  }, [contacts]);
+
+  const openClientReport = (contactUserId) => {
+    if (!contactUserId) return;
+    setTab("Clients");
+    setSearchParams({ client: contactUserId, report: "1" });
+  };
+
+  const closeClientReport = () => {
+    setSearchParams({});
+  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -181,7 +259,7 @@ function RealtorPortalInner() {
                     { label: "Client management", active: isRealtor },
                     { label: "Share scorecards with clients", active: isRealtor },
                     { label: "Off-market property scoring", active: isRealtor },
-                    { label: "Client comparison reports", active: false, soon: true },
+                    { label: "Client comparison reports", active: isRealtor },
                     { label: "MLS integration (coming soon)", active: false, soon: true },
                   ].map(({ label, active, soon }) => (
                     <li key={label} className="flex items-center gap-3 text-sm">
@@ -220,6 +298,63 @@ function RealtorPortalInner() {
                   </button>
                 </div>
 
+                <div className="mb-8 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0">
+                      <BarChart3 size={16} className="text-[#10b981]" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-[#1a2234] text-sm">Client comparison reports</h3>
+                      <p className="text-slate-400 text-xs mt-0.5">
+                        Select an in-app contact to see every property they scored for you — sorted by score.
+                      </p>
+                    </div>
+                  </div>
+                  {reportableContacts.length === 0 ? (
+                    <p className="text-xs text-slate-500">
+                      No accepted contacts yet.{" "}
+                      <Link to={createPageUrl("Contacts")} className="text-[#10b981] font-semibold hover:underline">
+                        Add contacts
+                      </Link>{" "}
+                      and share homes for scoring to unlock reports.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-slate-50">
+                      {reportableContacts.map((c) => {
+                        const uid = c.contact_user_id || c.contact?.id;
+                        const label =
+                          c.label ||
+                          c.contact?.full_name ||
+                          c.contact?.email ||
+                          c.contact?.username ||
+                          "Contact";
+                        const scoredCount = (sharesByContactUserId[uid] || []).filter(
+                          (s) => s.status === "returned" || s.status === "scored",
+                        ).length;
+                        return (
+                          <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-[#1a2234] truncate">{label}</div>
+                              <div className="text-[11px] text-slate-400 truncate">
+                                {[c.contact_role, c.contact?.email, scoredCount ? `${scoredCount} scored` : null]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => openClientReport(uid)}
+                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#10b981]/10 text-[#059669] hover:bg-[#10b981]/20 transition"
+                            >
+                              <BarChart3 size={12} /> Report
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+
                 {clients.length === 0 ? (
                   <EmptyState icon={Users} title="No clients yet" desc="Add your first client to start managing their home search." />
                 ) : (
@@ -228,6 +363,9 @@ function RealtorPortalInner() {
                       <ClientCard
                         key={c.id}
                         client={c}
+                        shares={sharesByClientEmail[(c.email || "").trim().toLowerCase()] || []}
+                        contacts={reportableContacts}
+                        onOpenReport={openClientReport}
                         onDelete={id => {
                           api.entities.Client.delete(id);
                           setClients(prev => prev.filter(x => x.id !== id));
@@ -244,6 +382,13 @@ function RealtorPortalInner() {
                     setClients(prev => [created, ...prev]);
                     setShowClientForm(false);
                   }} onClose={() => setShowClientForm(false)} />
+                )}
+
+                {reportClientId && (
+                  <ClientComparisonReport
+                    contactUserId={reportClientId}
+                    onClose={closeClientReport}
+                  />
                 )}
               </>
             )}
@@ -291,80 +436,149 @@ function RealtorPortalInner() {
           </div>
         )}
 
-        {/* ── SHARED VISITS (premium buyers → realtor inbox) ── */}
+        {/* ── SHARED VISITS (property shares + visit library inbox) ── */}
         {tab === "Shared visits" && (
           <div>
             {!isRealtor ? (
               <UpgradeGate plan="realtor" />
             ) : (
-              <>
-                <div className="flex items-center gap-3 mb-6">
-                  <Share2 className="text-[#10b981]" size={22} />
-                  <div>
-                    <h2 className="font-bold text-[#1a2234] text-lg">Client visit shares</h2>
-                    <p className="text-slate-400 text-sm">
-                      Premium clients can share in-person photos and scores from Property Visits.
-                    </p>
+              <div className="space-y-10">
+                <section>
+                  <div className="flex items-center justify-between gap-3 mb-6">
+                    <div className="flex items-center gap-3">
+                      <Share2 className="text-[#10b981]" size={22} />
+                      <div>
+                        <h2 className="font-bold text-[#1a2234] text-lg">Homes sent for scoring</h2>
+                        <p className="text-slate-400 text-sm">
+                          Status: Sent → Viewed → Scored. Same list as Shared homes → Sent.
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      to={createPageUrl("SharedHomes") + "?tab=sent"}
+                      className="text-xs font-semibold text-[#10b981] hover:underline shrink-0"
+                    >
+                      Open Shared homes →
+                    </Link>
                   </div>
-                </div>
-                {inboxLoading ? (
-                  <div className="flex justify-center py-16">
-                    <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+                  {sharesLoading ? (
+                    <div className="flex justify-center py-12">
+                      <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : sentShares.length === 0 ? (
+                    <EmptyState
+                      icon={Share2}
+                      title="No outbound shares yet"
+                      desc="From Evaluate, use “Send to client for scoring” to track Sent → Viewed → Scored here."
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {sentShares.map((item) => {
+                        const prop = item.property_payload || {};
+                        const address =
+                          prop.address || prop.formattedAddress || prop.property_address || "Property";
+                        const label = shareDisplayStatus(item);
+                        const peer = item.to_user?.full_name || item.to_user?.email || "Client";
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-wrap items-start justify-between gap-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-[#1a2234] text-sm truncate">{address}</div>
+                              <p className="text-xs text-slate-500 mt-1">
+                                To {peer}
+                                {item.created_at ? ` · Sent ${formatShareWhen(item.created_at)}` : ""}
+                              </p>
+                              {(item.viewed_at || item.scored_at) && (
+                                <p className="text-[11px] text-slate-400 mt-1">
+                                  {item.viewed_at ? `Viewed ${formatShareWhen(item.viewed_at)}` : ""}
+                                  {item.viewed_at && item.scored_at ? " · " : ""}
+                                  {item.scored_at ? `Scored ${formatShareWhen(item.scored_at)}` : ""}
+                                </p>
+                              )}
+                            </div>
+                            <span
+                              className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${shareStatusBadgeClass(label)}`}
+                            >
+                              {label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+
+                <section>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Share2 className="text-[#10b981]" size={22} />
+                    <div>
+                      <h2 className="font-bold text-[#1a2234] text-lg">Client visit shares</h2>
+                      <p className="text-slate-400 text-sm">
+                        Premium clients can share in-person photos and scores from Property Visits.
+                      </p>
+                    </div>
                   </div>
-                ) : inbox.length === 0 ? (
-                  <EmptyState
-                    icon={Share2}
-                    title="No shared visits yet"
-                    desc="When a client shares a property from Visits, it will appear here with their score and photos."
-                  />
-                ) : (
-                  <div className="space-y-6">
-                    {inbox.map((item) => (
-                      <div
-                        key={item.share_id}
-                        className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
-                      >
-                        <div className="flex flex-wrap justify-between gap-2 mb-3">
-                          <div>
-                            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide">From</div>
-                            <div className="font-bold text-[#1a2234]">
-                              {item.buyer?.full_name || item.buyer?.email || "Client"}
+                  {inboxLoading ? (
+                    <div className="flex justify-center py-16">
+                      <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : inbox.length === 0 ? (
+                    <EmptyState
+                      icon={Share2}
+                      title="No shared visits yet"
+                      desc="When a client shares a property from Visits, it will appear here with their score and photos."
+                    />
+                  ) : (
+                    <div className="space-y-6">
+                      {inbox.map((item) => (
+                        <div
+                          key={item.share_id}
+                          className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+                        >
+                          <div className="flex flex-wrap justify-between gap-2 mb-3">
+                            <div>
+                              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide">From</div>
+                              <div className="font-bold text-[#1a2234]">
+                                {item.buyer?.full_name || item.buyer?.email || "Client"}
+                              </div>
+                            </div>
+                            <div className="text-xs text-slate-400">
+                              {item.shared_at ? new Date(item.shared_at).toLocaleString() : ""}
                             </div>
                           </div>
-                          <div className="text-xs text-slate-400">
-                            {item.shared_at ? new Date(item.shared_at).toLocaleString() : ""}
-                          </div>
+                          {item.message && (
+                            <p className="text-sm text-slate-600 mb-4 border-l-2 border-[#10b981]/40 pl-3">{item.message}</p>
+                          )}
+                          <div className="font-semibold text-[#1a2234] mb-1">{item.property?.property_address}</div>
+                          {item.property?.personal_score != null && (
+                            <p className="text-sm text-slate-600 mb-3">
+                              Visit score: <span className="font-bold text-[#10b981]">{item.property.personal_score}/10</span>
+                            </p>
+                          )}
+                          {item.property?.visit_notes && (
+                            <p className="text-sm text-slate-500 mb-4">{item.property.visit_notes}</p>
+                          )}
+                          {item.photos?.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {item.photos.map((ph) => (
+                                <div key={ph.id} className="aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-100">
+                                  {ph.signed_url ? (
+                                    <img src={ph.signed_url} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">Photo</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {item.message && (
-                          <p className="text-sm text-slate-600 mb-4 border-l-2 border-[#10b981]/40 pl-3">{item.message}</p>
-                        )}
-                        <div className="font-semibold text-[#1a2234] mb-1">{item.property?.property_address}</div>
-                        {item.property?.personal_score != null && (
-                          <p className="text-sm text-slate-600 mb-3">
-                            Visit score: <span className="font-bold text-[#10b981]">{item.property.personal_score}/10</span>
-                          </p>
-                        )}
-                        {item.property?.visit_notes && (
-                          <p className="text-sm text-slate-500 mb-4">{item.property.visit_notes}</p>
-                        )}
-                        {item.photos?.length > 0 && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {item.photos.map((ph) => (
-                              <div key={ph.id} className="aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-100">
-                                {ph.signed_url ? (
-                                  <img src={ph.signed_url} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">Photo</div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
             )}
           </div>
         )}
@@ -403,7 +617,7 @@ function EmptyState({ icon: Icon, title, desc }) {
   );
 }
 
-function ClientCard({ client, onDelete, onPresetAdded }) {
+function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete, onPresetAdded }) {
   const [expanded, setExpanded] = useState(false);
   const [presets, setPresets] = useState([]);
   const [showPresetForm, setShowPresetForm] = useState(false);
@@ -416,7 +630,16 @@ function ClientCard({ client, onDelete, onPresetAdded }) {
     }
   }, [expanded, client.id, showPresetForm]);
 
+  const matchedContact = useMemo(() => {
+    const email = (client.email || "").trim().toLowerCase();
+    if (!email) return null;
+    return (
+      contacts.find((c) => (c.contact?.email || "").trim().toLowerCase() === email) || null
+    );
+  }, [client.email, contacts]);
+
   const statusColors = { active: "bg-[#10b981]/10 text-[#10b981]", under_contract: "bg-blue-50 text-blue-600", closed: "bg-slate-100 text-slate-500", inactive: "bg-red-50 text-red-400" };
+  const recentShares = shares.slice(0, 3);
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
       <div className="flex gap-4">
@@ -442,6 +665,42 @@ function ClientCard({ client, onDelete, onPresetAdded }) {
             )}
             {client.notes && <div className="flex items-start gap-2 text-xs text-slate-400 mt-1"><FileText size={11} className="mt-0.5 shrink-0" />{client.notes}</div>}
           </div>
+
+          {recentShares.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Shared homes</div>
+              {recentShares.map((s) => {
+                const prop = s.property_payload || {};
+                const addr =
+                  prop.address || prop.formattedAddress || prop.property_address || "Property";
+                const label = shareDisplayStatus(s);
+                return (
+                  <div key={s.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate text-slate-600">{addr}</span>
+                    <span
+                      className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${shareStatusBadgeClass(label)}`}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
+              {shares.length > 3 && (
+                <p className="text-[10px] text-slate-400">+{shares.length - 3} more</p>
+              )}
+            </div>
+          )}
+
+          {matchedContact && onOpenReport && (
+            <button
+              type="button"
+              onClick={() => onOpenReport(matchedContact.contact_user_id || matchedContact.contact?.id)}
+              className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#10b981] hover:underline"
+            >
+              <BarChart3 size={12} /> Comparison report
+            </button>
+          )}
+
           <button
             onClick={() => setExpanded(!expanded)}
             className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#10b981] hover:underline"

@@ -150,6 +150,12 @@ export default function Evaluate() {
     }).catch(() => {});
   }, [isAuthenticated]);
 
+  // Recipient opened Evaluate via share link → mark Viewed
+  useEffect(() => {
+    if (!shareId || !isAuthenticated) return;
+    api.shares?.markViewed?.(shareId).catch(() => {});
+  }, [shareId, isAuthenticated]);
+
   const addCategory = (cat) => {
     if (activeCategories.find(c => c.id === cat.id)) return;
     setActiveCategories(prev => [...prev, withUnratedDefaults(cat)]);
