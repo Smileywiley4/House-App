@@ -115,6 +115,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     # Public web app URL for invite links (e.g. https://app.example.com)
     app_public_url: str = "http://localhost:5173"
+    # Shared secret for GitHub Actions / cron → POST /api/cron/rentcast-daily-refresh
+    cron_secret: str = ""
     # Comma-separated Supabase user UUIDs allowed to run publisher revenue sync etc. (in addition to profiles.plan=admin)
     platform_admin_user_ids: str = ""
     port: int = 8000

@@ -14,6 +14,7 @@ from app.dependencies import get_supabase_admin, get_current_user_id, get_option
 from app.llm import get_property_by_address_llm, has_llm_provider, active_provider
 from app.google_places import autocomplete_addresses, get_property_via_google, get_autoscore_data, places_v1_search_nearby
 from app.rentcast import browse_rentcast, get_rentcast_property, is_sparse_property
+from app.rentcast_refresh import get_cached_browse, upsert_region_cache
 from app.web_search import search_property_listings, format_search_context, extract_listing_hints
 
 router = APIRouter(prefix="/property", tags=["property"])
@@ -578,20 +579,55 @@ async def browse_properties(
     if not has_place and not has_geo:
         raise HTTPException(status_code=400, detail="Provide a city/ZIP or map center coordinates.")
 
+    mode = (body.mode or "for_sale").strip().lower()
+    filters = body.filters or {}
+    # Serve morning-refreshed metro cache for default (unfiltered) map pans.
+    use_cache = not filters
+
+    if use_cache:
+        cached = get_cached_browse(
+            mode=mode,
+            latitude=body.latitude,
+            longitude=body.longitude,
+            city=(body.city or "").strip() or None,
+            state=(body.state or "").strip() or None,
+        )
+        if cached and (cached.get("properties") or []):
+            return cached
+
     result = await browse_rentcast(
-        mode=body.mode,
+        mode=mode,
         latitude=body.latitude,
         longitude=body.longitude,
         radius=body.radius,
         city=(body.city or "").strip() or None,
         state=(body.state or "").strip() or None,
         zip_code=(body.zip or "").strip() or None,
-        filters=body.filters or {},
+        filters=filters,
         limit=body.limit,
         offset=body.offset,
     )
     if result.get("error") == "RentCast is not configured":
         raise HTTPException(status_code=503, detail="Property browse is not configured.")
+
+    # Write-through cache for unfiltered city/metro views (keeps site fresh after live fetches too).
+    if use_cache and body.city and body.state and not result.get("error"):
+        try:
+            upsert_region_cache(
+                mode=mode,
+                city=body.city.strip(),
+                state=body.state.strip(),
+                latitude=float(body.latitude) if body.latitude is not None else 0.0,
+                longitude=float(body.longitude) if body.longitude is not None else 0.0,
+                radius_miles=float(body.radius or 8),
+                properties=result.get("properties") or [],
+                total=int(result.get("total") or 0),
+            )
+        except Exception:
+            logger.warning("browse write-through cache failed", exc_info=True)
+
+    result["cached"] = False
+    result["source"] = result.get("source") or "rentcast"
     return result
 
 

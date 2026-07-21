@@ -1,0 +1,53 @@
+# Daily RentCast refresh at 7:00 America/New_York.
+# GitHub Actions cron is UTC-only, so we fire at 11:00 and 12:00 UTC and
+# only proceed when local Eastern time is 7am.
+name: RentCast daily refresh
+
+on:
+  schedule:
+    - cron: "0 11 * * *"
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Eastern hour
+        id: tz
+        run: |
+          HOUR=$(TZ=America/New_York date +%H)
+          echo "eastern_hour=$HOUR" >> "$GITHUB_OUTPUT"
+          if [ "$HOUR" != "07" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Not 7am Eastern (hour=$HOUR); skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refresh RentCast metro cache
+        if: steps.tz.outputs.skip != 'true'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_BASE: ${{ secrets.API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          BASE="${API_BASE:-https://house-app-production-cfea.up.railway.app}"
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET secret is missing"
+            exit 1
+          fi
+          curl -fsS -X POST "$BASE/api/cron/rentcast-daily-refresh" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            --max-time 900 \
+            -o /tmp/refresh.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open("/tmp/refresh.json"))
+          print(f"succeeded={d.get('succeeded')} failed={d.get('failed')} cleared={d.get('property_cache_cleared')}")
+          if not d.get("ok"):
+            raise SystemExit(1)
+          if int(d.get("failed") or 0) > int(d.get("succeeded") or 0):
+            raise SystemExit("Too many metro refresh failures")
+          PY
