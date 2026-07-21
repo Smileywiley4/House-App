@@ -219,23 +219,23 @@ export default function ImportanceQuizModal({
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-slate-100 flex gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={skip}
-            disabled={saving}
-            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 disabled:opacity-50"
-          >
-            {trigger === "retake" ? "Cancel" : "Maybe later"}
-          </button>
+        <div className="px-5 py-4 border-t border-slate-100 flex flex-col gap-2.5 shrink-0">
           <button
             type="button"
             disabled={saving || !selected}
             onClick={goNext}
-            className="flex-1 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : null}
             {isLast ? "Save preset" : "Next"}
+          </button>
+          <button
+            type="button"
+            onClick={skip}
+            disabled={saving}
+            className="mx-auto text-xs font-medium text-slate-600 opacity-45 hover:opacity-80 transition-opacity disabled:pointer-events-none py-1"
+          >
+            {trigger === "retake" ? "Cancel" : "Skip"}
           </button>
         </div>
       </div>
