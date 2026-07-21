@@ -38,6 +38,7 @@ import { PremiumGate } from "@/components/PremiumGate";
 import RequireAuth from "@/components/RequireAuth";
 import InviteFriendsPanel from "@/components/profile/InviteFriendsPanel";
 import AppearanceSettings from "@/components/profile/AppearanceSettings";
+import NotificationSettings from "@/components/profile/NotificationSettings";
 import ProfilePhotoPicker from "@/components/profile/ProfilePhotoPicker";
 import PreferenceShareCardPanel from "@/components/profile/PreferenceShareCardPanel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -518,9 +519,18 @@ function ProfileInner() {
           <div className="space-y-8 max-w-2xl">
             <div>
               <h2 className="text-lg font-bold text-foreground mb-1">Settings</h2>
-              <p className="text-slate-400 text-sm">Display options and how this browser keeps you signed in.</p>
+              <p className="text-slate-400 text-sm">Display, notifications, and how this browser keeps you signed in.</p>
             </div>
             <AppearanceSettings />
+            <NotificationSettings
+              user={user}
+              onUpdated={(updated) => {
+                if (updated) {
+                  setUser((prev) => (prev ? { ...prev, ...updated } : updated));
+                  refreshUser();
+                }
+              }}
+            />
             <div className="bg-card rounded-2xl border border-border p-6">
               <h3 className="font-semibold text-foreground mb-2">This browser &amp; device</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">

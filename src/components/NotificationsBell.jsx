@@ -28,6 +28,7 @@ function hrefForNotification(n) {
       : createPageUrl("ProjectDetail");
   }
   if (kind.startsWith("contact_")) return createPageUrl("Contacts");
+  if (kind === "weekly_digest" || kind === "listing_match") return createPageUrl("BrowseProperties");
   return createPageUrl("BrowseProperties");
 }
 

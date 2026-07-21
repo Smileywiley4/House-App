@@ -9,6 +9,7 @@ from fastapi import APIRouter, Header, HTTPException
 from app.config import get_settings
 from app.listing_alerts import process_listing_alerts
 from app.rentcast_refresh import refresh_all_metros
+from app.weekly_digest import process_weekly_preset_digests
 
 router = APIRouter(prefix="/cron", tags=["cron"])
 logger = logging.getLogger(__name__)
@@ -68,3 +69,22 @@ async def listing_alerts_match(
     """Standalone alert matching (optional separate schedule)."""
     _authorize(authorization, x_cron_secret)
     return await process_listing_alerts()
+
+
+@router.post("/weekly-preset-digest")
+async def weekly_preset_digest(
+    authorization: str | None = Header(default=None),
+    x_cron_secret: str | None = Header(default=None, alias="X-Cron-Secret"),
+):
+    """
+    Weekly batch digest for users with profiles.preset_digest_opt_in.
+
+    Separate from (paused) RentCast daily metro refresh — matches against
+    browse_region_cache first, then live RentCast within quota. Does not
+    re-enable or invoke the daily bulk refresh.
+    """
+    _authorize(authorization, x_cron_secret)
+    logger.info("Starting weekly preset digest")
+    summary = await process_weekly_preset_digests()
+    logger.info("Weekly preset digest done: %s", summary)
+    return summary

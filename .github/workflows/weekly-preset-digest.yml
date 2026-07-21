@@ -1,0 +1,48 @@
+# Weekly preset digest (POST /api/cron/weekly-preset-digest).
+#
+# Separate from RentCast daily metro refresh (which stays PAUSED).
+# Matches opted-in users' saved alerts/presets against browse cache
+# (and live RentCast only on cache miss). Freshness depends on cache
+# until the daily RentCast refresh is re-enabled.
+#
+# Monday 14:00 UTC ≈ 10am Eastern / 9am Central.
+name: Weekly preset digest
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send weekly preset digests
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_BASE: ${{ secrets.API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          BASE="${API_BASE:-https://house-app-production-cfea.up.railway.app}"
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET secret is missing"
+            exit 1
+          fi
+          curl -fsS -X POST "$BASE/api/cron/weekly-preset-digest" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            --max-time 600 \
+            -o /tmp/digest.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open("/tmp/digest.json"))
+          print(
+              f"users_checked={d.get('users_checked')} digests_sent={d.get('digests_sent')} "
+              f"emails_sent={d.get('emails_sent')} notifications={d.get('notifications_created')} "
+              f"errors={d.get('errors')} cache_hits={d.get('cache_hits')} live={d.get('live_queries')}"
+          )
+          if d.get("error"):
+            raise SystemExit(d["error"])
+          if int(d.get("errors") or 0) > max(2, int(d.get("users_checked") or 0) // 2):
+            raise SystemExit("Too many digest errors")
+          PY

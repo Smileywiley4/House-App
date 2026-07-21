@@ -37,6 +37,7 @@ class UpdateProfileBody(BaseModel):
     linked_realtor_id: str | None = None
     phone: str | None = Field(default=None, max_length=50)
     marketing_opt_in: bool | None = None
+    preset_digest_opt_in: bool | None = None
     avatar_url: str | None = Field(default=None, max_length=2000)
     has_seen_onboarding_quiz: bool | None = None
     has_seen_client_priority_quiz: bool | None = None
@@ -389,6 +390,7 @@ def _profile_to_user(row: dict | None) -> dict | None:
         "linked_realtor_id": str(row["linked_realtor_id"]) if row.get("linked_realtor_id") else None,
         "phone": row.get("phone") or "",
         "marketing_opt_in": bool(row.get("marketing_opt_in")),
+        "preset_digest_opt_in": bool(row.get("preset_digest_opt_in")),
         "promo_code": row.get("promo_code") or "",
         "avatar_url": row.get("avatar_url") or "",
         "has_seen_onboarding_quiz": bool(row.get("has_seen_onboarding_quiz")),
