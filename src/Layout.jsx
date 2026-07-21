@@ -31,10 +31,9 @@ export default function Layout({ children, currentPageName }) {
   const allNavItems = [
     { name: "BrowseProperties", label: "Search Properties", icon: Map, public: true },
     { name: "Home", label: "Score address", icon: Home, public: true },
-    { name: "QuickCompare", label: "Compare", icon: Columns, public: true },
+    { name: "SideBySide", label: "Compare", icon: Columns, public: true },
     { name: "SearchByPreset", label: "Find by Preset", icon: Search },
     { name: "Compare", label: "Properties", icon: BarChart3 },
-    { name: "SideBySide", label: "Side by Side", icon: Columns },
     { name: "ProjectDetail", label: "Projects", icon: FolderKanban },
     { name: "RealtorPortal", label: "Realtors", icon: Building2 },
     { name: "Pricing", label: "Pricing", icon: Zap, public: true },

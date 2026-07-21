@@ -1031,14 +1031,16 @@ export default function BrowseProperties() {
                             >
                               Score this home
                             </Link>
-                            <Link
-                              to={`${createPageUrl("QuickCompare")}?address=${encodeURIComponent(
-                                p.formatted_address || p.address || ""
-                              )}`}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                storeBrowseCompareSelection([p]);
+                                navigate(createPageUrl("SideBySide"));
+                              }}
                               className="inline-flex px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
                             >
-                              Quick compare
-                            </Link>
+                              Compare
+                            </button>
                           </div>
                         </div>
                       </div>

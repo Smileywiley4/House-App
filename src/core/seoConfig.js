@@ -20,8 +20,9 @@ export const SEO_BY_PAGE = {
       'Browse live for-sale listings and off-market value estimates across the U.S. Filter by price, beds, baths, and more, then score homes to compare.',
   },
   QuickCompare: {
-    title: 'Quick compare properties',
-    description: 'Fast head-to-head comparison flow for two or more addresses using your saved weights.',
+    title: 'Compare properties',
+    description: 'Compare homes side by side with weighted scores and category breakdowns.',
+    noindex: true,
   },
   SearchByPreset: {
     title: 'Find homes by preset',
@@ -32,8 +33,8 @@ export const SEO_BY_PAGE = {
     description: `View and manage properties you have scored in ${APP_NAME}.`,
   },
   SideBySide: {
-    title: 'Side-by-side comparison',
-    description: 'Compare multiple scored homes in one view with totals and category breakdowns.',
+    title: 'Compare properties',
+    description: 'Compare multiple homes side by side with totals, category breakdowns, and plan-based slot limits.',
   },
   ProjectDetail: {
     title: 'Scoring projects',

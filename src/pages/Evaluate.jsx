@@ -16,6 +16,7 @@ import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
 import { useAuth } from "@/lib/AuthContext";
 import { readCurrentProperty } from "@/core/currentProperty";
+import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -139,8 +140,12 @@ export default function Evaluate() {
   const percentage = maxPossible > 0 ? Math.round((weightedTotal / maxPossible) * 100) : 0;
 
   const sendToCompare = () => {
-    const payload = {
-      property: {
+    const auto_scores = {};
+    for (const c of activeCategories) {
+      if (c?.id != null) auto_scores[c.id] = Number(c.score) || 0;
+    }
+    storeBrowseCompareSelection([
+      {
         address: property.address,
         city: property.city,
         state: property.state,
@@ -157,19 +162,12 @@ export default function Evaluate() {
         listing_status: property.listing_status,
         features: property.features || {},
         sale_history: property.sale_history || [],
+        formatted_address: [property.address, property.city, property.state].filter(Boolean).join(", "),
+        auto_scores,
+        overall_percentage: percentage,
       },
-      categories: activeCategories.map(c => ({
-        id: c.id,
-        label: c.label,
-        importance: c.importance,
-        score: c.score,
-        mandatory: c.mandatory || false,
-        neighborhood: c.neighborhood || false,
-        custom: c.custom || false,
-      })),
-    };
-    sessionStorage.setItem("compareProperty", JSON.stringify(payload));
-    navigate(createPageUrl("QuickCompare"));
+    ]);
+    navigate(createPageUrl("SideBySide"));
   };
 
   const saveScore = async () => {

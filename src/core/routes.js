@@ -6,9 +6,11 @@
 export const ROUTE_KEYS = {
   HOME: 'Home',
   BROWSE_PROPERTIES: 'BrowseProperties',
+  /** @deprecated Use SIDE_BY_SIDE — /QuickCompare redirects there */
   QUICK_COMPARE: 'QuickCompare',
   SEARCH_BY_PRESET: 'SearchByPreset',
   COMPARE: 'Compare',
+  /** Canonical quick-compare UI (header Compare, browse Compare properties) */
   SIDE_BY_SIDE: 'SideBySide',
   PROJECT_DETAIL: 'ProjectDetail',
   REALTOR_PORTAL: 'RealtorPortal',

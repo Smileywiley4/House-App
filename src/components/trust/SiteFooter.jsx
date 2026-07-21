@@ -6,7 +6,7 @@ import { COMPANY_TAGLINE, SUPPORT_EMAIL } from '@/core/companyConfig';
 const FOOTER_LINKS = {
   Product: [
     { label: 'Search homes', page: 'Home' },
-    { label: 'Quick compare', page: 'QuickCompare' },
+    { label: 'Compare', page: 'SideBySide' },
     { label: 'Pricing', page: 'Pricing' },
     { label: 'How it works', page: 'About' },
   ],

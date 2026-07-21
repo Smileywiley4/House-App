@@ -20,7 +20,7 @@ export default function Support() {
       <div className="not-prose grid sm:grid-cols-3 gap-4 mb-10">
         {[
           { icon: Clock, title: 'Response time', desc: 'We aim to reply within 1–2 business days.' },
-          { icon: HelpCircle, title: 'Self-service', desc: 'Try Quick Compare — no login required.' },
+          { icon: HelpCircle, title: 'Self-service', desc: 'Use Compare to put homes side by side with your plan’s slot limits.' },
           { icon: MessageCircle, title: 'Account help', desc: 'Billing, login, and subscription questions welcome.' },
         ].map(({ icon: Icon, title, desc }) => (
           <div key={title} className="rounded-xl border border-slate-200 bg-white p-5">

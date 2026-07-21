@@ -83,10 +83,10 @@ export default function Home() {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            to={createPageUrl("QuickCompare")}
+            to={createPageUrl("SideBySide")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] text-white font-semibold rounded-xl hover:bg-[#059669] transition-colors"
           >
-            Try Quick Compare <ChevronRight size={16} />
+            Compare properties <ChevronRight size={16} />
           </Link>
           <Link
             to={createPageUrl("Compare")}

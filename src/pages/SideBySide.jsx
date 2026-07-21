@@ -170,7 +170,7 @@ function SideBySideInner() {
             <ChevronLeft size={16} /> Back to Properties
           </Link>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h1 className="text-xl font-bold text-white">Side-by-Side Comparison</h1>
+            <h1 className="text-xl font-bold text-white">Compare</h1>
 
             <div className="flex items-center gap-2">
               {saveSnapshots.length > 0 && (

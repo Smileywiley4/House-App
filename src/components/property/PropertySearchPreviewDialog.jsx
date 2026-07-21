@@ -21,6 +21,7 @@ import {
 import PropertyLocationMap from "@/components/PropertyLocationMap";
 import { saveCurrentProperty } from "@/core/currentProperty";
 import { createPageUrl } from "@/utils";
+import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -129,9 +130,9 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
 
   const addToCompare = () => {
     saveCurrentProperty(property);
-    sessionStorage.setItem("compareProperty", JSON.stringify({ property }));
+    storeBrowseCompareSelection([property]);
     onOpenChange(false);
-    navigate(createPageUrl("QuickCompare"));
+    navigate(createPageUrl("SideBySide"));
   };
 
   return (
