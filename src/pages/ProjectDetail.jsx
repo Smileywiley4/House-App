@@ -12,7 +12,9 @@ import { api } from "@/api";
 import { createPageUrl } from "@/utils";
 import RequireAuth from "@/components/RequireAuth";
 import StartProjectModal from "@/components/browse/StartProjectModal";
+import ExportTourPacketButton from "@/components/ExportTourPacketButton";
 import { ALL_BROWSE_SCORE_IDS } from "@/components/browse/scoreCategories";
+import { projectPropertyToTourItem } from "@/lib/tourPacketPdf";
 
 const LABELS = {
   hospital_distance: "Hospital distance",
@@ -298,6 +300,17 @@ function ProjectDetailInner() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {properties.length >= 1 && (
+                <ExportTourPacketButton
+                  items={properties.map(projectPropertyToTourItem)}
+                  title={project.title ? `${project.title} · Tour packet` : "Tour packet"}
+                  filename={`tour-packet-${(project.title || "project")
+                    .replace(/[^\w\-]+/g, "-")
+                    .replace(/-+/g, "-")
+                    .toLowerCase()
+                    .slice(0, 40)}.pdf`}
+                />
+              )}
               {isOwner && (
                 <>
                   <button

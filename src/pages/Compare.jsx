@@ -23,9 +23,11 @@ import SharePropertyButton from "@/components/SharePropertyButton";
 import RequireAuth from "@/components/RequireAuth";
 import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
 import SendForScoringModal from "@/components/shares/SendForScoringModal";
+import ExportTourPacketButton from "@/components/ExportTourPacketButton";
 import AddressAutocompleteInput from "@/components/AddressAutocompleteInput";
 import PaywallModal from "@/components/PaywallModal";
 import { browseListingToCompareRow, loadBrowseCompareSelection } from "@/lib/browseCompare";
+import { compareScoreToTourItem } from "@/lib/tourPacketPdf";
 import { toast } from "@/components/ui/use-toast";
 
 const VIEW_MODES = [
@@ -176,7 +178,15 @@ function CompareInner() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h1 className="text-xl font-bold text-white">Compare</h1>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {comparing.length >= 1 && (
+                <ExportTourPacketButton
+                  items={comparing.map(compareScoreToTourItem)}
+                  title="Compare · Tour packet"
+                  filename="tour-packet-compare.pdf"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+                />
+              )}
               {saveSnapshots.length > 0 && (
                 <button
                   type="button"
