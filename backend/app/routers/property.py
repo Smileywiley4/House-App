@@ -20,7 +20,7 @@ from app.web_search import search_property_listings, format_search_context, extr
 router = APIRouter(prefix="/property", tags=["property"])
 logger = logging.getLogger(__name__)
 PUBLIC_SEARCH_LIMIT = 30
-PUBLIC_BROWSE_LIMIT = 60
+PUBLIC_BROWSE_LIMIT = 120
 PUBLIC_STREET_VIEW_LIMIT = 60
 PUBLIC_AUTOSCORE_LIMIT = 10
 PUBLIC_SEARCH_WINDOW_SECONDS = 60 * 60

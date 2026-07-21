@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polygon, Polyline, CircleMarker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { Filter, List, Map as MapIcon, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
+import { Filter, List, Map as MapIcon, Loader2, Pencil, Search, SlidersHorizontal, X } from "lucide-react";
 import { api } from "@/api";
 import { createPageUrl } from "@/utils";
 import BrowseFilters from "@/components/browse/BrowseFilters";
@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-const DEFAULT_CENTER = { lat: 40.7608, lng: -111.891 }; // Salt Lake City — good demo density
+const DEFAULT_CENTER = { lat: 40.7608, lng: -111.891 };
 const DEFAULT_ZOOM = 12;
 
 function formatPrice(n) {
@@ -72,6 +72,49 @@ function priceIcon(price, selected) {
   });
 }
 
+/** Ray-casting point-in-polygon. ring = [[lat, lng], ...] */
+export function pointInPolygon(lat, lng, ring) {
+  if (!ring || ring.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const yi = ring[i][0];
+    const xi = ring[i][1];
+    const yj = ring[j][0];
+    const xj = ring[j][1];
+    const intersect =
+      yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi + 0.0) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function haversineMiles(lat1, lng1, lat2, lng2) {
+  const R = 3958.8;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/** Covering circle for RentCast (centroid + max vertex distance). */
+export function polygonCoverCircle(ring) {
+  if (!ring?.length) return null;
+  const lat = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+  const lng = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+  let max = 0;
+  for (const [plat, plng] of ring) {
+    max = Math.max(max, haversineMiles(lat, lng, plat, plng));
+  }
+  return {
+    lat,
+    lng,
+    radius: Math.max(1, Math.min(25, max * 1.15 + 0.25)),
+  };
+}
+
 function MapController({ center, zoom, flyToken }) {
   const map = useMap();
   useEffect(() => {
@@ -81,15 +124,14 @@ function MapController({ center, zoom, flyToken }) {
   return null;
 }
 
-function MapMoveWatcher({ onMoveEnd }) {
+function MapMoveWatcher({ onMoveEnd, enabled }) {
   useMapEvents({
     moveend: (e) => {
+      if (!enabled) return;
       const map = e.target;
       const c = map.getCenter();
       const bounds = map.getBounds();
       const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-      // Approximate radius (miles) from center to corner
       const R = 3958.8;
       const toRad = (d) => (d * Math.PI) / 180;
       const dLat = toRad(ne.lat - c.lat);
@@ -106,6 +148,61 @@ function MapMoveWatcher({ onMoveEnd }) {
       });
     },
   });
+  return null;
+}
+
+function DrawInteraction({ active, draftPoints, onAddPoint, onFinish }) {
+  useMapEvents({
+    click: (e) => {
+      if (!active) return;
+      onAddPoint([e.latlng.lat, e.latlng.lng]);
+    },
+    dblclick: (e) => {
+      if (!active) return;
+      L.DomEvent.stopPropagation(e);
+      L.DomEvent.preventDefault(e);
+      onFinish();
+    },
+  });
+
+  useEffect(() => {
+    // Leaflet fires dblclick zoom by default — disable while drawing.
+  }, [active]);
+
+  if (!active || draftPoints.length === 0) return null;
+  return (
+    <>
+      <Polyline
+        positions={draftPoints}
+        pathOptions={{ color: "#10b981", weight: 2, dashArray: "6 6" }}
+      />
+      {draftPoints.map((pt, idx) => (
+        <CircleMarker
+          key={`${pt[0]}-${pt[1]}-${idx}`}
+          center={pt}
+          radius={5}
+          pathOptions={{ color: "#059669", fillColor: "#10b981", fillOpacity: 1, weight: 2 }}
+        />
+      ))}
+    </>
+  );
+}
+
+function DisableDblClickZoom({ active }) {
+  const map = useMap();
+  useEffect(() => {
+    if (active) {
+      map.doubleClickZoom.disable();
+      map.getContainer().style.cursor = "crosshair";
+    } else {
+      map.doubleClickZoom.enable();
+      map.getContainer().style.cursor = "";
+    }
+    return () => {
+      map.doubleClickZoom.enable();
+      map.getContainer().style.cursor = "";
+    };
+  }, [active, map]);
   return null;
 }
 
@@ -126,8 +223,8 @@ async function geocodePlace(query) {
 }
 
 export default function BrowseProperties() {
-  const [mode, setMode] = useState("for_sale"); // for_sale | off_market
-  const [view, setView] = useState("split"); // split | list | map
+  const [mode, setMode] = useState("for_sale");
+  const [view, setView] = useState("split");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({});
   const [placeQuery, setPlaceQuery] = useState("");
@@ -140,15 +237,34 @@ export default function BrowseProperties() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [drawMode, setDrawMode] = useState(false);
+  const [draftPoints, setDraftPoints] = useState([]);
+  const [polygon, setPolygon] = useState(null); // closed ring [[lat,lng],...]
   const debounceRef = useRef(null);
   const skipNextMoveFetch = useRef(false);
   const listRef = useRef(null);
+  const polygonRef = useRef(null);
+
+  useEffect(() => {
+    polygonRef.current = polygon;
+  }, [polygon]);
+
+  const filterByPolygon = useCallback((list, ring) => {
+    if (!ring || ring.length < 3) return list || [];
+    return (list || []).filter((p) => {
+      const lat = Number(p.lat);
+      const lng = Number(p.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+      return pointInPolygon(lat, lng, ring);
+    });
+  }, []);
 
   const fetchBrowse = useCallback(
     async (opts = {}) => {
       const lat = opts.lat ?? center.lat;
       const lng = opts.lng ?? center.lng;
       const r = opts.radius ?? radius;
+      const ring = opts.polygon !== undefined ? opts.polygon : polygonRef.current;
       setLoading(true);
       setError("");
       try {
@@ -158,11 +274,15 @@ export default function BrowseProperties() {
           longitude: lng,
           radius: r,
           filters,
-          limit: 50,
+          limit: ring ? 100 : 50,
           offset: 0,
         });
-        setProperties(result?.properties || []);
-        setTotal(result?.total ?? (result?.properties || []).length);
+        let list = result?.properties || [];
+        if (ring?.length >= 3) {
+          list = filterByPolygon(list, ring);
+        }
+        setProperties(list);
+        setTotal(ring ? list.length : result?.total ?? list.length);
       } catch (err) {
         console.error(err);
         setError(err?.message || "Could not load properties for this area.");
@@ -172,19 +292,26 @@ export default function BrowseProperties() {
         setLoading(false);
       }
     },
-    [center.lat, center.lng, radius, mode, filters]
+    [center.lat, center.lng, radius, mode, filters, filterByPolygon]
   );
 
-  // Initial + filter/mode changes
   useEffect(() => {
-    fetchBrowse();
+    const ring = polygonRef.current;
+    if (ring?.length >= 3) {
+      const cover = polygonCoverCircle(ring);
+      if (cover) {
+        fetchBrowse({ lat: cover.lat, lng: cover.lng, radius: cover.radius, polygon: ring });
+        return;
+      }
+    }
+    fetchBrowse({ polygon: null });
   }, [mode, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scheduleFetch = useCallback(
     (next) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        fetchBrowse(next);
+        fetchBrowse({ ...next, polygon: null });
       }, 450);
     },
     [fetchBrowse]
@@ -192,6 +319,7 @@ export default function BrowseProperties() {
 
   const onMapMoveEnd = useCallback(
     (payload) => {
+      if (drawMode || polygonRef.current) return;
       if (skipNextMoveFetch.current) {
         skipNextMoveFetch.current = false;
         return;
@@ -201,8 +329,42 @@ export default function BrowseProperties() {
       setZoom(payload.zoom);
       scheduleFetch(payload);
     },
-    [scheduleFetch]
+    [scheduleFetch, drawMode]
   );
+
+  const finishDrawing = useCallback(() => {
+    setDraftPoints((pts) => {
+      if (pts.length < 3) {
+        setError("Draw at least 3 points to close a search area.");
+        return pts;
+      }
+      const ring = [...pts];
+      setPolygon(ring);
+      setDrawMode(false);
+      const cover = polygonCoverCircle(ring);
+      if (cover) {
+        setCenter({ lat: cover.lat, lng: cover.lng });
+        setRadius(cover.radius);
+        skipNextMoveFetch.current = true;
+        fetchBrowse({ lat: cover.lat, lng: cover.lng, radius: cover.radius, polygon: ring });
+      }
+      return [];
+    });
+  }, [fetchBrowse]);
+
+  const clearDrawnArea = () => {
+    setPolygon(null);
+    setDraftPoints([]);
+    setDrawMode(false);
+    fetchBrowse({ polygon: null });
+  };
+
+  const startDraw = () => {
+    setDrawMode(true);
+    setDraftPoints([]);
+    setPolygon(null);
+    setError("");
+  };
 
   const runPlaceSearch = async (e) => {
     e?.preventDefault?.();
@@ -215,12 +377,15 @@ export default function BrowseProperties() {
         setError("Could not find that place. Try a city and state (e.g. Austin, TX).");
         return;
       }
+      setPolygon(null);
+      setDraftPoints([]);
+      setDrawMode(false);
       skipNextMoveFetch.current = true;
       setCenter({ lat: hit.lat, lng: hit.lng });
       setZoom(12);
       setFlyToken((t) => t + 1);
       setRadius(6);
-      await fetchBrowse({ lat: hit.lat, lng: hit.lng, radius: 6 });
+      await fetchBrowse({ lat: hit.lat, lng: hit.lng, radius: 6, polygon: null });
     } catch (err) {
       setError(err?.message || "Place search failed.");
     } finally {
@@ -245,7 +410,6 @@ export default function BrowseProperties() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#f7f7f5] flex flex-col">
-      {/* Toolbar */}
       <div className="border-b border-slate-200 bg-white px-4 py-3 sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex flex-col gap-3 lg:flex-row lg:items-center">
           <form onSubmit={runPlaceSearch} className="flex-1 flex gap-2 min-w-0">
@@ -288,6 +452,55 @@ export default function BrowseProperties() {
               </button>
             </div>
 
+            {!drawMode ? (
+              <button
+                type="button"
+                onClick={startDraw}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
+                <Pencil size={14} /> Draw
+              </button>
+            ) : (
+              <div className="inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={finishDrawing}
+                  disabled={draftPoints.length < 3}
+                  className="px-3 py-2 rounded-xl bg-[#10b981] text-white text-xs font-bold disabled:opacity-50"
+                >
+                  Finish
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDraftPoints((p) => p.slice(0, -1))}
+                  disabled={!draftPoints.length}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 disabled:opacity-40"
+                >
+                  Undo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDrawMode(false);
+                    setDraftPoints([]);
+                  }}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {polygon && !drawMode && (
+              <button
+                type="button"
+                onClick={clearDrawnArea}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#10b981]/40 bg-[#10b981]/10 text-xs font-bold text-[#059669]"
+              >
+                Clear area
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
@@ -324,10 +537,20 @@ export default function BrowseProperties() {
             </div>
           </div>
         </div>
+        {drawMode && (
+          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-slate-500 font-medium">
+            Click the map to add corners. Double-click or press <span className="font-bold text-slate-700">Finish</span>{" "}
+            to close the area — filters apply only inside your shape.
+          </p>
+        )}
+        {polygon && !drawMode && (
+          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-[#059669] font-semibold">
+            Custom search area active — pan is locked to this shape. Clear area to browse the full map again.
+          </p>
+        )}
       </div>
 
       <div className={`flex-1 max-w-[1600px] w-full mx-auto grid ${layoutClass} min-h-0`}>
-        {/* Map */}
         {(view === "split" || view === "map") && (
           <div className={`relative min-h-[45vh] lg:min-h-0 ${view === "map" ? "h-[calc(100vh-8rem)]" : "lg:h-[calc(100vh-8rem)]"}`}>
             <MapContainer
@@ -341,7 +564,25 @@ export default function BrowseProperties() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               />
               <MapController center={center} zoom={zoom} flyToken={flyToken} />
-              <MapMoveWatcher onMoveEnd={onMapMoveEnd} />
+              <MapMoveWatcher onMoveEnd={onMapMoveEnd} enabled={!drawMode && !polygon} />
+              <DisableDblClickZoom active={drawMode} />
+              <DrawInteraction
+                active={drawMode}
+                draftPoints={draftPoints}
+                onAddPoint={(pt) => setDraftPoints((prev) => [...prev, pt])}
+                onFinish={finishDrawing}
+              />
+              {polygon && (
+                <Polygon
+                  positions={polygon}
+                  pathOptions={{
+                    color: "#10b981",
+                    weight: 2,
+                    fillColor: "#10b981",
+                    fillOpacity: 0.12,
+                  }}
+                />
+              )}
               {markers.map((p) => (
                 <Marker
                   key={p.id || `${p.lat},${p.lng},${p.address}`}
@@ -349,21 +590,27 @@ export default function BrowseProperties() {
                   icon={priceIcon(p.price, selectedId === p.id)}
                   eventHandlers={{
                     click: () => {
+                      if (drawMode) return;
                       setSelectedId(p.id);
-                      const el = document.getElementById(`browse-card-${p.id}`);
-                      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                      document.getElementById(`browse-card-${p.id}`)?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest",
+                      });
                     },
                   }}
                 />
               ))}
             </MapContainer>
             <div className="absolute top-3 left-3 z-[500] bg-[#1a2234]/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
-              {loading ? "Updating…" : `${properties.length} shown${total > properties.length ? ` of ${total}` : ""}`}
+              {loading
+                ? "Updating…"
+                : `${properties.length} shown${!polygon && total > properties.length ? ` of ${total}` : ""}${
+                    polygon ? " in area" : ""
+                  }`}
             </div>
           </div>
         )}
 
-        {/* List */}
         {(view === "split" || view === "list") && (
           <div
             ref={listRef}
@@ -376,7 +623,8 @@ export default function BrowseProperties() {
                 {mode === "for_sale" ? "Homes for sale" : "Off-market estimates"}
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Licensed listing &amp; property data via RentCast. Drag the map to explore. Score any home to compare.
+                Licensed listing &amp; property data via RentCast. Draw a custom area or drag the map. Score any home to
+                compare.
               </p>
             </div>
 
@@ -392,7 +640,7 @@ export default function BrowseProperties() {
               </div>
             ) : properties.length === 0 ? (
               <p className="text-sm text-slate-500 p-8 text-center">
-                No homes matched these filters in this area. Zoom out or clear filters.
+                No homes matched these filters in this area. Zoom out, redraw, or clear filters.
               </p>
             ) : (
               <ul className="divide-y divide-slate-100">
@@ -478,7 +726,6 @@ export default function BrowseProperties() {
         )}
       </div>
 
-      {/* Filters drawer */}
       {filtersOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <button
