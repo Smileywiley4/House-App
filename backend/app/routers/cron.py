@@ -34,9 +34,12 @@ async def rentcast_daily_refresh(
     x_cron_secret: str | None = Header(default=None, alias="X-Cron-Secret"),
 ):
     """
-    7am America/New_York job: refresh RentCast browse cache for all 50 states
-    and clear stale address property_cache so the site picks up updates.
-    Then match listing alert subscriptions and create in-app notifications.
+    Refresh RentCast browse cache for all 50 states and clear stale address
+    property_cache so the site picks up updates. Then match listing alert
+    subscriptions and create in-app notifications.
+
+    Scheduled GHA cron is paused (quota) until public launch; invoke via
+    workflow_dispatch or authenticated POST. See rentcast-daily-refresh.yml.
     """
     _authorize(authorization, x_cron_secret)
     logger.info("Starting daily RentCast metro refresh")

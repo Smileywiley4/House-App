@@ -56,6 +56,8 @@ Exact-address search uses Google for location verification and RentCast for lice
 |---------|---------|
 | `RENTCAST_API_KEY` | Property records, taxes, sale history, attributes, and active listing price/status. Create at [RentCast API](https://app.rentcast.io/app/api). |
 | `RENTCAST_BASE_URL` | Optional; defaults to `https://api.rentcast.io/v1`. |
+
+**Daily metro refresh:** GitHub Actions workflow `.github/workflows/rentcast-daily-refresh.yml` is **paused** (no cron schedule) to save RentCast API quota until public launch. Endpoint `POST /api/cron/rentcast-daily-refresh` remains; re-enable by uncommenting `schedule:` in that workflow, or run manually via Actions → workflow_dispatch. Requires `CRON_SECRET`.
 | `GOOGLE_STREET_VIEW_API_KEY` | Optional dedicated server key for exterior imagery. Enable **Street View Static API**. If blank, the Places key is used. |
 
 The frontend never receives either key. `GET /api/property/street-view` proxies Street View images without storing or caching them. Property-owner data returned by RentCast is intentionally excluded from public responses. Listing-site photo scraping is disabled; users can upload photos they own, and licensed MLS/IDX media can be added later.

@@ -1,12 +1,17 @@
-# Daily RentCast refresh at 7:00 America/New_York.
+# RentCast metro cache refresh (POST /api/cron/rentcast-daily-refresh).
+#
+# PAUSED (save RentCast API quota until public live testing / launch).
+# Re-enable: uncomment the `schedule:` block below (7am America/New_York via
+# dual UTC crons), then push. Manual runs stay available via workflow_dispatch.
+#
 # GitHub Actions cron is UTC-only, so we fire at 11:00 and 12:00 UTC and
 # only proceed when local Eastern time is 7am.
 name: RentCast daily refresh
 
 on:
-  schedule:
-    - cron: "0 11 * * *"
-    - cron: "0 12 * * *"
+  # schedule:
+  #   - cron: "0 11 * * *"
+  #   - cron: "0 12 * * *"
   workflow_dispatch:
 
 jobs:
