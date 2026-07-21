@@ -27,7 +27,10 @@ export function usePlan() {
   const isRealtor = plan === PLANS.REALTOR || plan === PLANS.ADMIN;
   const isAdmin = plan === PLANS.ADMIN;
 
-  /** Free users see ads; premium/realtor do not */
+  /**
+   * Guests (no plan → free) and free accounts see ads.
+   * Premium / Pro / Realtor / Admin never see ads (`isPremium` includes those tiers).
+   */
   const showAds = isFree;
   /** Can compare 3+ properties side-by-side */
   const canCompare3Plus = isPremium;

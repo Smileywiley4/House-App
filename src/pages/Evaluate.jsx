@@ -23,6 +23,7 @@ import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 import { PROPERTY_SCORE_DISCLAIMER } from "@/core/companyConfig";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import { AdSlot } from "@/components/AdSlot";
 import { brand } from "@/design-tokens";
 
 export default function Evaluate() {
@@ -672,6 +673,11 @@ export default function Evaluate() {
           </>
         )}
 
+      </div>
+
+      {/* Below scoring UI / CTAs — labeled display only; not on Pricing/Profile */}
+      <div className="max-w-4xl mx-auto px-6 pb-10">
+        <AdSlot format="rectangle" className="min-h-[250px]" />
       </div>
 
       {showPicker && (

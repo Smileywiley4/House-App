@@ -20,6 +20,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import OnboardingQuizHost from "@/components/onboarding/OnboardingQuizHost";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import PrimaryNavLink from "@/components/nav/PrimaryNavLink";
+import { AdSlot } from "@/components/AdSlot";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -40,6 +41,21 @@ import {
 import { useNotificationBadge } from "@/hooks/useNotificationBadge";
 import { THEME } from "@/core/constants";
 import { brand } from "@/design-tokens";
+
+/** No sitewide footer ads on account, paywall, auth, or legal pages (AdSense policy / UX). */
+const NO_FOOTER_ADS_PAGES = new Set([
+  "Profile",
+  "Pricing",
+  "Login",
+  "Signup",
+  "ResetPassword",
+  "Privacy",
+  "Terms",
+  "Support",
+  "SavedProperties",
+  "PropertyVisits",
+  "PropertyVisitDetail",
+]);
 
 const t = {
   accent: THEME.accent,
@@ -159,6 +175,11 @@ export default function Layout({ children, currentPageName }) {
       </header>
 
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      {!NO_FOOTER_ADS_PAGES.has(currentPageName) && (
+        <div className="max-w-5xl mx-auto w-full px-6 py-4">
+          <AdSlot format="leaderboard" className="min-h-[90px]" />
+        </div>
+      )}
       <div className="pb-20 md:pb-0"><SiteFooter /></div>
       <MobileBottomNav currentPageName={currentPageName} isAuthenticated={isAuthenticated} isLoadingAuth={isLoadingAuth} updatesBadge={updatesBadge} />
       <OnboardingQuizHost />

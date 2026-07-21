@@ -26,6 +26,7 @@ import SendForScoringModal from "@/components/shares/SendForScoringModal";
 import ExportTourPacketButton from "@/components/ExportTourPacketButton";
 import AddressAutocompleteInput from "@/components/AddressAutocompleteInput";
 import PaywallModal from "@/components/PaywallModal";
+import { AdSlot } from "@/components/AdSlot";
 import { browseListingToCompareRow, loadBrowseCompareSelection } from "@/lib/browseCompare";
 import { compareScoreToTourItem } from "@/lib/tourPacketPdf";
 import { toast } from "@/components/ui/use-toast";
@@ -382,6 +383,10 @@ function CompareInner() {
             )}
           </>
         )}
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 pb-10">
+        <AdSlot format="leaderboard" className="min-h-[90px]" />
       </div>
 
       <SaveToProjectModal

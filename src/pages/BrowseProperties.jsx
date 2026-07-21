@@ -50,6 +50,7 @@ import { OFF_MARKET_ESTIMATE_DISCLAIMER } from "@/core/companyConfig";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
 import EmptyState from "@/components/EmptyState";
+import { AdSlot } from "@/components/AdSlot";
 import { brand } from "@/design-tokens";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -570,6 +571,7 @@ export default function BrowseProperties() {
       const lng = opts.lng ?? center.lng;
       const r = opts.radius ?? radius;
       const ring = opts.polygon !== undefined ? opts.polygon : polygonRef.current;
+      const activeFilters = opts.filters !== undefined ? opts.filters : filters;
       setLoading(true);
       setError("");
       try {
@@ -578,7 +580,7 @@ export default function BrowseProperties() {
           latitude: lat,
           longitude: lng,
           radius: r,
-          filters,
+          filters: activeFilters,
           limit: ring ? 100 : 50,
           offset: 0,
         });
@@ -1190,6 +1192,10 @@ export default function BrowseProperties() {
         )}
       </div>
 
+      <div className="max-w-[1600px] w-full mx-auto px-4 py-3">
+        <AdSlot format="leaderboard" className="min-h-[90px]" />
+      </div>
+
       <div className={`flex-1 max-w-[1600px] w-full mx-auto grid ${layoutClass} min-h-0`}>
         {(view === "split" || view === "map") && (
           <div className={`relative min-h-[45vh] lg:min-h-0 ${view === "map" ? "h-[calc(100vh-8rem)]" : "lg:h-[calc(100vh-8rem)]"}`}>
@@ -1375,7 +1381,7 @@ export default function BrowseProperties() {
               />
             ) : (
               <ul className="divide-y divide-slate-100">
-                {properties.map((p) => {
+                {properties.flatMap((p, index) => {
                   const img = coverSrc(p);
                   const key = propertyKey(p);
                   const selected = selectedId === p.id;
@@ -1383,7 +1389,7 @@ export default function BrowseProperties() {
                   const atLimit = !checked && compareIds.size >= maxCompareCount;
                   const cardAddress =
                     p.formatted_address || [p.address, p.city, p.state].filter(Boolean).join(", ") || "Property";
-                  return (
+                  const row = (
                     <li
                       key={key}
                       id={`browse-card-${p.id}`}
@@ -1489,6 +1495,23 @@ export default function BrowseProperties() {
                       </div>
                     </li>
                   );
+                  /** Every 8 listings — labeled in-feed; not between every card (policy-friendly density). */
+                  const nodes = [row];
+                  if ((index + 1) % 8 === 0 && index + 1 < properties.length) {
+                    nodes.push(
+                      <li key={`browse-ad-${index}`} className="p-4 bg-slate-50/90 list-none">
+                        <AdSlot format="infeed" className="min-h-[100px]" />
+                      </li>
+                    );
+                  }
+                  if (index === properties.length - 1 && properties.length >= 3) {
+                    nodes.push(
+                      <li key="browse-ad-end" className="p-4 list-none">
+                        <AdSlot format="rectangle" className="min-h-[250px]" />
+                      </li>
+                    );
+                  }
+                  return nodes;
                 })}
               </ul>
             )}

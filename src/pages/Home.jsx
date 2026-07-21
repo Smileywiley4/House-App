@@ -63,6 +63,10 @@ export default function Home() {
         <PropertyCard property={DEMO_PROPERTY} isDemo demoScore={DEMO_PROPERTY.demoScore} demoScoreLabel={DEMO_PROPERTY.demoScoreLabel} />
       </div>
 
+      <div className="max-w-5xl mx-auto px-6 pb-4">
+        <AdSlot format="rectangle" className="min-h-[250px]" />
+      </div>
+
       <div className="max-w-5xl mx-auto px-6 py-16">
         <h2 className="text-center text-2xl font-bold text-[#14192E] mb-12">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-8">

@@ -22,12 +22,14 @@ Optional:
 | Variable | Purpose |
 |----------|---------|
 | `VITE_GOOGLE_ANALYTICS_HUB_API_VERSION` | `v1` (default) or `v1beta1` — must match paths you call |
-| `VITE_GOOGLE_ADS_CLIENT_ID` | AdSense / display ads client slot setup |
+| `VITE_GOOGLE_ADS_CLIENT_ID` | AdSense publisher id `ca-pub-…` (live fill after domain approved) |
 | `VITE_GOOGLE_ADS_SLOT_LEADERBOARD` / `VITE_GOOGLE_ADS_SLOT_INFEED` / optional `VITE_GOOGLE_ADS_SLOT_RECTANGLE` | Ad unit slots (or `VITE_GOOGLE_ADS_SLOT_1` / `_2`) |
 | `VITE_GOOGLE_ADS_DEMO` | Optional. `false` disables dev auto sample IDs. `true` forces sample test ads even outside dev (avoid in production). |
 | `VITE_SITE_URL` | Production origin **no trailing slash** — canonical URLs, JSON-LD, `postbuild` **sitemap.xml** |
 | `VITE_OG_IMAGE_URL` | Optional full **https** URL to a 1200×630 image for Open Graph / Twitter cards |
 | `VITE_BASE44_APP_ID` / `VITE_BASE44_BACKEND_URL` / `VITE_BASE44_APP_BASE_URL` / `VITE_BASE44_FUNCTIONS_VERSION` | Base44 platform (if used) |
+
+Until production AdSense env is set, free/guest still see labeled `AdSlot` outline placeholders (Home, Browse, Evaluate, Compare). See `docs/ADSENSE_SETUP.md`.
 
 ---
 

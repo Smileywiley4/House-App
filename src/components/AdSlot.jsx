@@ -11,15 +11,20 @@ import { usePlan } from "@/core/hooks/usePlan";
  * official samples: https://github.com/googleads/googleads-adsense-examples/tree/main/v2/python
  * One-time token: `python scripts/adsense_oauth_to_env.py` → `backend/scripts/README_ADSENSE.md`
  *
- * Renders for **free** users only (`usePlan().showAds`). Premium/Realtor see nothing.
+ * Renders for **free / guest** users only (`usePlan().showAds`). Premium/Realtor/Admin see nothing.
  * React Native: use e.g. react-native-google-mobile-ads + same showAds logic.
  *
  * **Local demo:** With no `VITE_GOOGLE_ADS_*` set, `npm run dev` uses Google’s sample `ca-pub` + slot (test ads).
- * Opt out: `VITE_GOOGLE_ADS_DEMO=false`. Production: set your real AdSense IDs.
+ * Opt out: `VITE_GOOGLE_ADS_DEMO=false`.
+ * **Production:** Until real IDs are set (domain TBD / AdSense approved), free/guest see labeled **“Ad · Propurty”**
+ * placeholders. Aliases: `VITE_ADSENSE_CLIENT`, `VITE_ADSENSE_SLOT_*`. Paid plans remain ad-free.
+ * @see docs/ADSENSE_SETUP.md
  */
 /** Google sample publisher + slot — testing only. @see https://developers.google.com/admob/unity/test-ads */
 const GOOGLE_SAMPLE_ADSENSE_CLIENT = "ca-pub-3940256099942544";
 const GOOGLE_SAMPLE_ADSENSE_SLOT = "6300978111";
+
+const AD_LABEL = "Ad · Propurty";
 
 /** Normalize publisher id for the script URL and data-ad-client */
 function normalizeClientId(id) {
@@ -30,11 +35,35 @@ function normalizeClientId(id) {
   return s;
 }
 
-const CLIENT_ID_RAW = import.meta.env.VITE_GOOGLE_ADS_CLIENT_ID;
-const SLOT_LEADERBOARD_ENV =
-  import.meta.env.VITE_GOOGLE_ADS_SLOT_LEADERBOARD || import.meta.env.VITE_GOOGLE_ADS_SLOT_1;
-const SLOT_INFEED_ENV = import.meta.env.VITE_GOOGLE_ADS_SLOT_INFEED || import.meta.env.VITE_GOOGLE_ADS_SLOT_2;
-const SLOT_RECTANGLE_ENV = import.meta.env.VITE_GOOGLE_ADS_SLOT_RECTANGLE;
+function envFirst(...keys) {
+  for (const key of keys) {
+    const v = import.meta.env[key];
+    if (v != null && String(v).trim()) return String(v).trim();
+  }
+  return "";
+}
+
+const CLIENT_ID_RAW = envFirst(
+  "VITE_GOOGLE_ADS_CLIENT_ID",
+  "VITE_ADSENSE_CLIENT",
+  "VITE_ADSENSE_CLIENT_ID"
+);
+const SLOT_LEADERBOARD_ENV = envFirst(
+  "VITE_GOOGLE_ADS_SLOT_LEADERBOARD",
+  "VITE_GOOGLE_ADS_SLOT_1",
+  "VITE_ADSENSE_SLOT_LEADERBOARD",
+  "VITE_ADSENSE_SLOT_1"
+);
+const SLOT_INFEED_ENV = envFirst(
+  "VITE_GOOGLE_ADS_SLOT_INFEED",
+  "VITE_GOOGLE_ADS_SLOT_2",
+  "VITE_ADSENSE_SLOT_INFEED",
+  "VITE_ADSENSE_SLOT_2"
+);
+const SLOT_RECTANGLE_ENV = envFirst(
+  "VITE_GOOGLE_ADS_SLOT_RECTANGLE",
+  "VITE_ADSENSE_SLOT_RECTANGLE"
+);
 
 const ENV_CLIENT = normalizeClientId(CLIENT_ID_RAW);
 const ENV_HAS_ANY_SLOT = Boolean(SLOT_LEADERBOARD_ENV || SLOT_INFEED_ENV || SLOT_RECTANGLE_ENV);
@@ -100,6 +129,45 @@ function slotForFormat(format) {
   return SLOT_LEADERBOARD || SLOT_INFEED;
 }
 
+function minHeightForFormat(format) {
+  if (format === "rectangle") return 250;
+  if (format === "infeed") return 100;
+  return 90;
+}
+
+/**
+ * Labeled outline so placement is visible before the custom domain / AdSense units are approved.
+ * Clearly marked “Advertisement” — not mistaken for app UI.
+ */
+function AdPlaceholder({ format = "leaderboard", className = "", hint = null }) {
+  return (
+    <div
+      role="complementary"
+      aria-label="Advertisement"
+      className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-400 ${className}`}
+      style={{ minHeight: minHeightForFormat(format) }}
+    >
+      <p className="mb-1 text-center text-[9px] font-medium uppercase tracking-[0.18em] text-slate-400">
+        Advertisement
+      </p>
+      <span className="text-sm font-semibold tracking-wide text-slate-500">{AD_LABEL}</span>
+      {hint ? (
+        <p className="mt-2 max-w-md px-4 text-center text-[10px] leading-relaxed text-slate-400">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function configHint() {
+  if (ENV_CLIENT && !ENV_HAS_ANY_SLOT) {
+    return "Set VITE_GOOGLE_ADS_SLOT_LEADERBOARD (or VITE_ADSENSE_SLOT_*) when AdSense units are ready.";
+  }
+  if (!ENV_CLIENT && ENV_HAS_ANY_SLOT) {
+    return "Set VITE_GOOGLE_ADS_CLIENT_ID or VITE_ADSENSE_CLIENT=ca-pub-… when your domain is approved.";
+  }
+  return "Reserved placement — live ads after client ID + slot IDs are set on the host (custom domain TBD).";
+}
+
 export function AdSlot({ format = "leaderboard", className = "" }) {
   const { showAds } = usePlan();
   const insRef = useRef(null);
@@ -135,27 +203,17 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
   if (!showAds) return null;
 
   if (!CLIENT_ID || !HAS_ANY_SLOT) {
-    if (import.meta.env.PROD) return null;
-    const hint =
-      ENV_CLIENT && !ENV_HAS_ANY_SLOT
-        ? "Set VITE_GOOGLE_ADS_SLOT_LEADERBOARD (and/or INFEED / RECTANGLE) in .env.local"
-        : !ENV_CLIENT && ENV_HAS_ANY_SLOT
-          ? "Set VITE_GOOGLE_ADS_CLIENT_ID=ca-pub-… in .env.local"
-          : "Set VITE_GOOGLE_ADS_CLIENT_ID and VITE_GOOGLE_ADS_SLOT_* in .env.local (or run npm run dev with no vars for Google sample test ads)";
-    return (
-      <div className={`flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-xs py-8 px-4 text-center ${className}`}>
-        {hint}
-      </div>
-    );
+    return <AdPlaceholder format={format} className={className} hint={configHint()} />;
   }
 
   const slotId = slotForFormat(format);
   if (!slotId) {
-    if (import.meta.env.PROD) return null;
     return (
-      <div className={`flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-xs py-8 ${className}`}>
-        Ad slot (missing slot for format &quot;{format}&quot;)
-      </div>
+      <AdPlaceholder
+        format={format}
+        className={className}
+        hint={`Ad slot (missing unit for format "${format}")`}
+      />
     );
   }
 
@@ -165,19 +223,24 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
     format === "rectangle" ? "auto" : format === "infeed" ? "fluid" : "horizontal";
 
   return (
-    <div className={className} aria-label="Advertisement">
+    <div className={className} role="complementary" aria-label="Advertisement">
       <p className="mb-1 text-center text-[9px] font-medium uppercase tracking-[0.18em] text-slate-400">
         Advertisement
       </p>
-      <ins
-        ref={insRef}
-        className="adsbygoogle"
-        style={{ display: "block", minHeight: isRectangle ? 250 : 90 }}
-        data-ad-client={CLIENT_ID}
-        data-ad-slot={slotId}
-        data-ad-format={adFormat}
-        data-full-width-responsive={format !== "rectangle" ? "true" : "false"}
-      />
+      <div
+        className="overflow-hidden rounded-xl border border-dashed border-slate-200 bg-slate-50/80"
+        style={{ minHeight: minHeightForFormat(format) }}
+      >
+        <ins
+          ref={insRef}
+          className="adsbygoogle"
+          style={{ display: "block", minHeight: isRectangle ? 250 : 90 }}
+          data-ad-client={CLIENT_ID}
+          data-ad-slot={slotId}
+          data-ad-format={adFormat}
+          data-full-width-responsive={format !== "rectangle" ? "true" : "false"}
+        />
+      </div>
     </div>
   );
 }

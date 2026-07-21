@@ -11,7 +11,9 @@ function normalizeAdsensePublisherId(value) {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const adsensePublisherId = normalizeAdsensePublisherId(env.VITE_GOOGLE_ADS_CLIENT_ID)
+  const adsensePublisherId = normalizeAdsensePublisherId(
+    env.VITE_GOOGLE_ADS_CLIENT_ID || env.VITE_ADSENSE_CLIENT || env.VITE_ADSENSE_CLIENT_ID
+  )
 
   return {
     plugins: [
