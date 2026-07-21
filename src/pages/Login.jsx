@@ -928,7 +928,7 @@ export default function Login() {
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-[#10b981] focus:ring-[#10b981]"
                     />
                     <span className="text-xs text-slate-600 leading-relaxed">
-                      I agree to the{" "}
+                      By creating an account, I agree to the{" "}
                       <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline" target="_blank" rel="noopener noreferrer">
                         Terms of Service
                       </Link>{" "}

@@ -4,12 +4,14 @@
  */
 import { APP_NAME } from '@/core/constants';
 
-export const COMPANY_LEGAL_NAME = 'Property Pocket';
+export const COMPANY_LEGAL_NAME = 'WileyWorx LLC';
 export const COMPANY_TAGLINE = 'Compare & score homes with confidence';
 export const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || 'support@proppocket.com';
 export const SUPPORT_URL =
   import.meta.env.VITE_SUPPORT_URL || '/Support';
+/** Governing law placeholder for Terms — confirm with counsel before launch. */
+export const GOVERNING_LAW_STATE = 'Texas';
 
 export const LEGAL_LAST_UPDATED = 'July 21, 2026';
 

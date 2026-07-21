@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { APP_NAME } from '@/core/constants';
-import { COMPANY_TAGLINE, SUPPORT_EMAIL } from '@/core/companyConfig';
+import { COMPANY_TAGLINE, SUPPORT_EMAIL, COMPANY_LEGAL_NAME } from '@/core/companyConfig';
 
 const FOOTER_LINKS = {
   Product: [
@@ -51,7 +51,7 @@ export default function SiteFooter() {
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500">
-          <p>© {year} {APP_NAME}. All rights reserved.</p>
+          <p>© {year} {COMPANY_LEGAL_NAME}. {APP_NAME}. All rights reserved.</p>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-[#10b981] transition-colors">
             {SUPPORT_EMAIL}
           </a>
