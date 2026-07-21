@@ -4,7 +4,7 @@
  * Safe to reuse in React Native.
  */
 
-/** @typedef {{ id: string, email?: string, full_name?: string, default_weights?: Record<string, number>, role?: string, plan?: string, realtor_license?: string, brokerage?: string, state?: string, linked_realtor_id?: string|null, avatar_url?: string }} User */
+/** @typedef {{ id: string, email?: string, full_name?: string, default_weights?: Record<string, number>, role?: string, plan?: string, realtor_license?: string, brokerage?: string, state?: string, linked_realtor_id?: string|null, avatar_url?: string, has_seen_onboarding_quiz?: boolean, has_seen_client_priority_quiz?: boolean }} User */
 
 /** @typedef {{ category_id: string, category_label: string, importance: number, score: number }} ScoreItem */
 

@@ -372,6 +372,12 @@ function ProfileInner() {
     setTimeout(() => setSavedPrefs(false), 2000);
   };
 
+  const retakePriorityQuiz = () => {
+    import("@/lib/importanceQuiz").then(({ requestPriorityQuiz }) => {
+      requestPriorityQuiz({ trigger: "retake", force: true });
+    });
+  };
+
   const deleteScore = async (id) => {
     await api.entities.PropertyScore.delete(id);
     setScores(prev => prev.filter(s => s.id !== id));

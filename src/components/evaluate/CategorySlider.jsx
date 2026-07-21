@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import CategoryImportanceMiniQuiz from "@/components/onboarding/CategoryImportanceMiniQuiz";
 
 function SliderLabel({ rated, value, ratedClassName }) {
   if (!rated) {
@@ -29,7 +30,14 @@ function RangeTrack({ value, rated, fillColor, onChange, ariaLabel }) {
   );
 }
 
-export default function CategorySlider({ category, evidence, onImportanceChange, onScoreChange, onRemove }) {
+export default function CategorySlider({
+  category,
+  evidence,
+  onImportanceChange,
+  onScoreChange,
+  onRemove,
+  showImportanceHelp = false,
+}) {
   const scoreRated = Boolean(category.scoreRated);
   const importanceRated = Boolean(category.importanceRated);
   const scoreSource = category.scoreSource; // 'manual' | 'auto' | null
@@ -85,6 +93,15 @@ export default function CategorySlider({ category, evidence, onImportanceChange,
             <span>Not Important</span>
             <span>Very Important</span>
           </div>
+          {showImportanceHelp && (
+            <div className="mt-2">
+              <CategoryImportanceMiniQuiz
+                categoryId={category.id}
+                categoryLabel={category.label}
+                onApplyImportance={(val) => onImportanceChange(category.id, val)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Score */}

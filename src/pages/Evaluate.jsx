@@ -622,6 +622,7 @@ export default function Evaluate() {
                 onImportanceChange={updateImportance}
                 onScoreChange={updateScore}
                 onRemove={removeCategory}
+                showImportanceHelp={isAuthenticated}
               />
             ))}
           </>
@@ -640,6 +641,7 @@ export default function Evaluate() {
                 onImportanceChange={updateImportance}
                 onScoreChange={updateScore}
                 onRemove={removeCategory}
+                showImportanceHelp={isAuthenticated}
               />
             ))}
           </>

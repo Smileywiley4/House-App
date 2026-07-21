@@ -90,8 +90,18 @@ function ContactsInner() {
   const accept = async (id) => {
     setBusyId(id);
     try {
+      const pending = (data.pending_incoming || []).find((c) => c.id === id);
       await api.contacts.accept(id);
       await load();
+      // First time client accepts realtor invite/connection — client's benefit.
+      if (pending?.contact_role === "client") {
+        try {
+          const { requestPriorityQuiz } = await import("@/lib/importanceQuiz");
+          requestPriorityQuiz({ trigger: "client" });
+        } catch {
+          /* non-blocking */
+        }
+      }
     } catch (e) {
       setError(e?.message || "Could not accept");
     } finally {

@@ -42,6 +42,8 @@ function profileToUser(row) {
     marketing_opt_in: Boolean(row.marketing_opt_in),
     promo_code: row.promo_code || "",
     avatar_url: row.avatar_url || "",
+    has_seen_onboarding_quiz: Boolean(row.has_seen_onboarding_quiz),
+    has_seen_client_priority_quiz: Boolean(row.has_seen_client_priority_quiz),
   };
 }
 
@@ -173,6 +175,10 @@ export async function PATCH(request) {
       "brokerage",
       "state",
       "avatar_url",
+      "default_weights",
+      "linked_realtor_id",
+      "has_seen_onboarding_quiz",
+      "has_seen_client_priority_quiz",
     ]) {
       if (Object.prototype.hasOwnProperty.call(body, key)) updates[key] = body[key];
     }

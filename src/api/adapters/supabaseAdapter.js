@@ -26,6 +26,8 @@ function profileToUser(row) {
     state: row.state ?? '',
     linked_realtor_id: row.linked_realtor_id ?? null,
     avatar_url: row.avatar_url ?? '',
+    has_seen_onboarding_quiz: Boolean(row.has_seen_onboarding_quiz),
+    has_seen_client_priority_quiz: Boolean(row.has_seen_client_priority_quiz),
   };
 }
 
@@ -74,6 +76,12 @@ export function createSupabaseAdapter() {
         if (profile.state !== undefined) updates.state = profile.state;
         if (profile.linked_realtor_id !== undefined) updates.linked_realtor_id = profile.linked_realtor_id;
         if (profile.avatar_url !== undefined) updates.avatar_url = profile.avatar_url;
+        if (profile.has_seen_onboarding_quiz !== undefined) {
+          updates.has_seen_onboarding_quiz = Boolean(profile.has_seen_onboarding_quiz);
+        }
+        if (profile.has_seen_client_priority_quiz !== undefined) {
+          updates.has_seen_client_priority_quiz = Boolean(profile.has_seen_client_priority_quiz);
+        }
         await supabase.from('profiles').update(updates).eq('id', user.id);
         return profileToUser({ ...user, ...updates });
       },

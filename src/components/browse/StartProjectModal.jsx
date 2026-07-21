@@ -70,6 +70,17 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
         await api.projects.addProperties(project.id, seedProperties, { enrich_location: false });
       }
       onClose?.();
+      // Soft one-time prompt: new search may have new priorities.
+      try {
+        const { requestPriorityQuiz } = await import("@/lib/importanceQuiz");
+        requestPriorityQuiz({
+          trigger: "project",
+          projectId: project.id,
+          projectName: title.trim(),
+        });
+      } catch {
+        /* non-blocking */
+      }
       navigate(`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(project.id)}`);
     } catch (e) {
       setError(e?.message || "Could not create project");

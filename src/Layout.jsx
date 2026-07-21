@@ -27,6 +27,7 @@ import SearchBarTop from "@/components/SearchBarTop";
 import SiteFooter from "@/components/trust/SiteFooter";
 import NotificationsBell from "@/components/NotificationsBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import OnboardingQuizHost from "@/components/onboarding/OnboardingQuizHost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -283,6 +284,7 @@ export default function Layout({ children, currentPageName }) {
         isAuthenticated={isAuthenticated}
         isLoadingAuth={isLoadingAuth}
       />
+      <OnboardingQuizHost />
     </div>
   );
 }
