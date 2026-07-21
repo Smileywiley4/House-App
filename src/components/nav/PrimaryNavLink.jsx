@@ -16,7 +16,7 @@ export default function PrimaryNavLink({
   return (
     <Link
       to={createPageUrl(item.name)}
-      className={`relative flex flex-col items-center justify-center gap-0.5 min-w-0 px-2 py-1 rounded-md transition-colors hover:bg-black/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]/40 ${className}`}
+      className={`relative flex flex-col items-center justify-center gap-0.5 min-w-0 px-2 py-1 rounded-md transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:bg-black/[0.04] focus:outline-none ${className}`}
       style={{ color }}
       aria-current={active ? "page" : undefined}
       aria-label={badge > 0 ? `${item.label}, ${badge} unread` : item.label}
@@ -24,12 +24,12 @@ export default function PrimaryNavLink({
       <span className="relative inline-flex">
         <PrimaryNavIcon id={item.id} size={iconSize} strokeWidth={active ? 2.1 : 1.75} />
         {badge > 0 && (
-          <span className="absolute -top-1 -right-2 min-w-[1rem] h-4 px-0.5 rounded-full bg-[#10b981] text-[9px] font-bold text-white flex items-center justify-center leading-none">
+          <span className="absolute -top-1 -right-2 min-w-[1rem] h-4 px-0.5 rounded-full bg-brand text-micro font-bold text-white flex items-center justify-center leading-none">
             {badge > 9 ? "9+" : badge}
           </span>
         )}
       </span>
-      <span className={`text-[10px] font-medium tracking-tight truncate max-w-full ${active ? "font-semibold" : ""}`}>
+      <span className={`text-micro font-medium tracking-tight truncate max-w-full ${active ? "font-semibold" : ""}`}>
         {item.label}
       </span>
     </Link>

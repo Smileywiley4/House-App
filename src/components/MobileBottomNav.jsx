@@ -54,7 +54,7 @@ export default function MobileBottomNav({
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className="flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 py-1.5 px-1 rounded-md text-[10px] transition-colors hover:bg-black/[0.04]"
+            className="flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 py-1.5 px-1 rounded-md text-micro transition-colors hover:bg-black/[0.04]"
             style={{ color: moreActive || moreOpen ? NAV_ACTIVE : NAV_MUTED }}
             aria-label="More navigation"
             aria-expanded={moreOpen}
@@ -68,10 +68,10 @@ export default function MobileBottomNav({
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-2xl border-slate-200 bg-white text-[#2d3340] px-4 pt-6 max-h-[85vh] overflow-y-auto md:hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+          className="rounded-t-2xl border-slate-200 bg-white text-charcoal px-4 pt-6 max-h-[85vh] overflow-y-auto md:hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         >
           <SheetHeader className="text-left mb-4 pr-8">
-            <SheetTitle className="text-[#1a2234]">More</SheetTitle>
+            <SheetTitle className="text-navy">More</SheetTitle>
             <SheetDescription className="text-slate-500">Additional pages and tools</SheetDescription>
           </SheetHeader>
 
@@ -96,7 +96,7 @@ export default function MobileBottomNav({
 
             {!isLoadingAuth && !isAuthenticated && (
               <li>
-                <Link to="/login" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white bg-[#10b981]">
+                <Link to="/login" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white bg-[#047857]">
                   <LogIn size={18} />
                   Sign In
                 </Link>

@@ -22,6 +22,7 @@ import {
   Columns,
   Filter,
   FolderKanban,
+  Home as HomeIcon,
   List,
   LocateFixed,
   Map as MapIcon,
@@ -48,6 +49,8 @@ import SharePropertyButton from "@/components/SharePropertyButton";
 import { OFF_MARKET_ESTIMATE_DISCLAIMER } from "@/core/companyConfig";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import EmptyState from "@/components/EmptyState";
+import { brand } from "@/design-tokens";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -61,8 +64,8 @@ const DEFAULT_CENTER = { lat: 40.7608, lng: -111.891 };
 const DEFAULT_ZOOM = 12;
 /** Price pills appear at this zoom and above; below = small brand dots (+ hover tooltip). */
 const PRICE_LABEL_ZOOM = 14;
-const BRAND_PIN = "#10b981";
-const BRAND_PIN_SELECTED = "#059669";
+const BRAND_PIN = brand.primary;
+const BRAND_PIN_SELECTED = brand.primaryHover;
 
 function formatPrice(n) {
   if (n == null || n === "") return "—";
@@ -210,7 +213,7 @@ function highlightIcon() {
     className: "",
     html: `<div style="
       width:18px;height:18px;border-radius:50%;
-      background:#10b981;border:3px solid #fff;
+      background:${brand.primary};border:3px solid #fff;
       box-shadow:0 2px 10px rgba(0,0,0,.35);
     "></div>`,
     iconSize: [18, 18],
@@ -1020,12 +1023,12 @@ export default function BrowseProperties() {
               ariaLabel="Search city, neighborhood, ZIP, or address"
               icon="search"
               showKindBadge
-              inputClassName="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+              inputClassName="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand"
             />
             <button
               type="submit"
               disabled={loading || locating}
-              className="px-4 py-2.5 rounded-xl bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold shrink-0 disabled:opacity-60"
+              className="px-4 py-2.5 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white text-sm font-bold shrink-0 disabled:opacity-60"
             >
               Search
             </button>
@@ -1038,9 +1041,9 @@ export default function BrowseProperties() {
               className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 shrink-0 disabled:opacity-60"
             >
               {locating ? (
-                <Loader2 size={14} className="animate-spin text-[#10b981]" />
+                <Loader2 size={14} className="animate-spin text-brand" />
               ) : (
-                <LocateFixed size={14} className="text-[#10b981]" />
+                <LocateFixed size={14} className="text-brand" />
               )}
               <span className="hidden sm:inline">{locating ? "Locating…" : "My location"}</span>
             </button>
@@ -1052,7 +1055,7 @@ export default function BrowseProperties() {
                 type="button"
                 onClick={() => setMode("for_sale")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                  mode === "for_sale" ? "bg-white shadow text-[#1a2234]" : "text-slate-500"
+                  mode === "for_sale" ? "bg-white shadow text-navy" : "text-slate-500"
                 }`}
               >
                 For sale
@@ -1061,7 +1064,7 @@ export default function BrowseProperties() {
                 type="button"
                 onClick={() => setMode("off_market")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                  mode === "off_market" ? "bg-white shadow text-[#1a2234]" : "text-slate-500"
+                  mode === "off_market" ? "bg-white shadow text-navy" : "text-slate-500"
                 }`}
               >
                 Off-market est.
@@ -1109,7 +1112,7 @@ export default function BrowseProperties() {
               <button
                 type="button"
                 onClick={clearDrawnArea}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#10b981]/40 bg-[#10b981]/10 text-xs font-bold text-[#059669]"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-brand/40 bg-brand/10 text-xs font-bold text-brand-hover"
               >
                 Clear area
               </button>
@@ -1122,7 +1125,7 @@ export default function BrowseProperties() {
             >
               <SlidersHorizontal size={14} /> Filters
               {activeScoreMins > 0 && (
-                <span className="ml-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#10b981] text-[10px] text-white flex items-center justify-center">
+                <span className="ml-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-brand text-micro text-white flex items-center justify-center">
                   {activeScoreMins}
                 </span>
               )}
@@ -1157,25 +1160,25 @@ export default function BrowseProperties() {
           </div>
         </div>
         {drawMode && (
-          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-slate-500 font-medium">
+          <p className="max-w-[1600px] mx-auto mt-2 text-caption text-slate-500 font-medium">
             Drag on the map to draw a search area. Release to close the shape — filters apply only
             inside it.
           </p>
         )}
         {polygon && !drawMode && (
-          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-[#059669] font-semibold">
+          <p className="max-w-[1600px] mx-auto mt-2 text-caption text-brand-hover font-semibold">
             {areaLabel
               ? `Area: ${areaLabel.split(",").slice(0, 3).join(",")} — filters apply inside this boundary. Clear area to browse the full map.`
               : "Custom search area active — pan is locked to this shape. Clear area to browse the full map again."}
           </p>
         )}
         {highlight?.address && !polygon && (
-          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-[#059669] font-semibold">
+          <p className="max-w-[1600px] mx-auto mt-2 text-caption text-brand-hover font-semibold">
             Focused on {highlight.address}
           </p>
         )}
         {scoreMeta?.score_filter_applied && (
-          <p className="max-w-[1600px] mx-auto mt-2 text-[11px] text-slate-500">
+          <p className="max-w-[1600px] mx-auto mt-2 text-caption text-slate-500">
             Auto-score filter applied
             {scoreMeta.cache_hits != null
               ? ` · ${scoreMeta.cache_hits} cached, ${scoreMeta.live_lookups || 0} live lookups`
@@ -1275,7 +1278,7 @@ export default function BrowseProperties() {
                 })}
               </MarkerClusterGroup>
             </MapContainer>
-            <div className="absolute top-3 left-3 z-[500] bg-[#1a2234]/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+            <div className="absolute top-3 left-3 z-[500] bg-navy/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
               {loading
                 ? "Updating…"
                 : `${properties.length} shown${!polygon && total > properties.length ? ` of ${total}` : ""}${
@@ -1294,7 +1297,7 @@ export default function BrowseProperties() {
           >
             <div className="p-4 border-b border-slate-100 sticky top-0 bg-white z-10 space-y-3">
               <div>
-                <h1 className="text-lg font-bold text-[#1a2234]">
+                <h1 className="text-lg font-bold text-navy">
                   {mode === "for_sale" ? "Homes for sale" : "Off-market estimates"}
                 </h1>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -1303,7 +1306,7 @@ export default function BrowseProperties() {
                   project.
                 </p>
                 {mode === "off_market" && (
-                  <p className="text-[11px] leading-relaxed text-slate-400 mt-1.5 max-w-xl">
+                  <p className="text-caption leading-relaxed text-slate-400 mt-1.5 max-w-xl">
                     {OFF_MARKET_ESTIMATE_DISCLAIMER}
                   </p>
                 )}
@@ -1312,7 +1315,7 @@ export default function BrowseProperties() {
                 <button
                   type="button"
                   onClick={runCompare}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a2234] hover:bg-[#243050] text-white text-xs font-bold"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-navy hover:bg-navy-hover text-white text-xs font-bold"
                 >
                   <Columns size={14} />
                   Compare properties
@@ -1336,7 +1339,7 @@ export default function BrowseProperties() {
                       }
                       setSaveProjectOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#10b981]/40 bg-[#10b981]/10 text-xs font-bold text-[#059669]"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-brand/40 bg-brand/10 text-xs font-bold text-brand-hover"
                   >
                     Save selected ({compareIds.size})
                   </button>
@@ -1358,11 +1361,18 @@ export default function BrowseProperties() {
                 isLoading
                 onRetry={() => fetchBrowse()}
                 label="Loading homes…"
+                skeleton="browse"
+                skeletonRows={5}
+                className="py-0"
               />
             ) : properties.length === 0 ? (
-              <p className="text-sm text-slate-500 p-8 text-center">
-                No homes matched these filters in this area. Zoom out, redraw, or clear filters.
-              </p>
+              <EmptyState
+                compact
+                icon={HomeIcon}
+                title="No homes matched"
+                description="No homes matched these filters in this area. Zoom out, redraw, or clear filters."
+                className="m-4 border-slate-200"
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {properties.map((p) => {
@@ -1371,6 +1381,8 @@ export default function BrowseProperties() {
                   const selected = selectedId === p.id;
                   const checked = compareIds.has(key);
                   const atLimit = !checked && compareIds.size >= maxCompareCount;
+                  const cardAddress =
+                    p.formatted_address || [p.address, p.city, p.state].filter(Boolean).join(", ") || "Property";
                   return (
                     <li
                       key={key}
@@ -1381,10 +1393,10 @@ export default function BrowseProperties() {
                       <label
                         className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center cursor-pointer ${
                           checked
-                            ? "bg-[#10b981] border-[#10b981] text-white"
+                            ? "bg-brand border-brand text-white"
                             : atLimit
                               ? "border-slate-200 bg-slate-100 cursor-not-allowed opacity-60"
-                              : "border-slate-300 bg-white hover:border-[#10b981]"
+                              : "border-slate-300 bg-white hover:border-brand"
                         }`}
                         title={
                           atLimit
@@ -1398,9 +1410,10 @@ export default function BrowseProperties() {
                           checked={checked}
                           disabled={atLimit && !checked}
                           onChange={() => toggleCompare(p)}
+                          aria-label={`Select ${cardAddress} for compare`}
                         />
                         {checked ? (
-                          <span className="text-[11px] font-bold leading-none">✓</span>
+                          <span className="text-caption font-bold leading-none">✓</span>
                         ) : null}
                       </label>
                       <div className="flex gap-3 pr-8">
@@ -1408,7 +1421,7 @@ export default function BrowseProperties() {
                           {img ? (
                             <img
                               src={img}
-                              alt=""
+                              alt={`Exterior of ${cardAddress}`}
                               className="w-full h-full object-cover"
                               loading="lazy"
                               onError={(e) => {
@@ -1416,7 +1429,7 @@ export default function BrowseProperties() {
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                            <div className="w-full h-full flex items-center justify-center text-micro text-slate-400 font-semibold">
                               No photo
                             </div>
                           )}
@@ -1427,11 +1440,11 @@ export default function BrowseProperties() {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-lg font-bold text-[#1a2234]">
+                          <div className="text-lg font-bold text-navy">
                             {p.on_market ? formatPrice(p.price) : `Est. ${formatPrice(p.price)}`}
                           </div>
                           {!p.on_market && (
-                            <p className="text-[10px] leading-snug text-slate-400 mt-0.5">
+                            <p className="text-micro leading-snug text-slate-400 mt-0.5">
                               Estimate only — not an appraisal; not the sole basis for a purchase.
                             </p>
                           )}
@@ -1449,14 +1462,14 @@ export default function BrowseProperties() {
                             {p.formatted_address || [p.address, p.city, p.state].filter(Boolean).join(", ")}
                           </div>
                           {p.hoa_fee != null && Number(p.hoa_fee) > 0 && (
-                            <div className="text-[10px] text-amber-700 mt-1 font-semibold">
+                            <div className="text-micro text-amber-700 mt-1 font-semibold">
                               HOA ${Number(p.hoa_fee).toLocaleString()}/mo
                             </div>
                           )}
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Link
                               to={evaluateHref(p)}
-                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg bg-[#10b981] hover:bg-[#059669] text-white text-[11px] font-bold"
+                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg bg-[#047857] hover:bg-[#065f46] text-white text-caption font-bold"
                             >
                               Score this home
                             </Link>
@@ -1466,7 +1479,7 @@ export default function BrowseProperties() {
                                 storeBrowseCompareSelection([p]);
                                 navigate(createPageUrl("Compare"));
                               }}
-                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
+                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg border border-slate-200 text-caption font-bold text-slate-700 hover:bg-white"
                             >
                               Compare
                             </button>
@@ -1493,7 +1506,7 @@ export default function BrowseProperties() {
           />
           <div className="relative w-full max-w-md h-full bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <h2 className="font-bold text-[#1a2234]">Filters</h2>
+              <h2 className="font-bold text-navy">Filters</h2>
               <button
                 type="button"
                 onClick={() => setFiltersOpen(false)}
@@ -1516,7 +1529,7 @@ export default function BrowseProperties() {
               <button
                 type="button"
                 onClick={() => setFiltersOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold"
+                className="flex-1 py-2.5 rounded-xl bg-brand text-white text-sm font-bold"
               >
                 Apply
               </button>

@@ -13,9 +13,11 @@ import {
   Users,
 } from "lucide-react";
 
-export const NAV_CHARCOAL = "#2d3340";
-export const NAV_MUTED = "#6b7280";
-export const NAV_ACTIVE = "#111827";
+import { brand } from "../design-tokens.js";
+
+export const NAV_CHARCOAL = brand.charcoal;
+export const NAV_MUTED = brand.muted;
+export const NAV_ACTIVE = brand.active;
 
 /** Five always-visible primary destinations (icon-above-label). */
 export const PRIMARY_NAV = [

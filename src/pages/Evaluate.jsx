@@ -23,6 +23,7 @@ import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 import { PROPERTY_SCORE_DISCLAIMER } from "@/core/companyConfig";
 import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
+import { brand } from "@/design-tokens";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -314,8 +315,8 @@ export default function Evaluate() {
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Header */}
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6">
-        <div className="absolute inset-0 bg-[#1a2234]/75" />
+      <div className="relative overflow-hidden bg-navy px-6 py-6">
+        <div className="absolute inset-0 bg-navy/75" />
         <div className="relative max-w-4xl mx-auto">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
             <ChevronLeft size={16} /> Back to Search
@@ -327,7 +328,7 @@ export default function Evaluate() {
             </div>
             {property.price && (
               <div className="text-right">
-                <div className="text-2xl font-bold text-[#c9a84c]">${Number(property.price).toLocaleString()}</div>
+                <div className="text-2xl font-bold text-gold">${Number(property.price).toLocaleString()}</div>
                 {summaryFacts && <div className="text-xs text-slate-400">{summaryFacts}</div>}
               </div>
             )}
@@ -341,18 +342,18 @@ export default function Evaluate() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="text-center">
-            <div className={`text-4xl font-bold ${canSaveScore ? "text-[#1a2234]" : "text-slate-400"}`}>
-              {percentage}<span className="text-xl text-slate-400"> / 100</span>
+            <div className={`text-4xl font-bold ${canSaveScore ? "text-navy" : "text-slate-600"}`}>
+              {percentage}<span className="text-xl text-slate-600"> / 100</span>
             </div>
-            <div className="text-xs text-slate-400 mt-1">
+            <div className="text-xs text-slate-600 mt-1">
               {canSaveScore ? "Property Score" : "Provisional score"}
             </div>
             </div>
             <div className="h-12 w-px bg-slate-100" />
             <div className="text-sm text-slate-500">
-            <span className="font-semibold text-[#1a2234]">{ratedCount}</span>
+            <span className="font-semibold text-navy">{ratedCount}</span>
             {" of "}
-            <span className="font-semibold text-[#1a2234]">{visibleCount}</span> rated
+            <span className="font-semibold text-navy">{visibleCount}</span> rated
             </div>
             <div className="flex-1 max-w-xs">
               <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -360,7 +361,7 @@ export default function Evaluate() {
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${percentage}%`,
-                    background: percentage >= 70 ? "#22c55e" : percentage >= 40 ? "#c9a84c" : "#ef4444"
+                    background: percentage >= 70 ? brand.success : percentage >= 40 ? brand.gold : brand.danger
                   }}
                 />
               </div>
@@ -386,7 +387,7 @@ export default function Evaluate() {
               <button
                 type="button"
                 onClick={() => setSendOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-[#10b981]/40 text-[#059669] hover:bg-[#10b981]/10 font-semibold rounded-xl transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 border border-brand/40 text-brand-hover hover:bg-brand/10 font-semibold rounded-xl transition-colors text-sm"
               >
                 <Send size={15} /> Send to client for scoring
               </button>
@@ -397,7 +398,7 @@ export default function Evaluate() {
                 onClick={returnToRealtor}
                 disabled={returning || activeCategories.length === 0 || !canSaveScore}
                 title={!canSaveScore ? saveGateMessage : undefined}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-navy hover:bg-navy-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {returning ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -420,7 +421,7 @@ export default function Evaluate() {
             />
             <button
               onClick={sendToCompare}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-navy hover:bg-navy-hover text-white font-semibold rounded-xl transition-colors text-sm"
             >
               <Columns size={15} /> Compare
             </button>
@@ -438,7 +439,7 @@ export default function Evaluate() {
               saved ? (
                 <Link
                   to={createPageUrl("SavedProperties")}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-xl text-sm"
+                  className="flex items-center gap-2 px-4 py-2 bg-success text-white font-semibold rounded-xl text-sm"
                 >
                   <BarChart3 size={15} /> View Comparison
                 </Link>
@@ -450,7 +451,7 @@ export default function Evaluate() {
                     disabled={saving || !canSaveScore}
                     title={!canSaveScore ? saveGateMessage : undefined}
                     aria-describedby={!canSaveScore ? "save-score-gate" : undefined}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#10b981]"
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-deep hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-deep"
                   >
                     {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={15} />}
                     {saving ? "Saving..." : "Save Score"}
@@ -459,7 +460,7 @@ export default function Evaluate() {
                     <span
                       id="save-score-gate"
                       role="tooltip"
-                      className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-lg bg-[#1a2234] px-3 py-2 text-xs font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover/save:opacity-100 group-focus-within/save:opacity-100"
+                      className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-lg bg-navy px-3 py-2 text-xs font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover/save:opacity-100 group-focus-within/save:opacity-100"
                     >
                       {saveGateMessage}
                     </span>
@@ -469,7 +470,7 @@ export default function Evaluate() {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-brand-deep hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm"
               >
                 <LogIn size={15} /> Sign In to Save
               </Link>
@@ -537,7 +538,7 @@ export default function Evaluate() {
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-[#1a2234]">Scoring Categories</h2>
+            <h2 className="text-lg font-bold text-navy">Scoring Categories</h2>
             <p className="mt-0.5 text-sm text-slate-500">
               {visibleCount > 0
                 ? `${ratedCount} of ${visibleCount} categories rated.`
@@ -547,7 +548,7 @@ export default function Evaluate() {
               <div className="mt-2 max-w-xs">
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#10b981] transition-all duration-300"
+                    className="h-full rounded-full bg-brand transition-all duration-300"
                     style={{ width: `${Math.min(100, ratedRatio * 100)}%` }}
                   />
                 </div>
@@ -562,14 +563,14 @@ export default function Evaluate() {
                   setShowPresetForm(true);
                   setPresetStatus("");
                 }}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2234] transition-colors hover:bg-slate-50"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-slate-50"
               >
                 <Bookmark size={16} /> Save Preset
               </button>
             ) : (
               <Link
                 to="/login"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a2234] transition-colors hover:bg-slate-50"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-slate-50"
               >
                 <LogIn size={16} /> Sign In to Save Preset
               </Link>
@@ -577,7 +578,7 @@ export default function Evaluate() {
             <button
               type="button"
               onClick={() => setShowPicker(true)}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a2234] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-hover"
             >
               <Plus size={16} /> Add Categories
             </button>
@@ -586,7 +587,7 @@ export default function Evaluate() {
 
         {showPresetForm && isAuthenticated && (
           <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
-            <Bookmark size={17} className="hidden shrink-0 text-[#10b981] sm:block" />
+            <Bookmark size={17} className="hidden shrink-0 text-brand sm:block" />
             <input
               autoFocus
               type="text"
@@ -600,13 +601,13 @@ export default function Evaluate() {
               }}
               maxLength={80}
               placeholder="Preset name, e.g. Family Home"
-              className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3 py-2.5 text-sm outline-none ring-[#10b981]/30 focus:ring-2"
+              className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3 py-2.5 text-sm outline-none ring-brand/30 focus:ring-2"
             />
             <button
               type="button"
               onClick={savePreset}
               disabled={!presetName.trim() || savingPreset}
-              className="rounded-lg bg-[#10b981] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#059669] disabled:opacity-40"
+              className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-40"
             >
               {savingPreset ? "Saving..." : "Save"}
             </button>
@@ -624,7 +625,7 @@ export default function Evaluate() {
           </div>
         )}
         {presetStatus && (
-          <p className={`text-sm font-medium ${presetStatus === "Preset saved" ? "text-[#059669]" : "text-red-600"}`}>
+          <p className={`text-sm font-medium ${presetStatus === "Preset saved" ? "text-brand-hover" : "text-red-600"}`}>
             {presetStatus}
           </p>
         )}
@@ -683,7 +684,7 @@ export default function Evaluate() {
       )}
 
       {returnStatus && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-[#1a2234] text-white text-sm font-semibold px-4 py-2.5 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-navy text-white text-sm font-semibold px-4 py-2.5 shadow-lg">
           {returnStatus}
         </div>
       )}

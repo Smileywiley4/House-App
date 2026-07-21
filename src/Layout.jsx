@@ -39,12 +39,15 @@ import {
   NAV_ACTIVE,
 } from "@/core/primaryNav";
 import { useNotificationBadge } from "@/hooks/useNotificationBadge";
+import { THEME } from "@/core/constants";
+import { brand } from "@/design-tokens";
 
 const t = {
-  accent: "#10b981",
-  accentHover: "#059669",
-  accentLight: "rgba(16,185,129,0.12)",
-  gold: "#c9a84c",
+  accent: THEME.accent,
+  accentHover: THEME.accentHover,
+  accentSolid: brand.primaryDeep,
+  accentLight: THEME.accentLight,
+  gold: THEME.gold,
   label: "Prop Pocket",
 };
 
@@ -72,7 +75,7 @@ export default function Layout({ children, currentPageName }) {
       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: t.accent }}>
         <Home size={18} className="text-white" />
       </div>
-      <span className="font-bold text-[#1a2234] tracking-tight text-lg truncate hidden sm:inline">{t.label}</span>
+      <span className="font-bold text-navy tracking-tight text-lg truncate hidden sm:inline">{t.label}</span>
       <span className="ml-0.5 text-[11px] font-bold shrink-0 hidden sm:inline" style={{ color: t.gold }}>✦</span>
     </Link>
   );
@@ -81,10 +84,9 @@ export default function Layout({ children, currentPageName }) {
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors">
       <LayoutSeo currentPageName={currentPageName} />
       <style>{`
-        :root { --accent: ${t.accent}; --accent-hover: ${t.accentHover}; --accent-light: ${t.accentLight}; }
-        input[type='range'] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 9999px; outline: none; }
-        input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: ${t.accent}; cursor: pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
-        input[type='range']::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: ${t.accent}; cursor: pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        input[type='range'] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: var(--radius-pill); outline: none; }
+        input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--brand-primary-deep); cursor: pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        input[type='range']::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--brand-primary-deep); cursor: pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
       `}</style>
 
       <header className="bg-white border-b border-slate-200/90 px-3 sm:px-5 py-2 sticky top-0 z-40">
@@ -93,7 +95,7 @@ export default function Layout({ children, currentPageName }) {
             {showHeaderSearch && (
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[#2d3340] transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-charcoal transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 aria-label={mobileSearchOpen ? "Close address search" : "Open address search"}
                 aria-expanded={mobileSearchOpen}
                 onClick={() => setMobileSearchOpen((open) => !open)}
@@ -124,7 +126,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-1.5 shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button type="button" className="flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-md transition-colors hover:bg-black/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]/40" style={{ color: moreActive ? NAV_ACTIVE : NAV_MUTED }} aria-label="More navigation">
+                  <button type="button" className="flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-md transition-colors hover:bg-black/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40" style={{ color: moreActive ? NAV_ACTIVE : NAV_MUTED }} aria-label="More navigation">
                     <MoreHorizontal size={22} strokeWidth={moreActive ? 2.1 : 1.75} />
                     <span className={`text-[10px] tracking-tight ${moreActive ? "font-semibold" : "font-medium"}`}>More</span>
                   </button>
@@ -164,7 +166,7 @@ export default function Layout({ children, currentPageName }) {
 }
 
 function AccountCluster({ isLoadingAuth, isAuthenticated, user, logout, compact = false }) {
-  const btnClass = "flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[#2d3340] transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] overflow-hidden";
+  const btnClass = "flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-charcoal transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand overflow-hidden";
   if (isLoadingAuth) {
     return (
       <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50" aria-hidden>
@@ -174,7 +176,7 @@ function AccountCluster({ isLoadingAuth, isAuthenticated, user, logout, compact 
   }
   if (!isAuthenticated) {
     return (
-      <Link to="/login" className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold text-white transition hover:opacity-95" style={{ backgroundColor: t.accent }} aria-label="Sign in">
+      <Link to="/login" className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold text-white transition hover:opacity-95" style={{ backgroundColor: t.accentSolid }} aria-label="Sign in">
         <LogIn size={16} />
         {!compact && <span>Sign In</span>}
       </Link>
@@ -187,7 +189,7 @@ function AccountCluster({ isLoadingAuth, isAuthenticated, user, logout, compact 
           {user?.avatar_url ? (
             <Avatar className="h-10 w-10">
               <AvatarImage src={user.avatar_url} alt="" className="object-cover" />
-              <AvatarFallback className="bg-transparent text-[#2d3340]"><UserCircle size={22} strokeWidth={1.75} /></AvatarFallback>
+              <AvatarFallback className="bg-transparent text-charcoal"><UserCircle size={22} strokeWidth={1.75} /></AvatarFallback>
             </Avatar>
           ) : (
             <UserCircle size={22} strokeWidth={1.75} />
