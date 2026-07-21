@@ -177,7 +177,7 @@ function PropertyCard({ property, isDemo = false, demoScore, demoScoreLabel }) {
 
         <Link
           to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(property.address)}&city=${encodeURIComponent(property.city)}&state=${encodeURIComponent(property.state)}&price=${property.price}&beds=${property.bedrooms}&baths=${property.bathrooms}&sqft=${property.sqft}&year=${property.year_built}`}
-          className="w-full flex items-center justify-center gap-2 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-base mt-4"
+          className="w-full flex items-center justify-center gap-2 py-4 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-colors text-base mt-4"
         >
           <Star size={18} />
           {isDemo ? "Try scoring this example" : "Score This Property"}

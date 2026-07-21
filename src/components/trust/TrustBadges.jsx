@@ -25,16 +25,16 @@ export default function TrustBadges() {
               <div className="inline-flex w-10 h-10 rounded-xl bg-[#10b981]/10 items-center justify-center mb-3">
                 <Icon size={20} className="text-[#10b981]" aria-hidden />
               </div>
-              <h3 className="font-semibold text-[#1a2234] text-sm mb-1">{title}</h3>
+              <p className="font-semibold text-[#1a2234] text-sm mb-1">{title}</p>
               {href ? (
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  <Link to={href} className="text-[#10b981] hover:underline font-medium">
+                <p className="text-slate-600 text-xs leading-relaxed">
+                  <Link to={href} className="text-[#047857] hover:underline font-medium">
                     {linkLabel || desc}
                   </Link>
                   {' — self-serve, no support ticket required.'}
                 </p>
               ) : (
-                <p className="text-slate-500 text-xs leading-relaxed">{desc}</p>
+                <p className="text-slate-600 text-xs leading-relaxed">{desc}</p>
               )}
             </div>
           ))}

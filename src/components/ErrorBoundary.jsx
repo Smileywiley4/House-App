@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component {
               <button
                 type="button"
                 onClick={this.handleRetry}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition"
               >
                 <RefreshCw size={16} />
                 Try again

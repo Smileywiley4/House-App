@@ -203,8 +203,8 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
     : "w-full pl-11 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:border-[#c9a84c] focus:bg-white/15 transition-all text-sm";
 
   const buttonClass = isHero
-    ? "px-6 py-4 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
-    : "px-4 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap text-sm";
+    ? "px-6 py-4 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
+    : "px-4 py-2.5 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap text-sm";
 
   return (
     <div className={className}>

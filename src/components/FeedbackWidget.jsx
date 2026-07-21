@@ -4,7 +4,7 @@ import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
 import { SUPPORT_EMAIL } from "@/core/companyConfig";
 
-const ACCENT = "#10b981";
+const ACCENT = "#047857";
 const MAX_SCREENSHOT_BYTES = 2 * 1024 * 1024;
 
 /**
@@ -154,11 +154,11 @@ export default function FeedbackWidget() {
 
           {done ? (
             <div className="p-5 space-y-3 text-center">
-              <CheckCircle2 size={36} className="mx-auto text-[#10b981]" />
+              <CheckCircle2 size={36} className="mx-auto text-[#047857]" />
               <p className="text-sm font-medium text-[#1a2234]">Thanks — we got it.</p>
               <p className="text-xs text-slate-500 leading-relaxed">
                 For urgent account or billing help, email{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#047857] hover:underline">
                   {SUPPORT_EMAIL}
                 </a>
                 .
@@ -293,7 +293,7 @@ export default function FeedbackWidget() {
 
               <p className="text-[10px] text-slate-400 text-center leading-relaxed">
                 Not live chat — we read these in email. Prefer writing us?{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#047857] hover:underline">
                   {SUPPORT_EMAIL}
                 </a>
               </p>

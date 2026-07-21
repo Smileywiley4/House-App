@@ -123,7 +123,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
             Get AI-powered neighborhood analysis, proximity scores, and an engaging buyer description for this property.
           </p>
           <button onClick={generate}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition">
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
             <Sparkles size={15} /> Generate AI Insights
           </button>
         </div>
