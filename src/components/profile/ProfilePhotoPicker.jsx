@@ -90,8 +90,8 @@ export default function ProfilePhotoPicker({
             {uploading ? 'Uploading…' : avatarUrl || previewUrl ? 'Change photo' : 'Add profile photo'}
           </button>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            Property Pocket needs access to your photos to set a profile picture. You&apos;ll be prompted by your
-            browser or device.
+            Property Pocket needs access to your photos only to set a profile picture you choose. We do not browse
+            your library in the background — you&apos;ll be prompted when you tap Add/Change photo.
           </p>
         </div>
       </div>

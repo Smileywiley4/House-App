@@ -524,7 +524,7 @@ async def append_marketing_signup(
 
 
 async def mark_account_cancelled(user_id: str) -> bool:
-    """Mark the CRM row as Deleted when the user cancels / deletes their account."""
+    """Mark the CRM row as Deleted and clear personal contact fields on deletion."""
     target = (user_id or "").strip()
     if not target:
         return True
@@ -533,14 +533,15 @@ async def mark_account_cancelled(user_id: str) -> bool:
 
     await ensure_marketing_sheet_layout()
     now = _format_utc()
-    status_letter = _column_letter(STATUS_COLUMN_INDEX)
-    updated_letter = _column_letter(STATUS_UPDATED_COLUMN_INDEX)
+    name_idx = MARKETING_SHEET_HEADERS.index("Name")
+    source_idx_abs = MARKETING_SHEET_HEADERS.index("Source")
+    name_letter = _column_letter(name_idx)
+    source_letter = _column_letter(source_idx_abs)
 
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             row_number = await _find_row_index_by_user_id(client, target)
             if row_number is None:
-                # Still create a cancelled stub so the sheet reflects the deletion event.
                 return await upsert_account_row(
                     user_id=target,
                     email=None,
@@ -554,14 +555,36 @@ async def mark_account_cancelled(user_id: str) -> bool:
                     status_updated_at=now,
                 )
 
+            clear_range = f"{name_letter}{row_number}:{source_letter}{row_number}"
+            get_resp = await client.get(
+                f"{SHEETS_API}/{_sheet_id()}/values/{clear_range}",
+                headers=_auth_headers(),
+            )
+            get_resp.raise_for_status()
+            prev = ((get_resp.json() or {}).get("values") or [[]])[0]
+            width = source_idx_abs - name_idx + 1
+            row_vals = list(prev) + [""] * max(0, width - len(prev))
+            row_vals = row_vals[:width]
+            row_vals[0] = ""
+            row_vals[1] = "[deleted]"
+            row_vals[2] = ""
+            opt_idx = MARKETING_SHEET_HEADERS.index("Marketing opt-in") - name_idx
+            if 0 <= opt_idx < len(row_vals):
+                row_vals[opt_idx] = "No"
+            status_idx = STATUS_COLUMN_INDEX - name_idx
+            updated_idx = STATUS_UPDATED_COLUMN_INDEX - name_idx
+            row_vals[status_idx] = "Deleted"
+            row_vals[updated_idx] = now
+            row_vals[source_idx_abs - name_idx] = "account_deletion"
+
             response = await client.put(
-                f"{SHEETS_API}/{_sheet_id()}/values/{status_letter}{row_number}:{updated_letter}{row_number}",
+                f"{SHEETS_API}/{_sheet_id()}/values/{clear_range}",
                 params={"valueInputOption": "RAW"},
-                json={"values": [["Deleted", now]]},
+                json={"values": [row_vals]},
                 headers=_auth_headers(),
             )
             response.raise_for_status()
-        logger.info("Marked account sheet row Deleted for user %s", target)
+        logger.info("Marked account sheet row Deleted (PII cleared) for user %s", target)
         return True
     except Exception as exc:
         logger.warning("Failed marking account cancelled for user %s: %s", target, exc)

@@ -21,11 +21,15 @@ import {
   SlidersHorizontal,
   Cog,
   LogOut,
+  Download,
 } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import { useAuth } from "@/lib/AuthContext";
 import { getSharedSupabase } from "@/lib/supabase";
+import { clearClientAuthMemory } from "@/lib/clearClientAuth";
+import { SUPPORT_EMAIL } from "@/core/companyConfig";
+import { toast } from "@/components/ui/use-toast";
 import { MANDATORY_CATEGORIES, OPTIONAL_CATEGORIES, NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import RecommendationEngine from "@/components/profile/RecommendationEngine";
 import ClientAssignmentsInbox from "@/components/realtor/ClientAssignmentsInbox";
@@ -129,6 +133,17 @@ function ProfileInner() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState("");
 
   // Weights: 0–10 per category
   const [weights, setWeights] = useState({});
@@ -160,7 +175,58 @@ function ProfileInner() {
       setLoadingScores(false);
     });
     api.entities.Preset.list(null).then(setPresets).catch(() => setPresets([]));
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await api.auth.getEmailChangeStatus?.();
+        if (cancelled || !status) return;
+        if (status.pendingEmail) setPendingEmail(status.pendingEmail);
+        if (status.email) setEmail(status.email);
+      } catch {
+        /* optional adapter method */
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
+
+  /** After confirming the email-change link, land back on Security with a success toast. */
+  useEffect(() => {
+    if (searchParams.get("email_changed") !== "1") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await refreshUser();
+        const u = await api.auth.me();
+        if (cancelled) return;
+        setUser(u);
+        setEmail(u.email || "");
+        setPendingEmail("");
+        setNewEmail("");
+        toast({
+          title: "Email updated",
+          description: `You can now sign in with ${u.email || "your new email"}.`,
+        });
+      } catch {
+        toast({
+          title: "Email confirmed",
+          description: "Your login email was updated. Sign in with the new address next time.",
+        });
+      } finally {
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete("email_changed");
+            next.set("tab", "security");
+            return next;
+          },
+          { replace: true }
+        );
+        setTab("security");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once on return from email confirm link
 
   const saveAccount = async () => {
     setSaving(true);
@@ -172,15 +238,15 @@ function ProfileInner() {
         brokerage,
         state: stateVal,
       });
-      if (email && user?.email && email !== user.email) {
-        await api.auth.updateEmail(email);
-      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      // Let the UI remain usable; show error inline if possible
       console.error(err);
-      alert(err?.message || "Could not save account changes.");
+      toast({
+        title: "Could not save",
+        description: err?.message || "Could not save account changes.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -202,12 +268,99 @@ function ProfileInner() {
       setPasswordSaved(true);
       setNewPassword("");
       setConfirmPassword("");
+      toast({ title: "Password updated", description: "Use your new password the next time you sign in." });
       setTimeout(() => setPasswordSaved(false), 2000);
     } catch (err) {
       console.error(err);
       setPasswordError(err?.message || "Could not update password. Try again.");
+      toast({
+        title: "Password update failed",
+        description: err?.message || "Could not update password. Try again.",
+        variant: "destructive",
+      });
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const changeEmail = async () => {
+    setEmailError("");
+    const next = newEmail.trim().toLowerCase();
+    if (!next || !next.includes("@")) {
+      setEmailError("Enter a valid email address.");
+      return;
+    }
+    if (user?.email && next === String(user.email).trim().toLowerCase()) {
+      setEmailError("That is already your current email.");
+      return;
+    }
+    setEmailSaving(true);
+    try {
+      const result = await api.auth.updateEmail(next);
+      const pending = result?.pendingEmail || next;
+      setPendingEmail(pending);
+      setNewEmail("");
+      setEmailSent(true);
+      toast({
+        title: "Verification email sent",
+        description: `Check ${pending} and click the confirmation link. Your login email stays ${user?.email || "unchanged"} until then.`,
+      });
+      setTimeout(() => setEmailSent(false), 4000);
+    } catch (err) {
+      console.error(err);
+      const msg = err?.message || "Could not start email change. Try again.";
+      setEmailError(msg);
+      toast({ title: "Email change failed", description: msg, variant: "destructive" });
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+
+  const downloadMyData = async () => {
+    setExportLoading(true);
+    setExportError("");
+    try {
+      const data = await api.auth.exportMe();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `property-pocket-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      setExportError(err?.message || `Could not export. Email ${SUPPORT_EMAIL} for help.`);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (deleteConfirmText.trim() !== "DELETE") {
+      setDeleteError("Type DELETE in all caps to confirm.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await api.auth.deleteMe();
+      clearClientAuthMemory();
+      try {
+        const sb = getSharedSupabase();
+        if (sb) await sb.auth.signOut({ scope: "global" });
+      } catch {
+        /* already deleted */
+      }
+      clearClientAuthMemory();
+      window.location.href = `${window.location.origin}/login?deleted=1`;
+    } catch (err) {
+      console.error(err);
+      setDeleteError(err?.message || "Could not delete account. Try again or contact support.");
+      setDeleting(false);
     }
   };
 
@@ -317,7 +470,7 @@ function ProfileInner() {
                 { id: "profile", title: "Profile", desc: "Personal & contact info", icon: User },
                 { id: "usage", title: "Usage", desc: "Scores, presets, activity", icon: Activity },
                 { id: "settings", title: "Settings", desc: "Appearance & this device", icon: Cog },
-                { id: "security", title: "Security", desc: "Password & sign out", icon: Shield },
+                { id: "security", title: "Security", desc: "Email, password & sign out", icon: Shield },
                 { id: "billing", title: "Billing", desc: "Plan & payment methods", icon: CreditCard },
                 { id: "preferences", title: "Score preferences", desc: "Category weights", icon: SlidersHorizontal },
                 { id: "presets", title: "Presets", desc: "Saved filter sets", icon: Bookmark },
@@ -409,10 +562,20 @@ function ProfileInner() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                  readOnly
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-muted/40 text-sm text-foreground"
                 />
-                <p className="text-xs text-slate-400 mt-1">Email changes may require confirmation depending on your Supabase settings.</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  To change your login email, go to{" "}
+                  <button
+                    type="button"
+                    onClick={() => selectTab("security")}
+                    className="text-[#10b981] hover:underline font-semibold"
+                  >
+                    Security
+                  </button>
+                  . A verification link is sent to the new address before it becomes active.
+                </p>
               </div>
 
               <div>
@@ -507,9 +670,52 @@ function ProfileInner() {
           <div className="max-w-lg space-y-8">
             <div>
               <h2 className="text-lg font-bold text-foreground mb-1">Security</h2>
-              <p className="text-slate-400 text-sm">Password and session for this browser.</p>
+              <p className="text-slate-400 text-sm">Email, password, and session for this browser.</p>
             </div>
             <SessionOnDeviceCard />
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+              <p className="text-sm font-semibold text-foreground">Change email</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Current login email: <span className="font-semibold text-foreground">{email || "—"}</span>
+              </p>
+              {pendingEmail ? (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-50/80 dark:bg-amber-950/30 px-4 py-3 space-y-1">
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Verification pending</p>
+                  <p className="text-xs text-amber-800/90 dark:text-amber-200/90 leading-relaxed">
+                    We sent a confirmation link to <strong>{pendingEmail}</strong>. Keep using{" "}
+                    <strong>{email || "your current email"}</strong> to sign in until you confirm.
+                    Check spam if you do not see it.
+                  </p>
+                </div>
+              ) : null}
+              <div className="space-y-3">
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="New email address"
+                  autoComplete="email"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                />
+                {emailError && <p className="text-xs text-red-600 font-semibold">{emailError}</p>}
+                <button
+                  type="button"
+                  onClick={changeEmail}
+                  disabled={emailSaving || !newEmail.trim()}
+                  className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+                    emailSent ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                  } disabled:opacity-60`}
+                >
+                  {emailSaving
+                    ? "Sending…"
+                    : emailSent
+                      ? "Verification email sent"
+                      : pendingEmail
+                        ? "Resend verification"
+                        : "Send verification email"}
+                </button>
+              </div>
+            </div>
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
               <p className="text-sm font-semibold text-foreground">Change password</p>
               <div className="space-y-3">
@@ -553,6 +759,88 @@ function ProfileInner() {
                 <LogOut size={16} />
                 Sign out
               </button>
+            </div>
+
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-3">
+              <p className="text-sm font-semibold text-foreground">Download my data</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Export a JSON snapshot of your profile, scores, presets, projects, contacts, and shares.
+                Payment card numbers are never stored by us (Stripe processes payments). You can also email{" "}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">{SUPPORT_EMAIL}</a>.
+              </p>
+              <button
+                type="button"
+                onClick={downloadMyData}
+                disabled={exportLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#1a2234] hover:bg-[#243050] text-white disabled:opacity-60"
+              >
+                <Download size={16} />
+                {exportLoading ? "Preparing…" : "Download my data"}
+              </button>
+              {exportError ? <p className="text-xs text-red-600 font-semibold">{exportError}</p> : null}
+            </div>
+
+            <div className="bg-card rounded-2xl border border-red-500/40 p-6 space-y-3">
+              <p className="text-sm font-semibold text-foreground">Delete account</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Permanently deletes your account and associated personal data. Any active web subscription is{" "}
+                <strong className="text-foreground">canceled immediately</strong> so you are{" "}
+                <strong className="text-foreground">not charged at the next billing period</strong>.
+                Access ends when deletion completes. Unused referral credits are forfeited. See{" "}
+                <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms</Link>
+                {" "}and{" "}
+                <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy</Link>.
+              </p>
+              {!confirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteError("");
+                    setConfirmDelete(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm border border-red-500/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  <Trash2 size={16} />
+                  Delete my account…
+                </button>
+              ) : (
+                <div className="space-y-3 rounded-xl border border-red-500/30 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                    This cannot be undone. Type DELETE to confirm.
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    autoComplete="off"
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-red-500"
+                  />
+                  {deleteError ? <p className="text-xs text-red-600 font-semibold">{deleteError}</p> : null}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={deleteAccount}
+                      disabled={deleting || deleteConfirmText.trim() !== "DELETE"}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                    >
+                      {deleting ? "Deleting…" : "Permanently delete account"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDelete(false);
+                        setDeleteConfirmText("");
+                        setDeleteError("");
+                      }}
+                      disabled={deleting}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

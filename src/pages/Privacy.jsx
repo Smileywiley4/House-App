@@ -52,6 +52,14 @@ export default function Privacy() {
           a feature you explicitly use requests that and you approve it.
         </li>
         <li>
+          <strong>Profile photos &amp; visit photos</strong> — Images you choose to upload (avatar or property visit
+          photos). Uploads happen only after you pick a file; we do not access your photo library in the background.
+        </li>
+        <li>
+          <strong>Referrals</strong> — Invite codes you share or redeem, and whether a referral credit was applied
+          (billing status only — not card numbers).
+        </li>
+        <li>
           <strong>Payment data</strong> — Processed by Stripe (web) and, if applicable, Apple / Google / RevenueCat
           (mobile). We receive subscription and entitlement status; we do not store full card numbers.
         </li>
@@ -80,10 +88,11 @@ export default function Privacy() {
       <p>We do <strong>not</strong> sell your personal information to data brokers. We share information only as needed to run the Service or as required by law:</p>
       <ul>
         <li>
-          <strong>Processors</strong> — Supabase (auth/database), Stripe (payments), Vercel and Railway (or similar
-          hosting), Google (Maps/Street View/OAuth/ads where applicable), RentCast (property data), email providers
-          such as Resend, Apple/Google/RevenueCat (mobile billing), and Google Sheets (internal CRM for marketing
-          opt-ins only — not for sale).
+          <strong>Processors</strong> — Supabase (auth/database/storage), Stripe (payments), Vercel and Railway (or
+          similar hosting), Google (Maps/Street View/OAuth/ads where applicable), RentCast (licensed property data),
+          OpenAI (and optionally other LLM providers) when you use AI-assisted features such as Evaluate insights,
+          email providers such as Resend (if enabled), Apple/Google/RevenueCat (mobile billing), and Google Sheets
+          (internal CRM for account status / marketing opt-ins only — not for sale; never card data).
         </li>
         <li>
           <strong>User-initiated shares</strong> — When you invite a client, share a link, or use realtor–client
@@ -114,8 +123,18 @@ export default function Privacy() {
       <h2>5. Cookies &amp; local storage</h2>
       <p>
         We use cookies and similar technologies (including local/session storage) for sign-in sessions, preferences,
-        security, analytics needed to operate the site, and — where applicable — advertising consent and delivery.
-        You can control cookies through your browser; disabling them may break login or core features.
+        security, and essential site operation. If advertising is shown to guests or free users, ad partners may set
+        additional cookies subject to your consent choices where required. We do not use non-essential analytics
+        cookies beyond what is needed to run and secure the Service unless disclosed here or at collection. You can
+        control cookies through your browser; disabling them may break login or core features.
+      </p>
+
+      <h2>5A. AI / LLM processing</h2>
+      <p>
+        Some features (for example Evaluate insights) may send property-related prompts and limited user-provided
+        context to LLM processors such as OpenAI to generate informational outputs. Do not submit sensitive personal
+        data you do not want processed by those providers. Outputs are estimates only — see our Terms and product
+        disclaimers.
       </p>
 
       <h2>6. Retention</h2>
@@ -136,8 +155,20 @@ export default function Privacy() {
       <p>
         Depending on where you live (including under laws such as the CCPA/CPRA in California or GDPR-style rules in
         the EEA/UK, if they apply to you), you may have rights to access, correct, delete, or export certain personal
-        data, or to object to/restrict certain processing. You can often manage profile data in your account. For
-        access or deletion requests, email{' '}
+        data, or to object to/restrict certain processing. In your account you can:
+      </p>
+      <ul>
+        <li>
+          <strong>Download my data</strong> — Profile → Security → Download my data (JSON export), or email{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+        </li>
+        <li>
+          <strong>Delete account</strong> — Profile → Security → Delete account. This cancels web billing so you are
+          not charged at the next billing period, removes personal data as described in our Terms, and signs you out.
+        </li>
+      </ul>
+      <p>
+        For other access or deletion requests, email{" "}
         <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> from your account email. We may need to verify your
         identity. We do not discriminate against you for exercising privacy rights available under applicable law.
         We do not guarantee that every jurisdiction&apos;s rights apply to every request; we will respond as required

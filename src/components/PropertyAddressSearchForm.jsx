@@ -296,6 +296,8 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
         type="button"
         onClick={useCurrentLocation}
         disabled={locating || loading}
+        title="Uses your device location only when you tap, to search homes nearby"
+        aria-label="Use current location to search nearby homes"
         className={
           isHero
             ? "mt-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[#10b981] hover:text-[#34d399] disabled:opacity-60 mx-auto sm:mx-0"

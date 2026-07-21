@@ -246,11 +246,36 @@ export function createPythonBackendAdapter() {
     auth: {
       me: () => requestAuthProfile('GET', '/api/auth/me'),
       updateMe: (profile) => requestAuthProfile('PATCH', '/api/auth/me', profile),
-      deleteMe: () => request('DELETE', '/api/auth/me', { confirmation: 'DELETE' }),
+      deleteMe: () => requestAuthProfile('DELETE', '/api/auth/me', { confirmation: 'DELETE' }),
+      exportMe: () => requestAuthProfile('GET', '/api/auth/me/export'),
       updateEmail: async (email) => {
-        // Supabase client updates auth email; backend /api/auth/me only stores profile fields.
-        const { error } = await getSupabase().auth.updateUser({ email });
+        // Official Supabase email-change: confirmation is emailed to the new address.
+        // profiles.email is synced after confirmation (DB trigger + /api/auth/me).
+        const normalized = String(email || '').trim().toLowerCase();
+        if (!normalized.includes('@')) {
+          throw new Error('Enter a valid email address.');
+        }
+        const emailRedirectTo =
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/login?redirect=${encodeURIComponent('/profile?tab=security&email_changed=1')}`
+            : undefined;
+        const { data, error } = await getSupabase().auth.updateUser(
+          { email: normalized },
+          emailRedirectTo ? { emailRedirectTo } : undefined
+        );
         if (error) throw error;
+        return {
+          email: data?.user?.email || null,
+          pendingEmail: data?.user?.new_email || normalized,
+        };
+      },
+      getEmailChangeStatus: async () => {
+        const { data: { user } } = await getSupabase().auth.getUser();
+        if (!user) return { email: null, pendingEmail: null };
+        return {
+          email: user.email || null,
+          pendingEmail: user.new_email || null,
+        };
       },
       updatePassword: async (password) => {
         const { error } = await getSupabase().auth.updateUser({ password });
@@ -356,7 +381,13 @@ export function createPythonBackendAdapter() {
       inbox: () => request('GET', '/api/shares/inbox'),
       sent: () => request('GET', '/api/shares/sent'),
       pendingCount: () => request('GET', '/api/shares/pending-count'),
+      clientReport: (contactUserId) =>
+        request(
+          'GET',
+          `/api/shares/client-report?contact_user_id=${encodeURIComponent(contactUserId || '')}`,
+        ),
       get: (id) => request('GET', `/api/shares/${encodeURIComponent(id)}`),
+      markViewed: (id) => request('POST', `/api/shares/${encodeURIComponent(id)}/view`),
       returnScores: (id, body) => request('POST', `/api/shares/${encodeURIComponent(id)}/return`, body),
       cancel: (id) => request('POST', `/api/shares/${encodeURIComponent(id)}/cancel`),
     },

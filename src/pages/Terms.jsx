@@ -257,6 +257,35 @@ export default function Terms() {
         law.
       </p>
 
+      <h2>18. Account deletion</h2>
+      <p>
+        You may delete your account from Profile → Security (web). Deletion is permanent and typically includes:
+      </p>
+      <ul>
+        <li>
+          Removal or anonymization of personal account data in our systems (profile, contacts, shares, projects,
+          photos/avatars, and related app data), subject to legal retention needs (for example limited billing or
+          fraud records).
+        </li>
+        <li>
+          <strong>Subscription billing</strong> — Any active Stripe web subscription is{" "}
+          <strong>canceled immediately</strong> so that <strong>no charge occurs at the next billing period</strong>.
+          Paid access ends when deletion completes (you do not keep mid-cycle access after deletion).
+        </li>
+        <li>
+          <strong>Referral credits</strong> — Any unused referral / invite credits are <strong>forfeited</strong> on
+          deletion. Auto-renewal stops because the subscription is canceled.
+        </li>
+        <li>
+          Our internal account CRM (Google Sheets) is updated to a Deleted status with a timestamp; contact fields are
+          cleared. Card numbers are never stored in that sheet.
+        </li>
+      </ul>
+      <p>
+        After deletion we clear local session data on the device that completed the request; sign out on other devices
+        as needed. App-store subscriptions (if any) must also be canceled in Apple / Google subscription settings.
+      </p>
+
       <h2>19. Invite &amp; referral program</h2>
       <p>
         {APP_NAME} may offer an invite / referral program that lets you share a personal invite link with contacts.

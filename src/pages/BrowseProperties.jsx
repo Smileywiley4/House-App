@@ -974,8 +974,8 @@ export default function BrowseProperties() {
               type="button"
               onClick={useCurrentLocation}
               disabled={locating || loading}
-              title="Use current location"
-              aria-label="Use current location"
+              title="Use current location to search nearby homes (only when you tap)"
+              aria-label="Use current location to search nearby homes"
               className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 shrink-0 disabled:opacity-60"
             >
               {locating ? (

@@ -12,6 +12,7 @@ import stripe
 from app.config import get_settings
 from app.dependencies import get_supabase_admin, get_current_user_id
 from app.google_sheets_marketing import mark_account_cancelled, upsert_account_row
+from app.account_deletion import collect_export_payload, run_account_deletion
 from app.signup_challenge import (
     SIGNUP_CODE_TTL_SEC,
     SIGNUP_RESEND_COOLDOWN_SEC,
@@ -494,6 +495,11 @@ async def me(user_id: str = Depends(get_current_user_id)):
         row = _profile_insert_from_auth(supabase, user_id)
         r = supabase.table("profiles").select("*").eq("id", user_id).execute()
         row = r.data[0] if r.data else row
+    # Prefer live auth email (source of truth after email-change confirmation).
+    auth_email = _auth_user_email(supabase, user_id)
+    if auth_email and row and (row.get("email") or "").lower() != auth_email.lower():
+        supabase.table("profiles").update({"email": auth_email}).eq("id", user_id).execute()
+        row = {**row, "email": auth_email}
     row = await maybe_sync_marketing_profile(supabase, row)
     return _profile_to_user(row)
 
@@ -534,60 +540,25 @@ async def update_me(body: UpdateProfileBody, user_id: str = Depends(get_current_
     return _profile_to_user(row)
 
 
+@router.get("/me/export")
+async def export_me(user_id: str = Depends(get_current_user_id)):
+    """Download a JSON snapshot of the signed-in user's primary account data."""
+    supabase = get_supabase_admin()
+    return collect_export_payload(supabase, user_id)
+
+
 @router.delete("/me", status_code=204)
 async def delete_me(body: DeleteAccountBody, user_id: str = Depends(get_current_user_id)):
-    """Permanently delete the signed-in account and first cancel web billing."""
-    del body  # validation above requires an explicit destructive confirmation
-    settings = get_settings()
+    """
+    Permanently delete the signed-in account:
+    cancel Stripe immediately (no next-period charge), mark Sheets CRM Deleted,
+    wipe storage, forfeit referrals, delete auth user (cascades personal data).
+    """
+    del body
     supabase = get_supabase_admin()
-    profile_response = (
-        supabase.table("profiles")
-        .select("stripe_customer_id")
-        .eq("id", user_id)
-        .limit(1)
-        .execute()
+    await run_account_deletion(
+        supabase,
+        user_id,
+        auth_email=_auth_user_email(supabase, user_id),
     )
-    profile = profile_response.data[0] if profile_response.data else {}
-    stripe_customer_id = profile.get("stripe_customer_id")
-
-    if stripe_customer_id:
-        if not settings.stripe_secret_key:
-            raise HTTPException(
-                status_code=503,
-                detail="Account deletion is temporarily unavailable while billing is being verified.",
-            )
-        try:
-            stripe.api_key = settings.stripe_secret_key
-            subscriptions = stripe.Subscription.list(
-                customer=stripe_customer_id,
-                status="all",
-                limit=100,
-            )
-            cancellable = {"active", "trialing", "past_due", "unpaid", "paused"}
-            for subscription in subscriptions.auto_paging_iter():
-                if getattr(subscription, "status", None) in cancellable:
-                    stripe.Subscription.cancel(subscription.id)
-        except Exception as exc:
-            logger.exception("Could not cancel Stripe subscriptions before account deletion")
-            raise HTTPException(
-                status_code=502,
-                detail="We could not cancel web billing, so the account was not deleted. Please try again.",
-            ) from exc
-
-    if not await mark_account_cancelled(user_id):
-        raise HTTPException(
-            status_code=502,
-            detail="We could not update account records, so the account was not deleted. Please try again.",
-        )
-
-    try:
-        # This audit table intentionally has no auth foreign key, so remove it explicitly.
-        supabase.table("iap_events").delete().eq("app_user_id", user_id).execute()
-        supabase.auth.admin.delete_user(user_id)
-    except Exception as exc:
-        logger.exception("Supabase account deletion failed")
-        raise HTTPException(
-            status_code=502,
-            detail="Account deletion failed. No further action is required; please try again.",
-        ) from exc
     return Response(status_code=204)

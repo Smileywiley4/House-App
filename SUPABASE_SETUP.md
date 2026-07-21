@@ -134,6 +134,20 @@ CORS_ORIGINS=http://localhost:5173,https://your-vercel-app.vercel.app
 4. The app uses **PKCE** (`flowType: 'pkce'`). After Google redirects back, `/login` exchanges the `?code=` for a session — works for **new sign-ups and returning users** with the same button.
 5. Apply migration `20260709140000_oauth_profile_names.sql` so Google display names populate `profiles.full_name` on first sign-in.
 
+### Change email (Profile → Security)
+
+Users request an email change from **Profile → Security → Change email**. The app calls Supabase Auth `updateUser({ email })`, which sends a **confirmation link to the new address**. The login email does **not** change until that link is confirmed.
+
+**Dashboard (required — not fully configurable via Management API):**
+
+1. Supabase Dashboard → **Authentication** → **Email Templates**
+2. Confirm the **Change Email Address** template is enabled (default on most projects). Customize subject/body if desired; keep the `{{ .ConfirmationURL }}` link.
+3. **Authentication** → **Providers** → **Email** (or **Auth** → **Settings** depending on dashboard version):
+   - **Secure email change**: leave **ON** if you want confirmation from the *old* and *new* addresses (recommended). If OFF, only the new address must confirm.
+4. Ensure production/app URLs are already in **Redirect URLs** (section 6 above) so the confirmation link can return via `/login` to `/profile?tab=security&email_changed=1`.
+
+Apply migration `20260721260000_sync_profile_email_on_auth_change.sql` so `profiles.email` updates when `auth.users.email` changes after confirmation. The Python `/api/auth/me` endpoint also reconciles `profiles.email` from Auth as a fallback.
+
 ---
 
 ## 7. Run locally

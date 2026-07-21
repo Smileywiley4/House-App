@@ -1151,6 +1151,19 @@ export default function Login() {
           </div>
           )}
         </div>
+        <p className="mt-6 text-center text-[11px] text-slate-400">
+          <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">
+            Terms
+          </Link>
+          {" · "}
+          <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">
+            Privacy
+          </Link>
+          {" · "}
+          <Link to={createPageUrl("Support")} className="text-[#10b981] hover:underline">
+            Support
+          </Link>
+        </p>
       </div>
     </div>
     </>

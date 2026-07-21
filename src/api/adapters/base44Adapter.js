@@ -11,6 +11,7 @@ export const base44Adapter = {
     updateEmail: async () => {
       throw new Error("Email updates require Supabase/Python backend");
     },
+    getEmailChangeStatus: async () => ({ email: null, pendingEmail: null }),
     updatePassword: async () => {
       throw new Error("Password updates require Supabase/Python backend");
     },
@@ -598,7 +599,9 @@ export const base44Adapter = {
     inbox: () => Promise.reject(new Error('Property shares require Python backend')),
     sent: () => Promise.reject(new Error('Property shares require Python backend')),
     pendingCount: () => Promise.resolve({ count: 0 }),
+    clientReport: () => Promise.reject(new Error('Property shares require Python backend')),
     get: () => Promise.reject(new Error('Property shares require Python backend')),
+    markViewed: () => Promise.reject(new Error('Property shares require Python backend')),
     returnScores: () => Promise.reject(new Error('Property shares require Python backend')),
     cancel: () => Promise.reject(new Error('Property shares require Python backend')),
   },

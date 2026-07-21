@@ -78,12 +78,47 @@ export function createSupabaseAdapter() {
         return profileToUser({ ...user, ...updates });
       },
       updateEmail: async (email) => {
-        const { error } = await supabase.auth.updateUser({ email });
+        const normalized = String(email || '').trim().toLowerCase();
+        if (!normalized.includes('@')) {
+          throw new Error('Enter a valid email address.');
+        }
+        const emailRedirectTo =
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/login?redirect=${encodeURIComponent('/profile?tab=security&email_changed=1')}`
+            : undefined;
+        const { data, error } = await supabase.auth.updateUser(
+          { email: normalized },
+          emailRedirectTo ? { emailRedirectTo } : undefined
+        );
         if (error) throw error;
+        return {
+          email: data?.user?.email || null,
+          pendingEmail: data?.user?.new_email || normalized,
+        };
+      },
+      getEmailChangeStatus: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { email: null, pendingEmail: null };
+        return {
+          email: user.email || null,
+          pendingEmail: user.new_email || null,
+        };
       },
       updatePassword: async (password) => {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
+      },
+      deleteMe: async () => {
+        throw Object.assign(
+          new Error('Account deletion requires the Python API (set VITE_USE_PYTHON_BACKEND=true).'),
+          { status: 503 }
+        );
+      },
+      exportMe: async () => {
+        throw Object.assign(
+          new Error('Data export requires the Python API (set VITE_USE_PYTHON_BACKEND=true).'),
+          { status: 503 }
+        );
       },
       logout: async (returnUrl) => {
         await supabase.auth.signOut({ scope: 'local' });
@@ -1017,7 +1052,9 @@ export function createSupabaseAdapter() {
       inbox: () => Promise.reject(new Error('Property shares require Python backend')),
       sent: () => Promise.reject(new Error('Property shares require Python backend')),
       pendingCount: () => Promise.resolve({ count: 0 }),
+      clientReport: () => Promise.reject(new Error('Property shares require Python backend')),
       get: () => Promise.reject(new Error('Property shares require Python backend')),
+      markViewed: () => Promise.reject(new Error('Property shares require Python backend')),
       returnScores: () => Promise.reject(new Error('Property shares require Python backend')),
       cancel: () => Promise.reject(new Error('Property shares require Python backend')),
     },

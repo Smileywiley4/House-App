@@ -96,7 +96,7 @@ const PLANS = [
       "Share scorecards with clients",
       "Score off-market properties",
       "Realtor profile & license verification",
-      "Client comparison reports (soon)",
+      "Client comparison reports",
       "MLS integration (coming soon)",
     ],
   },
@@ -189,14 +189,15 @@ export default function Pricing() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-8 max-w-2xl mx-auto leading-relaxed">
-          Paid plans open secure Stripe checkout for a recurring subscription (auto-renewal).
-          Subscribes with auto-renewal; cancel anytime in Profile/billing.
-          You&apos;ll review payment details first, then accept our{' '}
+          <strong className="text-slate-500 font-semibold">Subscription disclosure:</strong> Paid plans use secure
+          Stripe checkout. Prices are as shown (e.g. Premium $3.99/mo or $39.99/yr; Realtor as listed). Subscriptions{" "}
+          <strong className="text-slate-500 font-semibold">auto-renew</strong> each billing period until you cancel.
+          Cancel anytime via Profile → Billing (Stripe customer portal). Deleting your account cancels web billing
+          immediately so you are not charged at the next period. Review our{" "}
           <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms of Service</Link>
-          {' '}and{' '}
+          {" "}and{" "}
           <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy Policy</Link>
-          {' '}before completing your purchase.
-          At checkout you can also enter a promotion code if you have one.
+          {" "}before purchase. At checkout you can also enter a promotion code if you have one.
         </p>
 
         <PricingAccessCode isAuthenticated={isAuthenticated} refreshUser={refreshUser} />
@@ -271,9 +272,9 @@ export default function Pricing() {
         {/* FAQ note */}
         <p className="text-center text-xs text-slate-400 mt-10">
           Subscriptions auto-renew each billing period until canceled. Cancel anytime from Profile → Billing.
-          Questions?{' '}
+          Your payment method is charged at each renewal unless you cancel first. Questions?{" "}
           <Link to={createPageUrl("Support")} className="text-[#10b981] hover:underline">Contact support</Link>
-          {' '}or email{' '}
+          {" "}or email{" "}
           <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">{SUPPORT_EMAIL}</a>
         </p>
       </div>

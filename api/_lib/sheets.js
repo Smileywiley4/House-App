@@ -128,3 +128,68 @@ export async function upsertAccountRow(row) {
   }
   return true;
 }
+
+/** Mark Accounts CRM row Deleted and clear contact PII (Name/Email/Phone). */
+export async function markAccountDeleted(userId) {
+  const sheetId = process.env.GOOGLE_MARKETING_SHEET_ID || "";
+  const sa = parseSa(process.env.GOOGLE_SHEETS_SA_JSON || "");
+  if (!sheetId || !sa?.client_email || !sa?.private_key) return false;
+  if (!userId) return false;
+
+  const token = await googleAccessToken(sa);
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  const valuesRes = await fetch(
+    `${SHEETS_API}/${sheetId}/values/${encodeURIComponent(`${TAB}!A:P`)}`,
+    { headers },
+  );
+  const valuesData = await valuesRes.json().catch(() => ({}));
+  const values = valuesData.values || [];
+  const uid = String(userId);
+  let existingIdx = -1;
+  for (let i = 1; i < values.length; i += 1) {
+    if (String(values[i][15] || "") === uid) {
+      existingIdx = i + 1;
+      break;
+    }
+  }
+
+  const now = new Date();
+  const stamp = `${now.toISOString().replace("T", " ").slice(0, 19)} UTC`;
+
+  if (existingIdx > 0) {
+    const prev = values[existingIdx - 1] || [];
+    const line = [...prev];
+    while (line.length < 16) line.push("");
+    line[2] = "";
+    line[3] = "[deleted]";
+    line[4] = "";
+    line[9] = "No";
+    line[12] = "Deleted";
+    line[13] = stamp;
+    line[14] = "account_deletion";
+    line[15] = uid;
+    await fetch(
+      `${SHEETS_API}/${sheetId}/values/${encodeURIComponent(`${TAB}!A${existingIdx}:P${existingIdx}`)}?valueInputOption=RAW`,
+      { method: "PUT", headers, body: JSON.stringify({ values: [line] }) },
+    );
+  } else {
+    const signupDate = now.toISOString().slice(0, 10);
+    const signupTime = `${now.toISOString().slice(11, 19)} UTC`;
+    await fetch(
+      `${SHEETS_API}/${sheetId}/values/${encodeURIComponent(`${TAB}!A:P`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          values: [[
+            signupDate, signupTime, "", "[deleted]", "", "", "", "", "", "No", "No", "",
+            "Deleted", stamp, "account_deletion", uid,
+          ]],
+        }),
+      },
+    );
+  }
+  return true;
+}
+

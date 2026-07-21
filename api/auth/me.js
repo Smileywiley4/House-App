@@ -192,3 +192,114 @@ export async function PATCH(request) {
     return json(502, { detail: err.message || "Profile update failed" });
   }
 }
+
+async function cancelStripeSubscriptions(customerId) {
+  const key = process.env.STRIPE_SECRET_KEY || "";
+  if (!customerId || !key) return false;
+  const listRes = await fetch(
+    `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(customerId)}&status=all&limit=100`,
+    { headers: { Authorization: `Bearer ${key}` } },
+  );
+  const listData = await listRes.json().catch(() => ({}));
+  if (!listRes.ok) throw new Error(listData?.error?.message || "Stripe list failed");
+  const cancellable = new Set(["active", "trialing", "past_due", "unpaid", "paused"]);
+  for (const sub of listData.data || []) {
+    if (cancellable.has(sub.status)) {
+      const cancelRes = await fetch(`https://api.stripe.com/v1/subscriptions/${sub.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${key}` },
+      });
+      if (!cancelRes.ok) {
+        const err = await cancelRes.json().catch(() => ({}));
+        throw new Error(err?.error?.message || "Stripe cancel failed");
+      }
+    }
+  }
+  return true;
+}
+
+export async function DELETE(request) {
+  const { url, service } = env();
+  if (!url || !service) return json(503, { detail: "Authentication is not configured" });
+
+  const auth = request.headers.get("authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (!token) return json(401, { detail: "Not authenticated" });
+
+  const user = await getAuthUser(url, token);
+  if (!user?.id) return json(401, { detail: "Invalid or expired token" });
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+  if (body?.confirmation !== "DELETE") {
+    return json(400, { detail: 'confirmation must be "DELETE"' });
+  }
+
+  try {
+    const rows = await rest(url, service, `profiles?id=eq.${encodeURIComponent(user.id)}&select=*`);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    const stripeCustomerId = row?.stripe_customer_id || null;
+    let stripeCancelled = false;
+
+    if (stripeCustomerId) {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return json(503, {
+          detail: "Account deletion is temporarily unavailable while billing is being verified.",
+        });
+      }
+      try {
+        await cancelStripeSubscriptions(stripeCustomerId);
+        stripeCancelled = true;
+      } catch (err) {
+        return json(502, {
+          detail: err.message || "We could not cancel web billing, so the account was not deleted.",
+        });
+      }
+    }
+
+    let sheetMarked = false;
+    try {
+      const { markAccountDeleted } = await import("../_lib/sheets.js");
+      sheetMarked = Boolean(await markAccountDeleted(user.id));
+    } catch {
+      sheetMarked = false;
+    }
+
+    try {
+      await rest(url, service, "account_deletion_log", {
+        method: "POST",
+        body: {
+          user_id: user.id,
+          plan_at_deletion: row?.plan || "free",
+          had_stripe_customer: Boolean(stripeCustomerId),
+          stripe_cancelled: stripeCancelled,
+          sheet_marked: sheetMarked,
+          source: "profile_delete_vercel",
+        },
+      });
+    } catch {
+      /* non-fatal if migration not applied yet */
+    }
+
+    const delRes = await fetch(`${url}/auth/v1/admin/users/${user.id}`, {
+      method: "DELETE",
+      headers: {
+        apikey: service,
+        Authorization: `Bearer ${service}`,
+      },
+    });
+    if (!delRes.ok) {
+      const text = await delRes.text();
+      return json(502, { detail: text || "Account deletion failed" });
+    }
+
+    return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+  } catch (err) {
+    return json(502, { detail: err.message || "Account deletion failed" });
+  }
+}
+
