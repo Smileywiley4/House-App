@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import re
 from time import monotonic
 
 import httpx
@@ -103,19 +104,26 @@ async def _nominatim_search(q: str) -> list[dict]:
         elapsed = monotonic() - _last_nominatim_at
         if elapsed < 1.05:
             await asyncio.sleep(1.05 - elapsed)
-        params = {
+
+        params: dict[str, str] = {
             "format": "json",
             "limit": "1",
             "polygon_geojson": "1",
             "addressdetails": "0",
             "countrycodes": "us",
-            "q": q,
         }
+        # Structured postal-code lookup is faster/more reliable than free-text for ZIPs.
+        zip_m = re.fullmatch(r"(\d{5})(?:-\d{4})?", q.strip())
+        if zip_m:
+            params["postalcode"] = zip_m.group(1)
+        else:
+            params["q"] = q
+
         headers = {
             "Accept": "application/json",
             "User-Agent": USER_AGENT,
         }
-        async with httpx.AsyncClient(timeout=20) as client:
+        async with httpx.AsyncClient(timeout=15) as client:
             res = await client.get(NOMINATIM_SEARCH, params=params, headers=headers)
         _last_nominatim_at = monotonic()
         if res.status_code >= 400:
