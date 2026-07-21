@@ -15,7 +15,6 @@ import {
   Map as MapIcon,
   Loader2,
   Pencil,
-  Search,
   SlidersHorizontal,
   X,
 } from "lucide-react";
@@ -28,9 +27,11 @@ import BrowseFilters from "@/components/browse/BrowseFilters";
 import BrowsePresetsBar from "@/components/browse/BrowsePresetsBar";
 import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
 import StartProjectModal from "@/components/browse/StartProjectModal";
+import AddressAutocompleteInput from "@/components/AddressAutocompleteInput";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
-import { loadBrowseHandoff } from "@/lib/browseHandoff";
+import { loadBrowseHandoff, looksLikePlaceQuery } from "@/lib/browseHandoff";
 import { getCurrentPosition } from "@/lib/geolocation";
+import { getPropertyByAddress } from "@/core/propertyService";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -377,6 +378,8 @@ export default function BrowseProperties() {
   const [filters, setFilters] = useState({});
   const [scoreMeta, setScoreMeta] = useState(null);
   const [placeQuery, setPlaceQuery] = useState("");
+  /** Skip autocomplete when query was set by GPS / programmatic focus. */
+  const [suppressSuggestQuery, setSuppressSuggestQuery] = useState("");
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [radius, setRadius] = useState(5);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
@@ -760,9 +763,29 @@ export default function BrowseProperties() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const runPlaceSearch = async (e) => {
+  const focusMapOnCoords = useCallback(
+    (lat, lng, address, zoomLevel = 16, browseRadius = 2.5) => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+      if (address) setHighlight({ lat, lng, address });
+      else setHighlight(null);
+      setPolygon(null);
+      setAreaLabel("");
+      setDrawMode(false);
+      setDraftPoints([]);
+      skipNextMoveFetch.current = true;
+      setCenter({ lat, lng });
+      setZoom(zoomLevel);
+      setRadius(browseRadius);
+      setFlyToken((t) => t + 1);
+      fetchBrowse({ lat, lng, radius: browseRadius, polygon: null });
+      return true;
+    },
+    [fetchBrowse]
+  );
+
+  const runPlaceSearch = async (e, queryOverride) => {
     e?.preventDefault?.();
-    const q = placeQuery.trim();
+    const q = (queryOverride ?? placeQuery).trim();
     if (!q) return;
     setLoading(true);
     setError("");
@@ -773,8 +796,10 @@ export default function BrowseProperties() {
       }
       const boundary = await api.geo.boundary(q);
       if (boundary?.ring?.length >= 3) {
-        setPlaceQuery(boundary.label?.split(",")[0] || q);
-        applyBoundaryRing(boundary.ring, boundary.label || q);
+        const label = boundary.label || q;
+        setPlaceQuery(label.split(",")[0] || label);
+        setSuppressSuggestQuery(label.split(",")[0] || label);
+        applyBoundaryRing(boundary.ring, label);
         return;
       }
       if (Number.isFinite(boundary?.lat) && Number.isFinite(boundary?.lng)) {
@@ -783,6 +808,8 @@ export default function BrowseProperties() {
         setDraftPoints([]);
         setDrawMode(false);
         setHighlight(null);
+        setPlaceQuery(boundary.label?.split(",")[0] || q);
+        setSuppressSuggestQuery(boundary.label?.split(",")[0] || q);
         skipNextMoveFetch.current = true;
         setCenter({ lat: boundary.lat, lng: boundary.lng });
         setZoom(12);
@@ -799,6 +826,61 @@ export default function BrowseProperties() {
     }
   };
 
+  const focusOnPropertyAddress = async (address) => {
+    const q = (address || "").trim();
+    if (!q) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await getPropertyByAddress(q);
+      const lat = Number(data?.lat);
+      const lng = Number(data?.lng);
+      const label =
+        data?.formatted_address ||
+        [data?.address, data?.city, data?.state, data?.zip].filter(Boolean).join(", ") ||
+        q;
+      setPlaceQuery(label);
+      setSuppressSuggestQuery(label);
+      if (!focusMapOnCoords(lat, lng, label, 16, 2.5)) {
+        // Property found but no coords — fall back to place boundary.
+        await runPlaceSearch(null, q);
+      }
+    } catch (err) {
+      if (looksLikePlaceQuery(q)) {
+        setLoading(false);
+        await runPlaceSearch(null, q);
+        return;
+      }
+      setError(err?.message || "Could not find that address.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitBrowseSearch = async (e) => {
+    e?.preventDefault?.();
+    const q = placeQuery.trim();
+    if (!q) return;
+    if (looksLikePlaceQuery(q)) {
+      await runPlaceSearch(null, q);
+      return;
+    }
+    await focusOnPropertyAddress(q);
+  };
+
+  const onBrowseSuggestion = async (address, suggestion) => {
+    const q = (address || "").trim();
+    if (!q) return;
+    setPlaceQuery(q);
+    setSuppressSuggestQuery(q);
+    const kind = suggestion?.kind;
+    if (kind === "place" || (kind !== "property" && looksLikePlaceQuery(q))) {
+      await runPlaceSearch(null, q);
+      return;
+    }
+    await focusOnPropertyAddress(q);
+  };
+
   const useCurrentLocation = async () => {
     if (locating || loading) return;
     setError("");
@@ -811,6 +893,7 @@ export default function BrowseProperties() {
       setDrawMode(false);
       setHighlight({ lat, lng, address: "Current location" });
       setPlaceQuery("Current location");
+      setSuppressSuggestQuery("Current location");
       skipNextMoveFetch.current = true;
       setCenter({ lat, lng });
       setZoom(14);
@@ -864,16 +947,21 @@ export default function BrowseProperties() {
       )}
       <div className="border-b border-slate-200 bg-white px-4 py-3 sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex flex-col gap-3 lg:flex-row lg:items-center">
-          <form onSubmit={runPlaceSearch} className="flex-1 flex gap-2 min-w-0">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={placeQuery}
-                onChange={(e) => setPlaceQuery(e.target.value)}
-                placeholder="City, neighborhood, ZIP…"
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
-              />
-            </div>
+          <form onSubmit={submitBrowseSearch} className="flex-1 flex gap-2 min-w-0">
+            <AddressAutocompleteInput
+              value={placeQuery}
+              onChange={(next) => {
+                setSuppressSuggestQuery("");
+                setPlaceQuery(next);
+              }}
+              onSelect={onBrowseSuggestion}
+              suppressQuery={suppressSuggestQuery}
+              placeholder="City, neighborhood, ZIP, or address…"
+              ariaLabel="Search city, neighborhood, ZIP, or address"
+              icon="search"
+              showKindBadge
+              inputClassName="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+            />
             <button
               type="submit"
               disabled={loading || locating}
