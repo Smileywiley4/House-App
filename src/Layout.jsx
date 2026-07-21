@@ -1,11 +1,32 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, BarChart3, Columns, Zap, Building2, UserCircle, Search, LogIn, Camera, Settings, CreditCard, Shield, LogOut, Map, FolderKanban, Users, Inbox } from "lucide-react";
+import {
+  Home,
+  BarChart3,
+  Columns,
+  Zap,
+  Building2,
+  UserCircle,
+  Search,
+  LogIn,
+  Camera,
+  Settings,
+  CreditCard,
+  Shield,
+  LogOut,
+  Map,
+  FolderKanban,
+  Users,
+  Inbox,
+  X,
+} from "lucide-react";
 import { LayoutSeo } from "@/components/SeoHelmet";
 import { useAuth } from "@/lib/AuthContext";
 import SearchBarTop from "@/components/SearchBarTop";
 import SiteFooter from "@/components/trust/SiteFooter";
 import NotificationsBell from "@/components/NotificationsBell";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -27,6 +48,11 @@ const t = {
 
 export default function Layout({ children, currentPageName }) {
   const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileSearchOpen(false);
+  }, [currentPageName]);
 
   /** Profile / account hub is opened from the header avatar only (upper right). */
   const allNavItems = [
@@ -45,7 +71,10 @@ export default function Layout({ children, currentPageName }) {
 
   const navItems = isAuthenticated
     ? allNavItems
-    : allNavItems.filter(i => i.public);
+    : allNavItems.filter((i) => i.public);
+
+  const showHeaderSearch = currentPageName !== "Home";
+  const showMobileSearchPanel = showHeaderSearch && mobileSearchOpen;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors">
@@ -95,16 +124,33 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Top nav */}
       <header className="bg-[#1a2234] border-b border-white/5 px-4 sm:px-6 py-2 sticky top-0 z-40">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-3">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: t.accent }}>
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: t.accent }}
+            >
               <Home size={14} className="text-white" />
             </div>
             <span className="font-bold text-white tracking-tight text-base truncate">{t.label}</span>
-            <span className="ml-0.5 text-[10px] font-bold shrink-0" style={{ color: t.gold }}>✦</span>
+            <span className="ml-0.5 text-[10px] font-bold shrink-0" style={{ color: t.gold }}>
+              ✦
+            </span>
           </Link>
 
-          <div className="flex items-center shrink-0 gap-2">
+          <div className="flex items-center shrink-0 gap-1.5 sm:gap-2">
+            {showHeaderSearch && (
+              <button
+                type="button"
+                className="md:hidden flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234]"
+                aria-label={mobileSearchOpen ? "Close address search" : "Open address search"}
+                aria-expanded={mobileSearchOpen}
+                onClick={() => setMobileSearchOpen((open) => !open)}
+              >
+                {mobileSearchOpen ? <X size={18} strokeWidth={1.75} /> : <Search size={18} strokeWidth={1.75} />}
+              </button>
+            )}
+
             {isLoadingAuth ? (
               <span
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5"
@@ -116,68 +162,72 @@ export default function Layout({ children, currentPageName }) {
               <>
                 <NotificationsBell />
                 <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234] overflow-hidden"
-                    aria-label="Open account menu"
-                  >
-                    {user?.avatar_url ? (
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar_url} alt="" className="object-cover" />
-                        <AvatarFallback className="bg-transparent text-white">
-                          <UserCircle size={22} strokeWidth={1.75} />
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <UserCircle size={22} strokeWidth={1.75} />
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={8}>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-0.5">
-                      <span className="text-sm font-semibold truncate">{user?.full_name || "My account"}</span>
-                      {user?.email && (
-                        <span className="text-xs font-normal text-muted-foreground truncate">{user.email}</span>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234] overflow-hidden"
+                      aria-label="Open account menu"
+                    >
+                      {user?.avatar_url ? (
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.avatar_url} alt="" className="object-cover" />
+                          <AvatarFallback className="bg-transparent text-white">
+                            <UserCircle size={22} strokeWidth={1.75} />
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <UserCircle size={22} strokeWidth={1.75} />
                       )}
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to={createPageUrl("Profile")} className="cursor-pointer">
-                      <UserCircle className="text-muted-foreground" />
-                      Profile &amp; account
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to={`${createPageUrl("Profile")}?tab=settings`} className="cursor-pointer">
-                      <Settings className="text-muted-foreground" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to={`${createPageUrl("Profile")}?tab=billing`} className="cursor-pointer">
-                      <CreditCard className="text-muted-foreground" />
-                      Billing
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to={`${createPageUrl("Profile")}?tab=security`} className="cursor-pointer">
-                      <Shield className="text-muted-foreground" />
-                      Security
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30"
-                    onClick={() => logout(true)}
-                  >
-                    <LogOut className="text-red-600" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={8}>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-0.5">
+                        <span className="text-sm font-semibold truncate">
+                          {user?.full_name || "My account"}
+                        </span>
+                        {user?.email && (
+                          <span className="text-xs font-normal text-muted-foreground truncate">
+                            {user.email}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to={createPageUrl("Profile")} className="cursor-pointer">
+                        <UserCircle className="text-muted-foreground" />
+                        Profile &amp; account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={`${createPageUrl("Profile")}?tab=settings`} className="cursor-pointer">
+                        <Settings className="text-muted-foreground" />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={`${createPageUrl("Profile")}?tab=billing`} className="cursor-pointer">
+                        <CreditCard className="text-muted-foreground" />
+                        Billing
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={`${createPageUrl("Profile")}?tab=security`} className="cursor-pointer">
+                        <Shield className="text-muted-foreground" />
+                        Security
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30"
+                      onClick={() => logout(true)}
+                    >
+                      <LogOut className="text-red-600" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <Link
@@ -192,7 +242,8 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        <nav className="mt-2 flex items-center gap-1 flex-nowrap overflow-x-auto whitespace-nowrap pb-1">
+        {/* Desktop horizontal nav — hidden below md (768px) */}
+        <nav className="mt-2 hidden md:flex items-center gap-1 flex-nowrap overflow-x-auto whitespace-nowrap pb-1">
           {navItems.map(({ name, label, icon: Icon }) => {
             const active = currentPageName === name;
             return (
@@ -211,18 +262,27 @@ export default function Layout({ children, currentPageName }) {
           })}
         </nav>
 
-        {currentPageName !== "Home" && (
-          <div className="mt-2">
+        {/* Desktop: always show search under nav. Mobile: expand from header icon. */}
+        {showHeaderSearch && (
+          <div className={`mt-2 ${showMobileSearchPanel ? "block" : "hidden"} md:block`}>
             <SearchBarTop />
           </div>
         )}
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
         {children}
       </main>
 
-      <SiteFooter />
+      <div className="pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+        <SiteFooter />
+      </div>
+
+      <MobileBottomNav
+        currentPageName={currentPageName}
+        isAuthenticated={isAuthenticated}
+        isLoadingAuth={isLoadingAuth}
+      />
     </div>
   );
 }
