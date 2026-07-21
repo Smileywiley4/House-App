@@ -50,9 +50,7 @@ function isTabActive(tab, currentPageName) {
   return Array.isArray(tab.alsoActive) && tab.alsoActive.includes(currentPageName);
 }
 
-/**
- * App-style bottom tabs for &lt;md. Primary destinations + More sheet for the rest.
- */
+/** App-style bottom tabs below the md (768px) breakpoint. */
 export default function MobileBottomNav({
   currentPageName,
   isAuthenticated,
@@ -73,8 +71,7 @@ export default function MobileBottomNav({
   return (
     <>
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#1a2234]/
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#1a2234] pb-[max(0.25rem,env(safe-area-inset-bottom))]"
         aria-label="Primary"
       >
         <div className="flex items-stretch justify-around px-1 pt-1 pb-1">
@@ -115,8 +112,7 @@ export default function MobileBottomNav({
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-2xl border-white/10 bg-[#1a2234] text-white px-4 pb-8 pt-6 max-h-[85vh] overflow-y-auto md:hidden"
-          style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
+          className="rounded-t-2xl border-white/10 bg-[#1a2234] text-white px-4 pt-6 max-h-[85vh] overflow-y-auto md:hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         >
           <SheetHeader className="text-left mb-4 pr-8">
             <SheetTitle className="text-white">More</SheetTitle>

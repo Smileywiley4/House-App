@@ -270,11 +270,11 @@ export default function Layout({ children, currentPageName }) {
         )}
       </header>
 
-      <main className="flex-1 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+      <main className="flex-1 pb-20 md:pb-0">
         {children}
       </main>
 
-      <div className="pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+      <div className="pb-20 md:pb-0">
         <SiteFooter />
       </div>
 
