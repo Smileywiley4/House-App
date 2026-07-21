@@ -1,17 +1,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polygon, Polyline, CircleMarker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { Filter, List, Map as MapIcon, Loader2, Pencil, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  Columns,
+  Filter,
+  FolderKanban,
+  List,
+  Map as MapIcon,
+  Loader2,
+  Pencil,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { api } from "@/api";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
+import { usePlan } from "@/core/hooks/usePlan";
+import { toast } from "@/components/ui/use-toast";
 import BrowseFilters from "@/components/browse/BrowseFilters";
 import BrowsePresetsBar from "@/components/browse/BrowsePresetsBar";
+import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
+import StartProjectModal from "@/components/browse/StartProjectModal";
+import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -226,6 +242,8 @@ async function geocodePlace(query) {
 
 export default function BrowseProperties() {
   const { isAuthenticated } = useAuth();
+  const { maxCompareCount, isPremium } = usePlan();
+  const navigate = useNavigate();
   const [mode, setMode] = useState("for_sale");
   const [view, setView] = useState("split");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -241,6 +259,9 @@ export default function BrowseProperties() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [compareIds, setCompareIds] = useState(() => new Set());
+  const [startProjectOpen, setStartProjectOpen] = useState(false);
+  const [saveProjectOpen, setSaveProjectOpen] = useState(false);
   const [drawMode, setDrawMode] = useState(false);
   const [draftPoints, setDraftPoints] = useState([]);
   const [polygon, setPolygon] = useState(null); // closed ring [[lat,lng],...]
@@ -248,6 +269,85 @@ export default function BrowseProperties() {
   const skipNextMoveFetch = useRef(false);
   const listRef = useRef(null);
   const polygonRef = useRef(null);
+
+  const requireAuth = (message) => {
+    const redirect = encodeURIComponent(
+      `${window.location.pathname}${window.location.search || ""}`
+    );
+    toast({
+      title: "Sign in required",
+      description: message,
+    });
+    navigate(`/login?redirect=${redirect}`);
+  };
+
+  const propertyKey = (p) => p.id || p.formatted_address || `${p.lat},${p.lng},${p.address}`;
+
+  const selectedProperties = useMemo(
+    () => (properties || []).filter((p) => compareIds.has(propertyKey(p))),
+    [properties, compareIds]
+  );
+
+  const toggleCompare = (p) => {
+    if (!isAuthenticated) {
+      requireAuth("Sign in or create an account to compare properties.");
+      return;
+    }
+    const key = propertyKey(p);
+    setCompareIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+        return next;
+      }
+      if (next.size >= maxCompareCount) {
+        toast({
+          title: "Compare limit reached",
+          description: isPremium
+            ? `You can compare up to ${maxCompareCount} properties.`
+            : `Free plan: compare up to ${maxCompareCount}. Upgrade to compare up to 4.`,
+        });
+        return prev;
+      }
+      next.add(key);
+      return next;
+    });
+  };
+
+  const runCompare = async () => {
+    if (!isAuthenticated) {
+      requireAuth("Sign in or create an account to compare properties.");
+      return;
+    }
+    if (selectedProperties.length < 1) {
+      toast({ title: "Select properties", description: "Check one or more listings in the list first." });
+      return;
+    }
+    if (selectedProperties.length > maxCompareCount) {
+      toast({
+        title: "Too many selected",
+        description: `Your plan allows up to ${maxCompareCount} in a compare session.`,
+      });
+      return;
+    }
+    try {
+      await api.projects.validateCompare(selectedProperties.length);
+    } catch (e) {
+      toast({ title: "Compare limit", description: e?.message || "Plan limit exceeded." });
+      return;
+    }
+    storeBrowseCompareSelection(selectedProperties);
+    setCompareIds(new Set());
+    navigate(createPageUrl("SideBySide"));
+  };
+
+  const runStartProject = () => {
+    if (!isAuthenticated) {
+      requireAuth("Sign in or create an account to start a project.");
+      return;
+    }
+    setStartProjectOpen(true);
+  };
 
   useEffect(() => {
     polygonRef.current = polygon;
@@ -534,7 +634,7 @@ export default function BrowseProperties() {
               )}
             </button>
 
-            <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50 lg:hidden">
+            <div className="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-50">
               <button
                 type="button"
                 onClick={() => setView("map")}
@@ -554,7 +654,7 @@ export default function BrowseProperties() {
               <button
                 type="button"
                 onClick={() => setView("split")}
-                className={`px-2.5 py-1.5 rounded-lg hidden sm:inline-flex ${view === "split" ? "bg-white shadow" : ""}`}
+                className={`px-2.5 py-1.5 rounded-lg ${view === "split" ? "bg-white shadow" : ""}`}
                 aria-label="Split view"
               >
                 <Filter size={14} />
@@ -654,14 +754,51 @@ export default function BrowseProperties() {
               view === "list" ? "h-[calc(100vh-8rem)]" : "max-h-[55vh] lg:max-h-none lg:h-[calc(100vh-8rem)]"
             }`}
           >
-            <div className="p-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-              <h1 className="text-lg font-bold text-[#1a2234]">
-                {mode === "for_sale" ? "Homes for sale" : "Off-market estimates"}
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Licensed listing &amp; property data via RentCast. Draw a custom area or drag the map. Score any home to
-                compare.
-              </p>
+            <div className="p-4 border-b border-slate-100 sticky top-0 bg-white z-10 space-y-3">
+              <div>
+                <h1 className="text-lg font-bold text-[#1a2234]">
+                  {mode === "for_sale" ? "Homes for sale" : "Off-market estimates"}
+                </h1>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Results sync with map markers
+                  {polygon ? " inside your drawn area" : ""}. Select homes to compare or start a
+                  project.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={runCompare}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a2234] hover:bg-[#243050] text-white text-xs font-bold"
+                >
+                  <Columns size={14} />
+                  Compare properties
+                  {compareIds.size > 0 ? ` (${compareIds.size})` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={runStartProject}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  <FolderKanban size={14} />
+                  Start project
+                </button>
+                {compareIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        requireAuth("Sign in to save properties to a project.");
+                        return;
+                      }
+                      setSaveProjectOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#10b981]/40 bg-[#10b981]/10 text-xs font-bold text-[#059669]"
+                  >
+                    Save selected ({compareIds.size})
+                  </button>
+                )}
+              </div>
             </div>
 
             {error && (
@@ -682,15 +819,43 @@ export default function BrowseProperties() {
               <ul className="divide-y divide-slate-100">
                 {properties.map((p) => {
                   const img = coverSrc(p);
+                  const key = propertyKey(p);
                   const selected = selectedId === p.id;
+                  const checked = compareIds.has(key);
+                  const atLimit = !checked && compareIds.size >= maxCompareCount;
                   return (
                     <li
-                      key={p.id || p.formatted_address}
+                      key={key}
                       id={`browse-card-${p.id}`}
-                      className={`p-4 hover:bg-slate-50 transition ${selected ? "bg-emerald-50/60" : ""}`}
+                      className={`p-4 hover:bg-slate-50 transition relative ${selected ? "bg-emerald-50/60" : ""}`}
                       onMouseEnter={() => setSelectedId(p.id)}
                     >
-                      <div className="flex gap-3">
+                      <label
+                        className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center cursor-pointer ${
+                          checked
+                            ? "bg-[#10b981] border-[#10b981] text-white"
+                            : atLimit
+                              ? "border-slate-200 bg-slate-100 cursor-not-allowed opacity-60"
+                              : "border-slate-300 bg-white hover:border-[#10b981]"
+                        }`}
+                        title={
+                          atLimit
+                            ? `Compare limit: ${maxCompareCount} on your plan`
+                            : "Select for compare"
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={checked}
+                          disabled={atLimit && !checked}
+                          onChange={() => toggleCompare(p)}
+                        />
+                        {checked ? (
+                          <span className="text-[11px] font-bold leading-none">✓</span>
+                        ) : null}
+                      </label>
+                      <div className="flex gap-3 pr-8">
                         <div className="w-32 h-24 rounded-xl overflow-hidden bg-slate-200 shrink-0 relative">
                           {img ? (
                             <img
@@ -748,7 +913,7 @@ export default function BrowseProperties() {
                               )}`}
                               className="inline-flex px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
                             >
-                              Add to compare
+                              Quick compare
                             </Link>
                           </div>
                         </div>
@@ -803,6 +968,25 @@ export default function BrowseProperties() {
           </div>
         </div>
       )}
+
+      <StartProjectModal
+        open={startProjectOpen}
+        onClose={() => setStartProjectOpen(false)}
+        seedProperties={selectedProperties}
+      />
+      <SaveToProjectModal
+        open={saveProjectOpen}
+        onClose={() => setSaveProjectOpen(false)}
+        properties={selectedProperties}
+        onSaved={(projectId) => {
+          toast({
+            title: "Saved to project",
+            description: "Open Project detail from the toast link or Projects nav.",
+          });
+          navigate(`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(projectId)}`);
+          setCompareIds(new Set());
+        }}
+      />
     </div>
   );
 }

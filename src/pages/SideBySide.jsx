@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ChevronLeft, Trophy, LayoutGrid, Columns, Table, Lock } from "lucide-react";
+import { ChevronLeft, Trophy, LayoutGrid, Columns, Table, Lock, FolderPlus } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import ShareComparison from "@/components/ShareComparison";
 import RequireAuth from "@/components/RequireAuth";
+import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
+import { browseListingToCompareRow, loadBrowseCompareSelection } from "@/lib/browseCompare";
+import { toast } from "@/components/ui/use-toast";
 
 // View mode toggle options
 const VIEW_MODES = [
@@ -27,24 +30,48 @@ function SideBySideInner() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("columns");
   const [selected, setSelected] = useState([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const { maxCompareCount } = usePlan();
 
   useEffect(() => {
-    api.entities.PropertyScore.list("-created_date").then(data => {
-      setScores(data);
-      setSelected(data.slice(0, 2).map(s => s.id));
+    let cancelled = false;
+    (async () => {
+      const incoming = loadBrowseCompareSelection({ consume: true }).map(browseListingToCompareRow);
+      const data = await api.entities.PropertyScore.list("-created_date");
+      if (cancelled) return;
+      const merged = [...incoming];
+      for (const s of data || []) {
+        if (!merged.some((m) => m.id === s.id || m.property_address === s.property_address)) {
+          merged.push(s);
+        }
+      }
+      setScores(merged);
+      if (incoming.length) {
+        const ids = incoming.slice(0, maxCompareCount).map((s) => s.id);
+        setSelected(ids);
+        toast({
+          title: "Compare ready",
+          description: `${ids.length} listing${ids.length === 1 ? "" : "s"} loaded from Search Properties.`,
+        });
+      } else {
+        setSelected((data || []).slice(0, Math.min(2, maxCompareCount)).map((s) => s.id));
+      }
       setLoading(false);
-    });
-  }, []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [maxCompareCount]);
 
-  const comparing = scores.filter(s => selected.includes(s.id));
+  const comparing = scores.filter((s) => selected.includes(s.id));
   const sorted = [...comparing].sort((a, b) => b.percentage - a.percentage);
   const winner = sorted[0];
 
   // Collect all unique category labels across compared properties
   const allCategories = [];
   const seen = new Set();
-  comparing.forEach(p => {
-    (p.scores || []).forEach(cat => {
+  comparing.forEach((p) => {
+    (p.scores || []).forEach((cat) => {
       if (!seen.has(cat.category_id)) {
         seen.add(cat.category_id);
         allCategories.push({ id: cat.category_id, label: cat.category_label });
@@ -52,9 +79,12 @@ function SideBySideInner() {
     });
   });
 
-  const { maxCompareCount } = usePlan();
-  const getScore = (property, catId) => property.scores?.find(s => s.category_id === catId);
-  const scoreColor = (pct) => pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
+  const getScore = (property, catId) => property.scores?.find((s) => s.category_id === catId);
+  const scoreColor = (pct) => (pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444");
+
+  const saveSnapshots = comparing
+    .map((c) => c._browseSnapshot)
+    .filter(Boolean);
 
   if (loading) {
     return (
@@ -77,6 +107,15 @@ function SideBySideInner() {
             <h1 className="text-xl font-bold text-white">Side-by-Side Comparison</h1>
 
             <div className="flex items-center gap-2">
+              {saveSnapshots.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSaveOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15"
+                >
+                  <FolderPlus size={14} /> Save to project
+                </button>
+              )}
               <ShareComparison scores={comparing} />
               {/* View mode toggle */}
               <div className="flex bg-white/10 rounded-xl p-1 gap-1">
@@ -128,7 +167,11 @@ function SideBySideInner() {
           {maxCompareCount === 2 && selected.length >= 2 && (
             <div className="mt-2 flex items-center gap-2 text-xs text-[#c9a84c]">
               <Lock size={12} />
-              Comparing 3+ properties is a <Link to={createPageUrl("Pricing")} className="underline font-semibold">Premium feature</Link>
+              Comparing more than 2 is a{" "}
+              <Link to={createPageUrl("Pricing")} className="underline font-semibold">
+                Premium feature
+              </Link>{" "}
+              (up to 4)
             </div>
           )}
         </div>
@@ -148,6 +191,15 @@ function SideBySideInner() {
           </>
         )}
       </div>
+
+      <SaveToProjectModal
+        open={saveOpen}
+        onClose={() => setSaveOpen(false)}
+        properties={saveSnapshots}
+        onSaved={() => {
+          toast({ title: "Saved to project", description: "Properties added to your project folder." });
+        }}
+      />
     </div>
   );
 }

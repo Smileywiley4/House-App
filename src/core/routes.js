@@ -10,6 +10,7 @@ export const ROUTE_KEYS = {
   SEARCH_BY_PRESET: 'SearchByPreset',
   COMPARE: 'Compare',
   SIDE_BY_SIDE: 'SideBySide',
+  PROJECT_DETAIL: 'ProjectDetail',
   REALTOR_PORTAL: 'RealtorPortal',
   PRICING: 'Pricing',
   PROFILE: 'Profile',

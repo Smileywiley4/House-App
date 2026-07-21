@@ -1,19 +1,19 @@
-# Python
-.DS_Store
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-.venv/
-.env
-.env.*
 !**/.env.example
+# Python
+*$py.class
+*.py[cod]
+*.so
+.DS_Store
+.Python
+.env
+.env*
+.env.*
+.venv/
+.vercel
+__pycache__/
 dist/
 mobile/dist-*/
+node_modules
 node_modules/
-node_modules
-node_modules
-.vercel
-.env*
+supabase/.temp/
+venv/

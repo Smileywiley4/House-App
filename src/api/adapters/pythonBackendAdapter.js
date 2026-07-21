@@ -2197,6 +2197,32 @@ export function createPythonBackendAdapter() {
       sharedWithMe: () => request('GET', '/api/library/shared-with-me'),
       peerSharesOutgoing: () => request('GET', '/api/library/peer-shares/outgoing'),
     },
+    /** Scoring projects (folder-like) — free + paid with plan limits */
+    projects: {
+      limits: () => request('GET', '/api/projects/limits'),
+      validateCompare: (count) => request('POST', '/api/projects/compare/validate', { count }),
+      list: () => request('GET', '/api/projects'),
+      create: (data) => request('POST', '/api/projects', data),
+      get: (id) => request('GET', `/api/projects/${encodeURIComponent(id)}`),
+      update: (id, data) => request('PATCH', `/api/projects/${encodeURIComponent(id)}`, data),
+      delete: (id) => request('DELETE', `/api/projects/${encodeURIComponent(id)}`),
+      addProperty: (projectId, property, opts = {}) =>
+        request('POST', `/api/projects/${encodeURIComponent(projectId)}/properties`, {
+          property,
+          enrich_location: opts.enrich_location !== false,
+        }),
+      addProperties: (projectId, properties, opts = {}) =>
+        request('POST', `/api/projects/${encodeURIComponent(projectId)}/properties/batch`, {
+          properties,
+          enrich_location: Boolean(opts.enrich_location),
+        }),
+      removeProperty: (projectId, propId) =>
+        request(
+          'DELETE',
+          `/api/projects/${encodeURIComponent(projectId)}/properties/${encodeURIComponent(propId)}`,
+        ),
+      rescore: (id) => request('POST', `/api/projects/${encodeURIComponent(id)}/rescore`),
+    },
     invitations: {
       send: (body) => request('POST', '/api/invitations', body),
       validateToken: (token) => publicGet(`/api/invitations/validate?token=${encodeURIComponent(token)}`),

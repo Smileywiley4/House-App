@@ -1,0 +1,391 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ChevronLeft,
+  FolderKanban,
+  Loader2,
+  Trash2,
+  SlidersHorizontal,
+  Home as HomeIcon,
+} from "lucide-react";
+import { api } from "@/api";
+import { createPageUrl } from "@/utils";
+import RequireAuth from "@/components/RequireAuth";
+import StartProjectModal from "@/components/browse/StartProjectModal";
+import { ALL_BROWSE_SCORE_IDS } from "@/components/browse/scoreCategories";
+
+const LABELS = {
+  hospital_distance: "Hospital distance",
+  highway_access: "Highway access",
+  schools: "Schools",
+  neighborhood_safety: "Neighborhood safety",
+  public_transportation: "Public transit",
+  location_lifestyle: "Lifestyle location",
+  bedroom_count: "Bedrooms",
+  bathroom_count: "Bathrooms",
+  overall_living_space: "Living space",
+  hoa_cost: "HOA cost",
+  garage_storage: "Garage / storage",
+};
+
+function scoreColor(pct) {
+  if (pct >= 70) return "#10b981";
+  if (pct >= 40) return "#f59e0b";
+  return "#ef4444";
+}
+
+export default function ProjectDetail() {
+  return (
+    <RequireAuth message="Sign in to view and manage your scoring projects">
+      <ProjectDetailInner />
+    </RequireAuth>
+  );
+}
+
+function ProjectDetailInner() {
+  const [params] = useSearchParams();
+  const projectId = params.get("id");
+  const navigate = useNavigate();
+  const [project, setProject] = useState(null);
+  const [projectList, setProjectList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [weights, setWeights] = useState({});
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [titleEdit, setTitleEdit] = useState("");
+  const [startOpen, setStartOpen] = useState(false);
+
+  const loadList = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const list = await api.projects.list();
+      setProjectList(list || []);
+      setProject(null);
+    } catch (e) {
+      setError(e?.message || "Could not load projects");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!projectId) {
+      await loadList();
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.projects.get(projectId);
+      setProject(data);
+      setTitleEdit(data.title || "");
+      setWeights(data.scoring_presets?.weights || {});
+    } catch (e) {
+      setError(e?.message || "Could not load project");
+      setProject(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId, loadList]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const savePrefs = async () => {
+    setSavingPrefs(true);
+    setError("");
+    try {
+      const updated = await api.projects.update(projectId, {
+        title: titleEdit.trim() || project.title,
+        scoring_presets: { weights },
+      });
+      setProject(updated);
+      setPrefsOpen(false);
+    } catch (e) {
+      setError(e?.message || "Could not update preferences");
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
+  const removeProp = async (propId) => {
+    try {
+      await api.projects.removeProperty(projectId, propId);
+      await load();
+    } catch (e) {
+      setError(e?.message || "Could not remove property");
+    }
+  };
+
+  const deleteProject = async () => {
+    if (!window.confirm("Delete this project and all saved listings in it?")) return;
+    try {
+      await api.projects.delete(projectId);
+      navigate(createPageUrl("ProjectDetail"));
+    } catch (e) {
+      setError(e?.message || "Could not delete project");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center gap-2 text-slate-400">
+        <Loader2 className="animate-spin" size={20} /> Loading…
+      </div>
+    );
+  }
+
+  if (!projectId) {
+    return (
+      <>
+        <div className="min-h-screen bg-[#fafaf8]">
+          <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
+            <div className="relative max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-white">Projects</h1>
+                <p className="text-slate-400 text-sm mt-1">
+                  Folder-like collections with project-only scoring preferences
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStartOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#10b981] text-white text-sm font-bold"
+              >
+                <FolderKanban size={16} /> Start project
+              </button>
+            </div>
+          </div>
+          <div className="max-w-5xl mx-auto px-6 py-8">
+            {error && (
+              <p className="mb-4 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                {error}
+              </p>
+            )}
+            {projectList.length === 0 ? (
+              <div className="text-center py-16">
+                <FolderKanban className="mx-auto text-slate-200 mb-4" size={48} />
+                <h2 className="text-xl font-bold text-[#1a2234] mb-2">No projects yet</h2>
+                <p className="text-slate-400 text-sm mb-6">
+                  Start a project from here or from Search Properties.
+                </p>
+                <Link to={createPageUrl("BrowseProperties")} className="text-[#10b981] font-semibold text-sm">
+                  Search Properties
+                </Link>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {projectList.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      to={`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(p.id)}`}
+                      className="block bg-white rounded-2xl border border-slate-100 p-4 hover:border-[#10b981]/40 transition"
+                    >
+                      <div className="font-bold text-[#1a2234]">{p.title}</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {p.property_count ?? 0} propert{(p.property_count ?? 0) === 1 ? "y" : "ies"}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        <StartProjectModal open={startOpen} onClose={() => setStartOpen(false)} />
+      </>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-[#fafaf8] flex flex-col items-center justify-center px-6">
+        <p className="text-slate-500 mb-4">{error || "Project not found"}</p>
+        <Link to={createPageUrl("ProjectDetail")} className="text-[#10b981] font-semibold text-sm">
+          Back to projects
+        </Link>
+      </div>
+    );
+  }
+
+  const properties = project.properties || [];
+
+  return (
+    <div className="min-h-screen bg-[#fafaf8]">
+      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
+        <div className="absolute inset-0 bg-[#1a2234]/75" />
+        <div className="relative max-w-5xl mx-auto">
+          <Link
+            to={createPageUrl("ProjectDetail")}
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4"
+          >
+            <ChevronLeft size={16} /> All projects
+          </Link>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-[#10b981] text-xs font-bold uppercase tracking-wide mb-1">
+                <FolderKanban size={14} /> Project
+              </div>
+              <h1 className="text-2xl font-bold text-white">{project.title}</h1>
+              <p className="text-slate-400 text-sm mt-1">
+                {properties.length} propert{properties.length === 1 ? "y" : "ies"} · scores use this
+                project&apos;s preferences
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setPrefsOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-semibold"
+              >
+                <SlidersHorizontal size={15} /> Scoring prefs
+              </button>
+              <button
+                type="button"
+                onClick={deleteProject}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:text-white text-sm font-semibold"
+              >
+                <Trash2 size={15} /> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        {error && (
+          <p className="mb-4 text-xs text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+            {error}
+          </p>
+        )}
+
+        {properties.length === 0 ? (
+          <div className="text-center py-20">
+            <HomeIcon className="mx-auto text-slate-200 mb-4" size={48} />
+            <h2 className="text-xl font-bold text-[#1a2234] mb-2">No properties yet</h2>
+            <p className="text-slate-400 mb-6 text-sm">
+              Select homes on Search Properties and use Save to project, or Start project with a
+              selection.
+            </p>
+            <Link
+              to={createPageUrl("BrowseProperties")}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
+            >
+              Browse homes
+            </Link>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {properties.map((p) => {
+              const snap = p.property_snapshot || {};
+              const pct = p.overall_percentage ?? 0;
+              const color = scoreColor(pct);
+              return (
+                <li
+                  key={p.id}
+                  className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex gap-4 items-start"
+                >
+                  <div
+                    className="w-16 h-16 rounded-xl flex flex-col items-center justify-center shrink-0 font-bold"
+                    style={{ background: `${color}18`, color }}
+                  >
+                    <span className="text-xl leading-none">{pct}</span>
+                    <span className="text-[9px] uppercase tracking-wide opacity-80">score</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-[#1a2234] truncate">{p.property_address}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {[
+                        snap.bedrooms != null ? `${snap.bedrooms} bd` : null,
+                        snap.bathrooms != null ? `${snap.bathrooms} ba` : null,
+                        snap.sqft != null ? `${Number(snap.sqft).toLocaleString()} sqft` : null,
+                        snap.price != null ? `$${Number(snap.price).toLocaleString()}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "Listing details"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeProp(p.id)}
+                    className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
+                    aria-label="Remove from project"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {prefsOpen && (
+        <div className="fixed inset-0 z-[80] flex justify-end">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close"
+            onClick={() => setPrefsOpen(false)}
+          />
+          <div className="relative w-full max-w-md h-full bg-white shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <h2 className="font-bold text-[#1a2234]">Project scoring prefs</h2>
+              <button
+                type="button"
+                onClick={() => setPrefsOpen(false)}
+                className="text-sm font-semibold text-slate-500"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <p className="text-xs text-slate-500">
+                These weights apply only to this project. Saving recalculates scores for every
+                property here.
+              </p>
+              <div>
+                <label className="text-xs font-bold text-slate-600">Title</label>
+                <input
+                  value={titleEdit}
+                  onChange={(e) => setTitleEdit(e.target.value)}
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+                />
+              </div>
+              {ALL_BROWSE_SCORE_IDS.map((id) => (
+                <div key={id}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium text-slate-700">{LABELS[id] || id}</span>
+                    <span className="font-bold text-[#10b981]">{weights[id] ?? 5}/10</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={10}
+                    value={weights[id] ?? 5}
+                    onChange={(e) => setWeights((w) => ({ ...w, [id]: Number(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={savingPrefs}
+                onClick={savePrefs}
+                className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              >
+                {savingPrefs ? <Loader2 className="animate-spin" size={16} /> : null}
+                Save &amp; rescore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

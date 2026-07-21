@@ -57,6 +57,7 @@ import Privacy from './pages/Privacy';
 import Support from './pages/Support';
 import Terms from './pages/Terms';
 import Profile from './pages/Profile';
+import ProjectDetail from './pages/ProjectDetail';
 import PropertyVisits from './pages/PropertyVisits';
 import QuickCompare from './pages/QuickCompare';
 import RealtorPortal from './pages/RealtorPortal';
@@ -77,6 +78,7 @@ export const PAGES = {
     "Support": Support,
     "Terms": Terms,
     "Profile": Profile,
+    "ProjectDetail": ProjectDetail,
     "PropertyVisits": PropertyVisits,
     "QuickCompare": QuickCompare,
     "RealtorPortal": RealtorPortal,

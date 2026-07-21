@@ -13,7 +13,7 @@ import stripe
 from app.config import get_settings
 from app.stripe_billing import plan_from_subscription_price_ids, stripe_customer_id
 from app.dependencies import get_supabase_admin
-from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, realtor_assignments, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook, marketing, promo, cron, notifications
+from app.routers import auth, property_scores, clients, private_listings, presets, property, llm, subscription, analytics, user_library, invitations, realtor_assignments, revenue, preferences, google_amp, google_workspace_datatransfer, google_adsense, google_adsense_platform, google_analytics_hub, google_android_management, google_chat, google_chrome_webstore, google_data_fusion, google_datamanager, google_doubleclicksearch, google_drive, google_filestore, google_oslogin, google_policyanalyzer, google_policysimulator, google_saasservicemgmt, google_servicenetworking, google_translate, revenuecat_webhook, marketing, promo, cron, notifications, projects
 
 
 @asynccontextmanager
@@ -73,6 +73,7 @@ app.include_router(revenue.router, prefix="/api/integrations")
 app.include_router(subscription.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(user_library.router, prefix="/api")
+app.include_router(projects.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(realtor_assignments.router, prefix="/api")
 app.include_router(revenuecat_webhook.router, prefix="/api")

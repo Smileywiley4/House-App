@@ -11,6 +11,13 @@ export const PLANS = {
   ADMIN: 'admin',
 };
 
+/** Free: 2 compare; Premium/Realtor/Admin: 4 */
+export const FREE_MAX_COMPARE = 2;
+export const PAID_MAX_COMPARE = 4;
+/** Free: 2 projects; Premium/Realtor/Admin: 20 */
+export const FREE_MAX_PROJECTS = 2;
+export const PAID_MAX_PROJECTS = 20;
+
 export function usePlan() {
   const { user } = useAuth();
   const plan = user?.plan ?? PLANS.FREE;
@@ -28,8 +35,10 @@ export function usePlan() {
   const canUseAIFeatures = isPremium;
   /** Can access Realtor portal (clients, private listings) */
   const canAccessRealtorPortal = isRealtor;
-  /** Max properties to compare in SideBySide */
-  const maxCompareCount = canCompare3Plus ? 10 : 2;
+  /** Max properties in a compare session (browse checkboxes / SideBySide) */
+  const maxCompareCount = isPremium ? PAID_MAX_COMPARE : FREE_MAX_COMPARE;
+  /** Max scoring projects (folders) */
+  const maxProjects = isPremium ? PAID_MAX_PROJECTS : FREE_MAX_PROJECTS;
 
   return {
     plan,
@@ -42,5 +51,6 @@ export function usePlan() {
     canUseAIFeatures,
     canAccessRealtorPortal,
     maxCompareCount,
+    maxProjects,
   };
 }

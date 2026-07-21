@@ -35,6 +35,11 @@ export const SEO_BY_PAGE = {
     title: 'Side-by-side comparison',
     description: 'Compare multiple scored homes in one view with totals and category breakdowns.',
   },
+  ProjectDetail: {
+    title: 'Scoring projects',
+    description: 'Organize homes into projects with custom scoring preferences and overall match scores.',
+    noindex: true,
+  },
   Evaluate: {
     title: 'Evaluate a property',
     description: 'Deep evaluation and scoring for a single property address.',
