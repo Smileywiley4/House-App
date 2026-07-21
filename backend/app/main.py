@@ -87,6 +87,61 @@ app.include_router(realtor_assignments.router, prefix="/api")
 app.include_router(revenuecat_webhook.router, prefix="/api")
 
 
+def _profile_has_admin_comp(supabase, *, user_id: str | None = None, customer_id: str | None = None) -> bool:
+    """True when the profile was granted perpetual testing access (e.g. ADMIN)."""
+    try:
+        q = supabase.table("profiles").select("admin_comp")
+        if user_id:
+            q = q.eq("id", user_id)
+        elif customer_id:
+            q = q.eq("stripe_customer_id", customer_id)
+        else:
+            return False
+        row = (q.limit(1).execute().data or [None])[0]
+        return bool(row and row.get("admin_comp"))
+    except Exception:
+        return False
+
+
+def _checkout_is_forever_full_comp(session: dict) -> bool:
+    """Detect Stripe ADMIN-style forever 100% off on a completed Checkout session."""
+    try:
+        discounts = session.get("discounts") or []
+        for entry in discounts:
+            coupon = None
+            if isinstance(entry, dict):
+                coupon = entry.get("coupon")
+                if isinstance(coupon, str) and coupon:
+                    try:
+                        coupon = stripe.Coupon.retrieve(coupon)
+                    except Exception:
+                        coupon = None
+            if coupon is None:
+                continue
+            if not isinstance(coupon, dict):
+                coupon = {
+                    "percent_off": getattr(coupon, "percent_off", None),
+                    "duration": getattr(coupon, "duration", None),
+                    "id": getattr(coupon, "id", None),
+                }
+            percent = coupon.get("percent_off")
+            duration = (coupon.get("duration") or "").lower()
+            coupon_id = (coupon.get("id") or "").lower()
+            if coupon_id == "admin_100_off":
+                return True
+            if percent is not None and float(percent) >= 100 and duration == "forever":
+                return True
+        # $0 Checkout with a discount present (promotion code applied) → perpetual testing comp.
+        if session.get("amount_total") == 0 and discounts:
+            return True
+        meta = session.get("metadata") or {}
+        if str(meta.get("promo_code") or "").strip().upper() == "ADMIN":
+            return True
+    except Exception:
+        return False
+    return False
+
+
 @app.post("/api/webhooks/stripe")
 async def stripe_webhook(request: Request):
     """Stripe webhook: subscription created/updated → set profile.plan and stripe_customer_id."""
@@ -117,10 +172,19 @@ async def stripe_webhook(request: Request):
         customer_id = stripe_customer_id(session.get("customer"))
         if user_id:
             supabase = get_supabase_admin()
-            supabase.table("profiles").update({
+            updates = {
                 "plan": plan_id,
                 "stripe_customer_id": customer_id,
-            }).eq("id", user_id).execute()
+            }
+            if _checkout_is_forever_full_comp(session):
+                updates["admin_comp"] = True
+                updates["promo_code"] = "ADMIN"
+            try:
+                supabase.table("profiles").update(updates).eq("id", user_id).execute()
+            except Exception:
+                updates.pop("admin_comp", None)
+                updates.pop("promo_code", None)
+                supabase.table("profiles").update(updates).eq("id", user_id).execute()
             handle_paid_subscription_for_referrals(
                 supabase,
                 user_id=user_id,
@@ -147,8 +211,10 @@ async def stripe_webhook(request: Request):
         elif customer_id:
             # A subscription can become incomplete, unpaid, or incomplete_expired
             # without emitting customer.subscription.deleted. Do not retain paid
-            # access after Stripe has made it non-entitled.
+            # access after Stripe has made it non-entitled — unless admin_comp.
             supabase = get_supabase_admin()
+            if _profile_has_admin_comp(supabase, customer_id=customer_id):
+                return {"received": True, "admin_comp_preserved": True}
             forfeit_unused_referral_balance_on_cancel(supabase, customer_id)
             supabase.table("profiles").update({"plan": "free"}).eq("stripe_customer_id", customer_id).execute()
 
@@ -171,6 +237,12 @@ async def stripe_webhook(request: Request):
         customer_id = stripe_customer_id(sub.get("customer"))
         if customer_id:
             supabase = get_supabase_admin()
+            if _profile_has_admin_comp(supabase, customer_id=customer_id):
+                # Keep perpetual testing plan; clear Stripe link only.
+                supabase.table("profiles").update({"stripe_customer_id": None}).eq(
+                    "stripe_customer_id", customer_id
+                ).execute()
+                return {"received": True, "admin_comp_preserved": True}
             forfeit_unused_referral_balance_on_cancel(supabase, customer_id)
             supabase.table("profiles").update({"plan": "free", "stripe_customer_id": None}).eq("stripe_customer_id", customer_id).execute()
 

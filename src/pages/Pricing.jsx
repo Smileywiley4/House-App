@@ -196,7 +196,10 @@ export default function Pricing() {
           {' '}and{' '}
           <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy Policy</Link>
           {' '}before completing your purchase.
+          At checkout you can also enter a promotion code if you have one.
         </p>
+
+        <PricingAccessCode isAuthenticated={isAuthenticated} refreshUser={refreshUser} />
 
         {/* Coming Soon */}
         <div className="mt-16">
@@ -274,6 +277,97 @@ export default function Pricing() {
           <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">{SUPPORT_EMAIL}</a>
         </p>
       </div>
+    </div>
+  );
+}
+
+function PricingAccessCode({ isAuthenticated, refreshUser }) {
+  const [showCode, setShowCode] = useState(false);
+  const [code, setCode] = useState("");
+  const [grantPlan, setGrantPlan] = useState("premium");
+  const [applying, setApplying] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [codeSuccess, setCodeSuccess] = useState("");
+
+  const applyCode = async () => {
+    setCodeError("");
+    setCodeSuccess("");
+    const trimmed = code.trim();
+    if (!trimmed) {
+      setCodeError("Enter a code.");
+      return;
+    }
+    if (!isAuthenticated) {
+      setCodeError("Sign in to apply a code.");
+      return;
+    }
+    setApplying(true);
+    try {
+      const result = await api.promo.redeem(trimmed, grantPlan);
+      setCodeSuccess(result?.message || `Code applied. Plan is now ${result?.plan || "updated"}.`);
+      try {
+        await refreshUser?.();
+      } catch {
+        /* ignore */
+      }
+    } catch (err) {
+      let message = err?.message || "Could not apply that code.";
+      try {
+        const parsed = JSON.parse(message);
+        if (typeof parsed?.detail === "string") message = parsed.detail;
+      } catch {
+        /* plain text */
+      }
+      setCodeError(message);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <div className="mt-10 max-w-md mx-auto text-center">
+      {!showCode ? (
+        <button
+          type="button"
+          onClick={() => setShowCode(true)}
+          className="text-xs text-slate-400 hover:text-slate-600 underline-offset-2 hover:underline"
+        >
+          Have an access code?
+        </button>
+      ) : (
+        <div className="space-y-3 rounded-2xl border border-slate-100 bg-white p-5 text-left shadow-sm">
+          <p className="text-xs text-slate-500">Enter an access or promo code</p>
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Enter code"
+            autoComplete="off"
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold tracking-wide text-[#1a2234] focus:outline-none focus:border-[#10b981]"
+          />
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] text-slate-400 shrink-0">Unlock as</label>
+            <select
+              value={grantPlan}
+              onChange={(e) => setGrantPlan(e.target.value)}
+              className="flex-1 text-xs rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-600"
+            >
+              <option value="premium">Premium</option>
+              <option value="realtor">Realtor</option>
+            </select>
+          </div>
+          {codeError && <p className="text-xs text-red-600 font-semibold">{codeError}</p>}
+          {codeSuccess && <p className="text-xs text-[#059669] font-semibold">{codeSuccess}</p>}
+          <button
+            type="button"
+            onClick={applyCode}
+            disabled={applying}
+            className="w-full py-2.5 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+          >
+            {applying ? "Applying…" : "Apply code"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -57,6 +57,14 @@ async def redeem_promo(body: RedeemPromoBody, user_id: str = Depends(get_current
         else:
             raise HTTPException(status_code=400, detail="This code cannot grant access.")
 
+    # Perpetual comps: ADMIN and other 100% free_access grants never expire via billing webhooks.
+    discount = promo.get("discount_percent")
+    is_perpetual_comp = (
+        code == "ADMIN"
+        or (promo.get("benefit") or "") in {"free_access", "free", "grant_plan"}
+        or (discount is not None and float(discount) >= 100)
+    )
+
     supabase = get_supabase_admin()
     existing = supabase.table("profiles").select("*").eq("id", user_id).limit(1).execute()
     row = existing.data[0] if existing.data else None
@@ -64,12 +72,15 @@ async def redeem_promo(body: RedeemPromoBody, user_id: str = Depends(get_current
         raise HTTPException(status_code=404, detail="Profile not found.")
 
     previous_code = (row.get("promo_code") or "").strip().upper()
-    if previous_code == code and (row.get("plan") or "free") == granted:
+    if previous_code == code and (row.get("plan") or "free") == granted and (
+        not is_perpetual_comp or bool(row.get("admin_comp"))
+    ):
         return {
             "ok": True,
             "already_applied": True,
             "plan": granted,
             "code": code,
+            "admin_comp": bool(row.get("admin_comp")),
             "profile": _profile_to_user(row),
         }
 
@@ -80,7 +91,18 @@ async def redeem_promo(body: RedeemPromoBody, user_id: str = Depends(get_current
         "promo_code_redeemed_at": now,
         "updated_at": now,
     }
-    supabase.table("profiles").update(updates).eq("id", user_id).execute()
+    if is_perpetual_comp:
+        updates["admin_comp"] = True
+    try:
+        supabase.table("profiles").update(updates).eq("id", user_id).execute()
+    except Exception as exc:
+        # Older DBs may lack admin_comp until migration is applied.
+        if is_perpetual_comp and "admin_comp" in updates:
+            logger.warning("admin_comp update failed (migration pending?): %s", exc)
+            updates.pop("admin_comp", None)
+            supabase.table("profiles").update(updates).eq("id", user_id).execute()
+        else:
+            raise
     refreshed = supabase.table("profiles").select("*").eq("id", user_id).limit(1).execute()
     row = refreshed.data[0] if refreshed.data else {**row, **updates}
 
@@ -110,12 +132,20 @@ async def redeem_promo(body: RedeemPromoBody, user_id: str = Depends(get_current
     except Exception:
         pass
 
-    logger.info("Promo %s redeemed by user %s → plan %s", code, user_id, granted)
+    logger.info(
+        "Promo %s redeemed by user %s → plan %s (admin_comp=%s)",
+        code,
+        user_id,
+        granted,
+        is_perpetual_comp,
+    )
+    perpetual_note = " Access does not expire." if is_perpetual_comp else ""
     return {
         "ok": True,
         "already_applied": False,
         "plan": granted,
         "code": code,
-        "message": f"Code applied. Your plan is now {granted.title()}.",
+        "admin_comp": is_perpetual_comp,
+        "message": f"Code applied. Your plan is now {granted.title()}.{perpetual_note}",
         "profile": _profile_to_user(row),
     }

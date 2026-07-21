@@ -101,7 +101,21 @@ async def revenuecat_webhook(request: Request):
 
     # Cancellation and billing-issue events can retain paid access through the
     # current period or grace period. Revoke only when RevenueCat confirms expiry.
+    # Perpetual ADMIN/testing comps (admin_comp) must not be revoked by IAP expiry.
     if event_type == "EXPIRATION":
+        try:
+            existing = (
+                supabase.table("profiles")
+                .select("admin_comp, plan")
+                .eq("id", app_user_id)
+                .limit(1)
+                .execute()
+            )
+            row = (existing.data or [None])[0]
+            if row and row.get("admin_comp"):
+                return {"ok": True, "plan": row.get("plan"), "admin_comp_preserved": True}
+        except Exception:
+            pass
         supabase.table("profiles").update({"plan": "free"}).eq("id", app_user_id).execute()
         return {"ok": True, "plan": "free"}
 

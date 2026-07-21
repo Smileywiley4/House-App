@@ -41,15 +41,15 @@ ADMIN_PROMO_CODE = {
     "benefit": "free_access",
     "grants_plan": "any",
     "discount_percent": "100",
-    "description": "100% off — grants free Premium or Realtor access (no payment).",
+    "description": "100% off forever — grants free Premium or Realtor (any paid plan), perpetual testing access.",
     "max_uses": "",
     "times_used": "0",
-    "notes": "Internal / founder code. Always honored in app; sheet Status Inactive only disables sheet copy.",
+    "notes": "Internal / testing. In-app redeem sets admin_comp (no expiry). Stripe ADMIN promo is forever 100% off.",
 }
 
 
 def builtin_admin_promo() -> dict:
-    """Always-on ADMIN code: 100% off / free Premium or Realtor."""
+    """Always-on ADMIN code: 100% off forever / free Premium or Realtor (no expiry)."""
     return {
         "code": "ADMIN",
         "status": "active",
