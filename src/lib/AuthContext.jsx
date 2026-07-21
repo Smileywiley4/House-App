@@ -14,19 +14,26 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const mounted = useRef(true);
+  const isAuthenticatedRef = useRef(false);
 
   const checkUserAuth = useCallback(async () => {
     try {
-      setIsLoadingAuth(true);
+      // Only show the global auth spinner on first load — soft refreshes must not
+      // remount RequireAuth children (that caused PropertyVisits infinite spinner).
+      if (!isAuthenticatedRef.current) {
+        setIsLoadingAuth(true);
+      }
       const currentUser = await api.auth.me();
       if (!mounted.current) return;
       setUser(currentUser);
       setIsAuthenticated(true);
+      isAuthenticatedRef.current = true;
     } catch (error) {
       console.error('User auth check failed:', error);
       if (!mounted.current) return;
       setIsAuthenticated(false);
       setUser(null);
+      isAuthenticatedRef.current = false;
     } finally {
       if (mounted.current) setIsLoadingAuth(false);
     }
@@ -42,6 +49,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         setIsAuthenticated(false);
         setUser(null);
+        isAuthenticatedRef.current = false;
         setIsLoadingAuth(false);
       }
       return;
@@ -62,6 +70,7 @@ export const AuthProvider = ({ children }) => {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null);
         setIsAuthenticated(false);
+        isAuthenticatedRef.current = false;
         setIsLoadingAuth(false);
         return;
       }
@@ -95,6 +104,7 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    isAuthenticatedRef.current = false;
     if (shouldRedirect) {
       api.auth.logout(typeof window !== 'undefined' ? window.location.href : undefined);
     } else {

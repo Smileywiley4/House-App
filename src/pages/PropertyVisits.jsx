@@ -11,11 +11,22 @@ import {
   Home,
   ChevronRight,
   Users,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { api } from "@/api";
 import RequireAuth from "@/components/RequireAuth";
 import { usePlan } from "@/core/hooks/usePlan";
-import { useAuth } from "@/lib/AuthContext";
+
+const LOAD_TIMEOUT_MS = 25000;
+
+function withTimeout(promise, ms, label = "Request") {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out. Please try again.`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 export default function PropertyVisits() {
   return (
@@ -27,7 +38,6 @@ export default function PropertyVisits() {
 
 function PropertyVisitsInner() {
   const { isPremium } = usePlan();
-  const { checkAppState } = useAuth();
   const [saved, setSaved] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +45,7 @@ function PropertyVisitsInner() {
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailErr, setDetailErr] = useState(null);
 
   const [newAddress, setNewAddress] = useState(
     () => new URLSearchParams(window.location.search).get("address") || "",
@@ -56,16 +67,20 @@ function PropertyVisitsInner() {
   const load = useCallback(async () => {
     if (!isPremium) {
       setLoading(false);
+      setErr(null);
       return;
     }
+    setLoading(true);
     setErr(null);
     try {
-      const incomingP = api.library.sharedWithMe ? api.library.sharedWithMe().catch(() => []) : Promise.resolve([]);
-      const [list, flds, incoming] = await Promise.all([
-        api.library.listSaved(),
-        api.library.listFolders(),
-        incomingP,
-      ]);
+      const incomingP = api.library.sharedWithMe
+        ? api.library.sharedWithMe().catch(() => [])
+        : Promise.resolve([]);
+      const [list, flds, incoming] = await withTimeout(
+        Promise.all([api.library.listSaved(), api.library.listFolders(), incomingP]),
+        LOAD_TIMEOUT_MS,
+        "Visits library",
+      );
       setSaved(Array.isArray(list) ? list : []);
       setFolders(Array.isArray(flds) ? flds : []);
       setSharedWithMe(Array.isArray(incoming) ? incoming : []);
@@ -79,22 +94,25 @@ function PropertyVisitsInner() {
     }
   }, [isPremium]);
 
+  // Do not call checkAppState here — it sets isLoadingAuth and remounts under RequireAuth in a loop.
   useEffect(() => {
     load();
-    checkAppState?.();
-  }, [load, checkAppState]);
+  }, [load]);
 
   const fetchDetail = useCallback(async (id) => {
     if (!id) {
       setDetail(null);
+      setDetailErr(null);
       return;
     }
     setDetailLoading(true);
+    setDetailErr(null);
     try {
-      const d = await api.library.getSaved(id);
+      const d = await withTimeout(api.library.getSaved(id), LOAD_TIMEOUT_MS, "Visit details");
       setDetail(d);
-    } catch {
+    } catch (e) {
       setDetail(null);
+      setDetailErr(e?.message || "Could not load property details");
     } finally {
       setDetailLoading(false);
     }
@@ -169,7 +187,27 @@ function PropertyVisitsInner() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#10b981] animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#10b981] animate-spin" aria-label="Loading visits" />
+      </div>
+    );
+  }
+
+  if (err && saved.length === 0 && folders.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center">
+          <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-3" />
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Couldn’t load visits</h1>
+          <p className="text-sm text-slate-600 mb-6">{err}</p>
+          <button
+            type="button"
+            onClick={() => load()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white font-semibold hover:bg-[#059669]"
+          >
+            <RefreshCw size={16} />
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -196,7 +234,18 @@ function PropertyVisitsInner() {
             <Home size={18} className="text-[#10b981]" />
             Saved properties
           </h2>
-          {err && <p className="text-sm text-red-600">{err}</p>}
+          {err && (
+            <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+              <p className="text-sm text-red-700">{err}</p>
+              <button
+                type="button"
+                onClick={() => load()}
+                className="shrink-0 text-xs font-semibold text-red-800 underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <input
@@ -410,7 +459,20 @@ function PropertyVisitsInner() {
           )}
           {selectedId && detailLoading && (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-[#10b981] animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#10b981] animate-spin" aria-label="Loading details" />
+            </div>
+          )}
+          {selectedId && !detailLoading && detailErr && !detail && (
+            <div className="py-8 text-center space-y-3">
+              <p className="text-sm text-red-600">{detailErr}</p>
+              <button
+                type="button"
+                onClick={() => fetchDetail(selectedId)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium"
+              >
+                <RefreshCw size={14} />
+                Retry
+              </button>
             </div>
           )}
           {selectedId && detail && !detailLoading && (() => {
