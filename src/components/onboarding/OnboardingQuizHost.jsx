@@ -7,6 +7,7 @@ import { PRIORITY_QUIZ_EVENT } from "@/lib/importanceQuiz";
 /**
  * Global host for one-time (dismissible) priority quiz triggers.
  * Guests never see this. Skip / complete both clear the relevant profile flag.
+ * First-time signup quiz adds a location step and redirects to Browse (handled in modal).
  */
 export default function OnboardingQuizHost() {
   const { user, isAuthenticated, isLoadingAuth, refreshUser } = useAuth();

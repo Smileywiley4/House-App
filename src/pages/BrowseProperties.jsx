@@ -670,7 +670,7 @@ export default function BrowseProperties() {
 
   /** Place boundary / handoff ring — no freehand min-point requirement. */
   const applyBoundaryRing = useCallback(
-    (ring, label = "") => {
+    (ring, label = "", opts = {}) => {
       if (!ring || ring.length < 3) return false;
       setPolygon(ring);
       setAreaLabel(label || "");
@@ -684,7 +684,13 @@ export default function BrowseProperties() {
         setRadius(cover.radius);
         skipNextMoveFetch.current = true;
         setFitToken((t) => t + 1);
-        fetchBrowse({ lat: cover.lat, lng: cover.lng, radius: cover.radius, polygon: ring });
+        fetchBrowse({
+          lat: cover.lat,
+          lng: cover.lng,
+          radius: cover.radius,
+          polygon: ring,
+          filters: opts.filters,
+        });
       }
       return true;
     },
@@ -755,9 +761,18 @@ export default function BrowseProperties() {
 
     (async () => {
       try {
+        const handoffFilters =
+          handoff?.filters && typeof handoff.filters === "object" ? handoff.filters : null;
+        if (handoffFilters) {
+          setFilters(handoffFilters);
+          skipNextFilterFetch.current = true;
+        }
+
         if (handoff?.type === "boundary" && Array.isArray(handoff.ring) && handoff.ring.length >= 3) {
           if (handoff.label) setPlaceQuery(handoff.label.split(",")[0] || handoff.label);
-          applyBoundaryRing(handoff.ring, handoff.label || "");
+          applyBoundaryRing(handoff.ring, handoff.label || "", {
+            filters: handoffFilters || undefined,
+          });
           clearHandoffParams();
           return;
         }
@@ -782,15 +797,23 @@ export default function BrowseProperties() {
           return;
         }
 
-        if (wantsArea || qParam) {
-          const query = qParam || placeQuery;
+        // Onboarding / place handoff without a precomputed ring — resolve via ?q= or handoff label.
+        const areaQuery =
+          qParam ||
+          (handoff?.type === "boundary" && handoff.label ? String(handoff.label).trim() : "") ||
+          placeQuery;
+
+        if (wantsArea || areaQuery) {
+          const query = areaQuery;
           if (query && api.geo?.boundary) {
             setLoading(true);
             try {
               const boundary = await api.geo.boundary(query);
               if (boundary?.ring?.length >= 3) {
                 setPlaceQuery(boundary.label?.split(",")[0] || query);
-                applyBoundaryRing(boundary.ring, boundary.label || query);
+                applyBoundaryRing(boundary.ring, boundary.label || query, {
+                  filters: handoffFilters || undefined,
+                });
               } else if (Number.isFinite(boundary?.lat) && Number.isFinite(boundary?.lng)) {
                 skipNextMoveFetch.current = true;
                 setCenter({ lat: boundary.lat, lng: boundary.lng });
@@ -802,14 +825,15 @@ export default function BrowseProperties() {
                   lng: boundary.lng,
                   radius: 6,
                   polygon: null,
+                  filters: handoffFilters || undefined,
                 });
               } else {
                 setError("Could not find that place.");
-                await fetchBrowse({ polygon: null });
+                await fetchBrowse({ polygon: null, filters: handoffFilters || undefined });
               }
             } catch (err) {
               setError(err?.message || "Place search failed.");
-              await fetchBrowse({ polygon: null });
+              await fetchBrowse({ polygon: null, filters: handoffFilters || undefined });
             } finally {
               setLoading(false);
             }

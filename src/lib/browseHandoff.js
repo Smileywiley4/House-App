@@ -115,12 +115,71 @@ export function storePropertyHandoff(property) {
   });
 }
 
-export function storeBoundaryHandoff({ ring, label, lat, lng }) {
+/**
+ * Place boundary handoff (Home search, onboarding quiz → Browse).
+ * Optional `filters` / `presetId` / `weights` activate browse scoring context
+ * without baking location into the saved importance preset.
+ * @param {{
+ *   ring?: number[][],
+ *   label?: string,
+ *   lat?: number|null,
+ *   lng?: number|null,
+ *   filters?: object|null,
+ *   presetId?: string|null,
+ *   weights?: Record<string, number>|null,
+ * }} opts
+ */
+export function storeBoundaryHandoff({
+  ring,
+  label,
+  lat,
+  lng,
+  filters = null,
+  presetId = null,
+  weights = null,
+} = {}) {
   storeBrowseHandoff({
     type: "boundary",
     ring: Array.isArray(ring) ? ring : [],
     label: label || "",
     lat: Number.isFinite(Number(lat)) ? Number(lat) : null,
     lng: Number.isFinite(Number(lng)) ? Number(lng) : null,
+    filters: filters && typeof filters === "object" ? filters : null,
+    presetId: presetId || null,
+    weights: weights && typeof weights === "object" ? weights : null,
   });
+}
+
+/**
+ * Map high importance weights → soft browse auto-score minimums (1–10).
+ * Only categories that Browse already supports as score_mins.
+ * @param {Record<string, number>} weights
+ * @param {{ minImportance?: number, scoreFloor?: number }} [opts]
+ * @returns {Record<string, number>}
+ */
+export function scoreMinsFromImportanceWeights(weights, opts = {}) {
+  const minImportance = Number(opts.minImportance) || 8;
+  const scoreFloor = Number(opts.scoreFloor) || 6;
+  const factorIds = [
+    "hospital_distance",
+    "schools",
+    "public_transportation",
+    "neighborhood_safety",
+    "location_lifestyle",
+    "highway_access",
+    "bedroom_count",
+    "bathroom_count",
+    "overall_living_space",
+    "hoa_cost",
+    "garage_storage",
+  ];
+  /** @type {Record<string, number>} */
+  const score_mins = {};
+  for (const id of factorIds) {
+    const w = Number(weights?.[id]);
+    if (Number.isFinite(w) && w >= minImportance) {
+      score_mins[id] = scoreFloor;
+    }
+  }
+  return score_mins;
 }
