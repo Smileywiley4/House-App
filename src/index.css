@@ -158,4 +158,32 @@
       box-shadow: none !important;
     }
   }
+
+  /* BrowseProperties map — mute Positron tiles; brand cluster circles */
+  .browse-map-muted .leaflet-tile-pane {
+    filter: saturate(0.45) brightness(1.05) contrast(0.94);
+  }
+
+  .browse-map-pin {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .browse-map-cluster {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .browse-map-cluster-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: #10b981;
+    color: #fff;
+    font: 700 12px/1 system-ui, sans-serif;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.28);
+  }
 }
