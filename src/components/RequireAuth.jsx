@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { LogIn } from "lucide-react";
+import PropurtyLoader from "@/components/PropurtyLoader";
 
 export default function RequireAuth({ children, message = "Sign in to access this feature" }) {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -8,15 +9,7 @@ export default function RequireAuth({ children, message = "Sign in to access thi
   const loginHref = `/login?redirect=${encodeURIComponent(location.pathname + location.search)}`;
 
   if (isLoadingAuth) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div
-          className="w-10 h-10 border-2 border-[#106B49]/30 border-t-[#106B49] rounded-full animate-spin"
-          role="status"
-          aria-label="Loading"
-        />
-      </div>
-    );
+    return <PropurtyLoader variant="page" label="Loading…" theme="light" />;
   }
 
   if (isAuthenticated) return children;

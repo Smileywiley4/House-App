@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import TapFeedback from '@/components/TapFeedback';
+import PropurtyLoader from '@/components/PropurtyLoader';
 import Login from './pages/Login';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -24,9 +25,11 @@ const AuthenticatedApp = () => {
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
+      <PropurtyLoader
+        variant="fullscreen"
+        theme="light"
+        label="Loading…"
+      />
     );
   }
 

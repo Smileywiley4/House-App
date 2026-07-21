@@ -5,6 +5,7 @@ import { getSharedSupabase } from "@/lib/supabase";
 import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
 import { SeoHelmet } from "@/components/SeoHelmet";
+import PropurtyLoader from "@/components/PropurtyLoader";
 import { createPageUrl } from "@/utils";
 import CaptchaField, { isCaptchaConfigured } from "@/components/CaptchaField";
 import {
@@ -622,39 +623,45 @@ export default function Login() {
 
   if (oauthLoading) {
     return (
-      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
-        <p className="text-white font-semibold">Signing you in...</p>
-        <p className="text-slate-400 text-sm mt-1">Completing Google sign-in</p>
-      </div>
+      <PropurtyLoader
+        variant="fullscreen"
+        theme="dark"
+        label="Signing in…"
+        detail="Completing Google sign-in"
+      />
     );
   }
 
   if (isSupabaseAuth && isLoadingAuth) {
     return (
-      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
-        <p className="text-white font-semibold text-sm">Checking your session…</p>
-      </div>
+      <PropurtyLoader
+        variant="fullscreen"
+        theme="dark"
+        label="Loading…"
+        detail="Checking your session…"
+      />
     );
   }
 
   if (isSupabaseAuth && isAuthenticated && !isOAuthReturnUrl() && !oauthLoading) {
     return (
-      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
-        <p className="text-white font-semibold text-sm">Taking you to the app…</p>
-      </div>
+      <PropurtyLoader
+        variant="fullscreen"
+        theme="dark"
+        label="Signing in…"
+        detail="Taking you to the app…"
+      />
     );
   }
 
   if (isSupabaseAuth && isAuthenticated && isOAuthReturnUrl()) {
     return (
-      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
-        <p className="text-white font-semibold">Signing you in...</p>
-        <p className="text-slate-400 text-sm mt-1">Completing Google sign-in</p>
-      </div>
+      <PropurtyLoader
+        variant="fullscreen"
+        theme="dark"
+        label="Signing in…"
+        detail="Completing Google sign-in"
+      />
     );
   }
 
