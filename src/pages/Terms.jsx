@@ -70,6 +70,11 @@ export default function Terms() {
           guarantees of value, condition, title, or marketability.
         </li>
         <li>
+          Property Scores reflect your stated preferences and publicly available data; they are not appraisals and
+          should not be the sole basis for a purchase decision. Off-market and automated value estimates are likewise
+          estimates only — not appraisals — and should not be the sole basis for a purchase decision.
+        </li>
+        <li>
           Nothing in the Service is financial, investment, legal, tax, insurance, or real-estate licensing advice.
           Consult licensed professionals before making decisions.
         </li>

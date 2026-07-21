@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Polygon, Polyline, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polygon,
+  Polyline,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "react-leaflet-cluster/lib/assets/MarkerCluster.css";
+import "react-leaflet-cluster/lib/assets/MarkerCluster.Default.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -33,6 +45,7 @@ import { loadBrowseHandoff, looksLikePlaceQuery } from "@/lib/browseHandoff";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { getPropertyByAddress } from "@/core/propertyService";
 import SharePropertyButton from "@/components/SharePropertyButton";
+import { OFF_MARKET_ESTIMATE_DISCLAIMER } from "@/core/companyConfig";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -44,6 +57,10 @@ L.Icon.Default.mergeOptions({
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 const DEFAULT_CENTER = { lat: 40.7608, lng: -111.891 };
 const DEFAULT_ZOOM = 12;
+/** Price pills appear at this zoom and above; below = small brand dots (+ hover tooltip). */
+const PRICE_LABEL_ZOOM = 14;
+const BRAND_PIN = "#10b981";
+const BRAND_PIN_SELECTED = "#059669";
 
 function formatPrice(n) {
   if (n == null || n === "") return "—";
@@ -76,22 +93,50 @@ function coverSrc(p) {
   return null;
 }
 
-function priceIcon(price, selected) {
+/** Unclustered pin: small brand dot when zoomed out; compact price pill when closer / selected. */
+function propertyPinIcon({ price, selected, showPrice }) {
   const label = formatPrice(price);
+  if (!showPrice && !selected) {
+    const size = 9;
+    return L.divIcon({
+      className: "browse-map-pin",
+      html: `<div role="img" aria-label="Property priced ${label}" style="
+        width:${size}px;height:${size}px;border-radius:50%;
+        background:${BRAND_PIN};
+        border:2px solid #fff;
+        box-shadow:0 1px 3px rgba(15,23,42,.28);
+      "></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+  const bg = selected ? BRAND_PIN_SELECTED : BRAND_PIN;
   return L.divIcon({
-    className: "",
-    html: `<div style="
-      background:${selected ? "#047857" : "#0f172a"};
+    className: "browse-map-pin",
+    html: `<div role="img" aria-label="Property priced ${label}" style="
+      background:${bg};
       color:#fff;
-      font:700 11px/1 system-ui,sans-serif;
-      padding:6px 8px;
+      font:700 10px/1 system-ui,sans-serif;
+      padding:4px 7px;
       border-radius:999px;
-      box-shadow:0 2px 8px rgba(0,0,0,.28);
+      box-shadow:0 1px 4px rgba(15,23,42,.22);
       white-space:nowrap;
-      border:2px solid #fff;
+      border:1.5px solid #fff;
     ">${label}</div>`,
-    iconSize: [54, 28],
-    iconAnchor: [27, 28],
+    iconSize: [48, 22],
+    iconAnchor: [24, 22],
+  });
+}
+
+function createBrowseClusterIcon(cluster) {
+  const count = cluster.getChildCount();
+  let size = 34;
+  if (count >= 50) size = 46;
+  else if (count >= 10) size = 40;
+  return L.divIcon({
+    html: `<div class="browse-map-cluster-inner" style="width:${size}px;height:${size}px" aria-label="${count} properties">${count}</div>`,
+    className: "browse-map-cluster",
+    iconSize: L.point(size, size),
   });
 }
 
@@ -195,6 +240,18 @@ function MapMoveWatcher({ onMoveEnd, enabled }) {
       });
     },
   });
+  return null;
+}
+
+/** Keep React zoom state in sync for pin label vs dot (works even when area filter locks pan). */
+function MapZoomTracker({ onZoom }) {
+  const map = useMap();
+  useMapEvents({
+    zoomend: () => onZoom?.(map.getZoom()),
+  });
+  useEffect(() => {
+    onZoom?.(map.getZoom());
+  }, [map, onZoom]);
   return null;
 }
 
@@ -335,7 +392,7 @@ function DrawInteraction({
   return (
     <Polyline
       positions={closed}
-      pathOptions={{ color: "#047857", weight: 2.5, dashArray: "6 6" }}
+      pathOptions={{ color: BRAND_PIN_SELECTED, weight: 1.5, dashArray: "5 5", opacity: 0.85 }}
     />
   );
 }
@@ -1134,7 +1191,7 @@ export default function BrowseProperties() {
             <MapContainer
               center={[center.lat, center.lng]}
               zoom={zoom}
-              className="h-full w-full z-0"
+              className="browse-map-muted h-full w-full z-0"
               scrollWheelZoom
             >
               <TileLayer
@@ -1143,6 +1200,7 @@ export default function BrowseProperties() {
               />
               <MapController center={center} zoom={zoom} flyToken={flyToken} />
               <FitBoundsToRing ring={polygon} token={fitToken} />
+              <MapZoomTracker onZoom={setZoom} />
               <MapMoveWatcher onMoveEnd={onMapMoveEnd} enabled={!drawMode && !polygon} />
               <DrawModeMapBehavior active={drawMode} />
               <DrawInteraction
@@ -1157,10 +1215,11 @@ export default function BrowseProperties() {
                 <Polygon
                   positions={polygon}
                   pathOptions={{
-                    color: "#047857",
-                    weight: 2,
-                    fillColor: "#059669",
-                    fillOpacity: 0.14,
+                    color: BRAND_PIN_SELECTED,
+                    weight: 1.5,
+                    fillColor: BRAND_PIN,
+                    fillOpacity: 0.04,
+                    opacity: 0.9,
                   }}
                 />
               )}
@@ -1173,23 +1232,46 @@ export default function BrowseProperties() {
                     zIndexOffset={1000}
                   />
                 )}
-              {markers.map((p) => (
-                <Marker
-                  key={p.id || `${p.lat},${p.lng},${p.address}`}
-                  position={[Number(p.lat), Number(p.lng)]}
-                  icon={priceIcon(p.price, selectedId === p.id)}
-                  eventHandlers={{
-                    click: () => {
-                      if (drawMode) return;
-                      setSelectedId(p.id);
-                      document.getElementById(`browse-card-${p.id}`)?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "nearest",
-                      });
-                    },
-                  }}
-                />
-              ))}
+              <MarkerClusterGroup
+                chunkedLoading
+                showCoverageOnHover={false}
+                maxClusterRadius={52}
+                spiderfyOnMaxZoom
+                disableClusteringAtZoom={16}
+                iconCreateFunction={createBrowseClusterIcon}
+              >
+                {markers.map((p) => {
+                  const selected = selectedId === p.id;
+                  const showPrice = zoom >= PRICE_LABEL_ZOOM;
+                  return (
+                    <Marker
+                      key={p.id || `${p.lat},${p.lng},${p.address}`}
+                      position={[Number(p.lat), Number(p.lng)]}
+                      icon={propertyPinIcon({
+                        price: p.price,
+                        selected,
+                        showPrice,
+                      })}
+                      eventHandlers={{
+                        click: () => {
+                          if (drawMode) return;
+                          setSelectedId(p.id);
+                          document.getElementById(`browse-card-${p.id}`)?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "nearest",
+                          });
+                        },
+                      }}
+                    >
+                      {!showPrice && !selected && (
+                        <Tooltip direction="top" offset={[0, -6]} opacity={0.95}>
+                          {formatPrice(p.price)}
+                        </Tooltip>
+                      )}
+                    </Marker>
+                  );
+                })}
+              </MarkerClusterGroup>
             </MapContainer>
             <div className="absolute top-3 left-3 z-[500] bg-[#1a2234]/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
               {loading
@@ -1218,6 +1300,11 @@ export default function BrowseProperties() {
                   {polygon ? " inside the active area" : ""}. Select homes to compare or start a
                   project.
                 </p>
+                {mode === "off_market" && (
+                  <p className="text-[11px] leading-relaxed text-slate-400 mt-1.5 max-w-xl">
+                    {OFF_MARKET_ESTIMATE_DISCLAIMER}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -1336,6 +1423,11 @@ export default function BrowseProperties() {
                           <div className="text-lg font-bold text-[#1a2234]">
                             {p.on_market ? formatPrice(p.price) : `Est. ${formatPrice(p.price)}`}
                           </div>
+                          {!p.on_market && (
+                            <p className="text-[10px] leading-snug text-slate-400 mt-0.5">
+                              Estimate only — not an appraisal; not the sole basis for a purchase.
+                            </p>
+                          )}
                           <div className="text-xs text-slate-600 mt-0.5">
                             {[
                               p.bedrooms != null ? `${p.bedrooms} bds` : null,

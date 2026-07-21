@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { usePlan } from "@/core/hooks/usePlan";
 import { readCurrentProperty } from "@/core/currentProperty";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
+import { PROPERTY_SCORE_DISCLAIMER } from "@/core/companyConfig";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -334,7 +335,8 @@ export default function Evaluate() {
 
       {/* Score Summary */}
       <div className="bg-white border-b border-slate-100 px-6 py-5">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="max-w-4xl mx-auto space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="text-center">
             <div className={`text-4xl font-bold ${canSaveScore ? "text-[#1a2234]" : "text-slate-400"}`}>
@@ -469,6 +471,10 @@ export default function Evaluate() {
           {!canSaveScore && isAuthenticated && !saved && (
             <p className="w-full text-sm text-slate-500">{saveGateMessage}</p>
           )}
+        </div>
+        <p className="text-[11px] leading-relaxed text-slate-400 max-w-2xl">
+          {PROPERTY_SCORE_DISCLAIMER}
+        </p>
         </div>
       </div>
 
