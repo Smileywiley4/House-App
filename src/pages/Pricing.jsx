@@ -192,7 +192,7 @@ export default function Pricing() {
           <strong className="text-slate-500 font-semibold">Subscription disclosure:</strong> Paid plans use secure
           Stripe checkout. Prices are as shown (e.g. Premium $3.99/mo or $39.99/yr; Realtor as listed). Subscriptions{" "}
           <strong className="text-slate-500 font-semibold">auto-renew</strong> each billing period until you cancel.
-          Cancel anytime via Profile → Billing (Stripe customer portal). Deleting your account cancels web billing
+          Cancel anytime via Profile → Billing → Manage subscription / Cancel (Stripe customer portal). Deleting your account cancels web billing
           immediately so you are not charged at the next period. Review our{" "}
           <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms of Service</Link>
           {" "}and{" "}
@@ -271,7 +271,8 @@ export default function Pricing() {
 
         {/* FAQ note */}
         <p className="text-center text-xs text-slate-400 mt-10">
-          Subscriptions auto-renew each billing period until canceled. Cancel anytime from Profile → Billing.
+          Subscriptions auto-renew each billing period until canceled. Cancel anytime from Profile → Billing → Manage
+          subscription / Cancel (self-serve Stripe portal; no support ticket required).
           Your payment method is charged at each renewal unless you cancel first. Questions?{" "}
           <Link to={createPageUrl("Support")} className="text-[#10b981] hover:underline">Contact support</Link>
           {" "}or email{" "}

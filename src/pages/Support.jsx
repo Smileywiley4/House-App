@@ -75,7 +75,10 @@ export default function Support() {
       <h2>Common topics</h2>
       <ul>
         <li>
-          <strong>Cancel subscription</strong> — Web: Profile → Billing. iOS: Settings → Apple ID → Subscriptions.
+          <strong>Cancel subscription</strong> — Self-serve (no email required). Web:{' '}
+          <Link to={`${createPageUrl('Profile')}?tab=billing`}>Profile → Billing → Manage subscription / Cancel</Link>{' '}
+          (Stripe portal). After you confirm in Stripe, renewals stop; access continues through the period already paid.
+          iOS: Settings → Apple ID → Subscriptions. Android: Google Play → Subscriptions.
         </li>
         <li>
           <strong>Restore iOS purchase</strong> — Use &quot;Restore purchases&quot; in the mobile app subscription section.

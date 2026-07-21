@@ -471,7 +471,7 @@ function ProfileInner() {
                 { id: "usage", title: "Usage", desc: "Scores, presets, activity", icon: Activity },
                 { id: "settings", title: "Settings", desc: "Appearance & this device", icon: Cog },
                 { id: "security", title: "Security", desc: "Email, password & sign out", icon: Shield },
-                { id: "billing", title: "Billing", desc: "Plan & payment methods", icon: CreditCard },
+                { id: "billing", title: "Billing", desc: "Plan, portal & cancel", icon: CreditCard },
                 { id: "preferences", title: "Score preferences", desc: "Category weights", icon: SlidersHorizontal },
                 { id: "presets", title: "Presets", desc: "Saved filter sets", icon: Bookmark },
                 { id: "history", title: "Saved properties", desc: "Scored listings", icon: BarChart3 },
@@ -850,7 +850,9 @@ function ProfileInner() {
           <div className="max-w-lg space-y-6">
             <div>
               <h2 className="text-lg font-bold text-foreground mb-1">Billing &amp; payment</h2>
-              <p className="text-slate-400 text-sm">Your plan and Stripe customer portal.</p>
+              <p className="text-slate-400 text-sm">
+                Manage your plan, payment methods, or cancel — self-serve via Stripe. No email or phone required.
+              </p>
             </div>
             {upgradeBanner && (
               <div className="bg-[#10b981]/10 border border-[#10b981]/25 text-[#059669] text-sm rounded-xl px-4 py-3">
@@ -880,9 +882,23 @@ function ProfileInner() {
                       setPortalLoading(true);
                       try {
                         const { url } = await api.subscription.getPortalUrl();
-                        if (url) window.location.href = url;
+                        if (url) {
+                          window.location.href = url;
+                          return;
+                        }
+                        toast({
+                          title: "Billing portal unavailable",
+                          description:
+                            "We couldn’t open Stripe for this account. Try again, or email support if you never completed checkout.",
+                          variant: "destructive",
+                        });
                       } catch (err) {
                         console.error(err);
+                        toast({
+                          title: "Could not open billing portal",
+                          description: err?.message || "Please try again in a moment.",
+                          variant: "destructive",
+                        });
                       } finally {
                         setPortalLoading(false);
                       }
@@ -890,12 +906,19 @@ function ProfileInner() {
                     disabled={portalLoading}
                     className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#10b981] hover:bg-[#059669] text-white disabled:opacity-60"
                   >
-                    {portalLoading ? "Opening…" : "Open billing portal"}
+                    {portalLoading ? "Opening…" : "Manage subscription / Cancel"}
                   </button>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Opens the Stripe customer portal. There you can update payment methods, view invoices, or{" "}
+                    <strong className="text-foreground font-semibold">Cancel</strong> your plan. No surveys or support
+                    tickets required. After you confirm cancel in Stripe,{" "}
+                    <strong className="text-foreground font-semibold">
+                      you won&apos;t be charged again at the next renewal
+                    </strong>
+                    ; access continues through the period already paid.
                     {(plan || "").toLowerCase() === "premium"
-                      ? "Your Premium plan auto-renews until canceled. Upgrade to Realtor anytime from Pricing — we’ll prorate the difference. Use the billing portal to update payment methods, view invoices, or cancel."
-                      : "Your plan auto-renews until canceled. In the Stripe portal you can update payment methods, view invoices, and cancel. If you cancel, charges stop after the current billing period ends."}
+                      ? " Upgrade to Realtor anytime from Pricing — we’ll prorate the difference."
+                      : ""}
                   </p>
                 </>
               ) : (
@@ -926,6 +949,13 @@ function ProfileInner() {
               <div>
                 <h2 className="text-lg font-bold text-foreground mb-1">Scoring Weights</h2>
                 <p className="text-slate-400 text-sm">Set how much each category matters to you (0 = don't care, 10 = critical). These auto-fill when you score a property.</p>
+                <button
+                  type="button"
+                  onClick={retakePriorityQuiz}
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:text-[#047857]"
+                >
+                  <Sparkles size={14} /> Retake priority quiz
+                </button>
               </div>
               <button
                 onClick={savePreferences}
@@ -972,6 +1002,13 @@ function ProfileInner() {
               <p className="text-slate-400 text-sm">
                 Save your scoring weights and search filters as presets to keep your multi-property search consistent.
               </p>
+              <button
+                type="button"
+                onClick={retakePriorityQuiz}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:text-[#047857]"
+              >
+                <Sparkles size={14} /> Retake priority quiz
+              </button>
             </div>
 
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mb-6">

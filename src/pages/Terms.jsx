@@ -168,9 +168,10 @@ export default function Terms() {
           the then-current price for the next period.
         </li>
         <li>
-          <strong>How to cancel</strong> — Web: Profile → Billing → Stripe customer portal. iOS: Apple ID
-          subscription settings. Android: Google Play subscriptions. Cancellation stops future renewals; access
-          typically continues through the paid period already charged.
+          <strong>How to cancel</strong> — Web: Profile → Billing → Manage subscription / Cancel (Stripe customer
+          portal). No support ticket, phone call, or retention survey is required. iOS: Apple ID subscription
+          settings. Android: Google Play subscriptions. Cancellation stops future renewals; access typically
+          continues through the paid period already charged.
         </li>
         <li>
           <strong>Failed payments</strong> — Processors may retry failed renewals; access may be suspended if payment
