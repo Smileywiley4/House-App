@@ -2234,6 +2234,17 @@ export function createPythonBackendAdapter() {
       redeem: (code, planId = 'premium') =>
         request('POST', '/api/promo/redeem', { code, plan_id: planId }),
     },
+    licenseVerification: {
+      request: (payload = {}) =>
+        request('POST', '/api/auth/me/license/request-verification', payload),
+      listPending: () => request('GET', '/api/admin/license-verification/pending'),
+      decide: (userId, status, notes) =>
+        request('PATCH', `/api/admin/license-verification/${encodeURIComponent(userId)}`, {
+          status,
+          notes,
+        }),
+      lookupUrl: (state) => request('GET', `/api/license/lookup-url/${encodeURIComponent(state)}`),
+    },
     /** Premium/Realtor: visit photos, folders, realtor sharing */
     library: {
       searchRealtors: (q) => request('GET', `/api/library/realtors/search?q=${encodeURIComponent(q || '')}`),
@@ -2318,6 +2329,9 @@ export function createPythonBackendAdapter() {
       revokeShare: () => request('DELETE', '/api/preference-cards/share'),
       getPublic: (token) =>
         publicGet(`/api/preference-cards/public/${encodeURIComponent(token || '')}`),
+    },
+    support: {
+      submitFeedback: (body) => request('POST', '/api/support/feedback', body),
     },
     preferences: {
       getLearned: () => request('GET', '/api/preferences/learned'),

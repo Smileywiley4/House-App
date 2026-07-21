@@ -19,6 +19,7 @@ import SearchBarTop from "@/components/SearchBarTop";
 import SiteFooter from "@/components/trust/SiteFooter";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import OnboardingQuizHost from "@/components/onboarding/OnboardingQuizHost";
+import FeedbackWidget from "@/components/FeedbackWidget";
 import PrimaryNavLink from "@/components/nav/PrimaryNavLink";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {

@@ -14,6 +14,8 @@ const getSupabase = () => {
 /** Map Supabase profile row to User shape */
 function profileToUser(row) {
   if (!row) return null;
+  const license_number = row.license_number ?? row.realtor_license ?? '';
+  const brokerage_name = row.brokerage_name ?? row.brokerage ?? '';
   return {
     id: row.id,
     email: row.email,
@@ -21,9 +23,15 @@ function profileToUser(row) {
     default_weights: row.default_weights ?? {},
     role: row.role ?? 'user',
     plan: row.plan ?? 'free',
-    realtor_license: row.realtor_license ?? '',
-    brokerage: row.brokerage ?? '',
+    realtor_license: license_number,
+    license_number,
+    brokerage: brokerage_name,
+    brokerage_name,
     state: row.state ?? '',
+    license_state: row.license_state ?? '',
+    license_verification_status: row.license_verification_status ?? 'self_reported',
+    license_verified_at: row.license_verified_at ?? null,
+    license_verification_notes: row.license_verification_notes ?? '',
     linked_realtor_id: row.linked_realtor_id ?? null,
     avatar_url: row.avatar_url ?? '',
     has_seen_onboarding_quiz: Boolean(row.has_seen_onboarding_quiz),
@@ -72,8 +80,17 @@ export function createSupabaseAdapter() {
         if (profile.full_name !== undefined) updates.full_name = profile.full_name;
         if (profile.default_weights !== undefined) updates.default_weights = profile.default_weights;
         if (profile.realtor_license !== undefined) updates.realtor_license = profile.realtor_license;
+        if (profile.license_number !== undefined) {
+          updates.license_number = profile.license_number;
+          updates.realtor_license = profile.license_number;
+        }
         if (profile.brokerage !== undefined) updates.brokerage = profile.brokerage;
+        if (profile.brokerage_name !== undefined) {
+          updates.brokerage_name = profile.brokerage_name;
+          updates.brokerage = profile.brokerage_name;
+        }
         if (profile.state !== undefined) updates.state = profile.state;
+        if (profile.license_state !== undefined) updates.license_state = profile.license_state;
         if (profile.linked_realtor_id !== undefined) updates.linked_realtor_id = profile.linked_realtor_id;
         if (profile.avatar_url !== undefined) updates.avatar_url = profile.avatar_url;
         if (profile.has_seen_onboarding_quiz !== undefined) {
@@ -84,6 +101,27 @@ export function createSupabaseAdapter() {
         }
         await supabase.from('profiles').update(updates).eq('id', user.id);
         return profileToUser({ ...user, ...updates });
+      },
+
+      requestLicenseVerification: async (payload = {}) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw Object.assign(new Error('Not authenticated'), { status: 401 });
+        const prep = {};
+        if (payload.license_number !== undefined) {
+          prep.license_number = payload.license_number;
+          prep.realtor_license = payload.license_number;
+        }
+        if (payload.license_state !== undefined) prep.license_state = payload.license_state;
+        if (payload.brokerage_name !== undefined) {
+          prep.brokerage_name = payload.brokerage_name;
+          prep.brokerage = payload.brokerage_name;
+        }
+        if (Object.keys(prep).length) {
+          await supabase.from('profiles').update(prep).eq('id', user.id);
+        }
+        const { data, error } = await supabase.rpc('request_license_verification');
+        if (error) throw error;
+        return profileToUser(data);
       },
       updateEmail: async (email) => {
         const normalized = String(email || '').trim().toLowerCase();
@@ -1084,6 +1122,10 @@ export function createSupabaseAdapter() {
       regenerate: () => Promise.reject(new Error('Preference cards require Python backend')),
       revokeShare: () => Promise.reject(new Error('Preference cards require Python backend')),
       getPublic: () => Promise.reject(new Error('Preference cards require Python backend')),
+    },
+    support: {
+      submitFeedback: () =>
+        Promise.reject(new Error('In-app feedback requires the Python API (VITE_USE_PYTHON_BACKEND=true).')),
     },
   };
 }

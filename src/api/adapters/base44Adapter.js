@@ -624,4 +624,8 @@ export const base44Adapter = {
     revokeShare: () => Promise.reject(new Error('Preference cards require Python backend')),
     getPublic: () => Promise.reject(new Error('Preference cards require Python backend')),
   },
+  support: {
+    submitFeedback: () =>
+      Promise.reject(new Error('In-app feedback requires the Python API (VITE_USE_PYTHON_BACKEND=true).')),
+  },
 };
