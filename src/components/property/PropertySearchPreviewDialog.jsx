@@ -24,6 +24,7 @@ import { saveCurrentProperty } from "@/core/currentProperty";
 import { createPageUrl } from "@/utils";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 import { browsePropertyUrl, storePropertyHandoff } from "@/lib/browseHandoff";
+import SharePropertyButton from "@/components/SharePropertyButton";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -327,6 +328,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
             >
               <Columns3 size={17} /> Add to Compare
             </button>
+            <SharePropertyButton property={property} variant="sidebar" />
 
             <div className="mt-5 space-y-1.5 text-[11px] leading-5 text-slate-500">
               {property.data_sources?.length > 0 && (

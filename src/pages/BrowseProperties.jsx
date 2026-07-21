@@ -32,6 +32,7 @@ import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 import { loadBrowseHandoff, looksLikePlaceQuery } from "@/lib/browseHandoff";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { getPropertyByAddress } from "@/core/propertyService";
+import SharePropertyButton from "@/components/SharePropertyButton";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -1356,7 +1357,7 @@ export default function BrowseProperties() {
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Link
                               to={evaluateHref(p)}
-                              className="inline-flex px-3 py-1.5 rounded-lg bg-[#10b981] hover:bg-[#059669] text-white text-[11px] font-bold"
+                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg bg-[#10b981] hover:bg-[#059669] text-white text-[11px] font-bold"
                             >
                               Score this home
                             </Link>
@@ -1366,10 +1367,11 @@ export default function BrowseProperties() {
                                 storeBrowseCompareSelection([p]);
                                 navigate(createPageUrl("Compare"));
                               }}
-                              className="inline-flex px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
+                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
                             >
                               Compare
                             </button>
+                            <SharePropertyButton property={p} variant="compact" stopPropagation />
                           </div>
                         </div>
                       </div>

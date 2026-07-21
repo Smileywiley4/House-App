@@ -19,6 +19,7 @@ import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import { getPropertyByAddress } from "@/core/propertyService";
 import ShareComparison from "@/components/ShareComparison";
+import SharePropertyButton from "@/components/SharePropertyButton";
 import RequireAuth from "@/components/RequireAuth";
 import SaveToProjectModal from "@/components/browse/SaveToProjectModal";
 import SendForScoringModal from "@/components/shares/SendForScoringModal";
@@ -223,11 +224,22 @@ function CompareInner() {
                     key={`slot-${index}-${id}`}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border bg-[#10b981] border-[#10b981] text-white"
                   >
-                    <span>{score.property_address?.split(",")[0]}</span>
+                    <span className="truncate max-w-[10rem]">{score.property_address?.split(",")[0]}</span>
+                    <SharePropertyButton
+                      property={{
+                        property_address: score.property_address,
+                        formatted_address: score.property_address,
+                        lat: score.lat,
+                        lng: score.lng,
+                      }}
+                      variant="icon"
+                      label=""
+                      stopPropagation
+                    />
                     <button
                       type="button"
                       onClick={() => clearSlot(index)}
-                      className="ml-1 opacity-70 hover:opacity-100"
+                      className="ml-0.5 opacity-70 hover:opacity-100 min-h-7 min-w-7 inline-flex items-center justify-center"
                       aria-label="Clear slot"
                       title="Clear slot"
                     >

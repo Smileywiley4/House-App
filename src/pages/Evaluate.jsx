@@ -15,6 +15,7 @@ import { PremiumFeatureGroup } from "@/components/PremiumGate";
 import { NEIGHBORHOOD_CATEGORIES } from "@/components/evaluate/categories";
 import PresetPicker from "@/components/presets/PresetPicker";
 import SendForScoringModal from "@/components/shares/SendForScoringModal";
+import SharePropertyButton from "@/components/SharePropertyButton";
 import { useAuth } from "@/lib/AuthContext";
 import { usePlan } from "@/core/hooks/usePlan";
 import { readCurrentProperty } from "@/core/currentProperty";
@@ -336,6 +337,17 @@ export default function Evaluate() {
                 {returning ? "Sending…" : "Send back to realtor"}
               </button>
             )}
+            <SharePropertyButton
+              property={{
+                address: property.address,
+                city: property.city,
+                state: property.state,
+                lat: property.lat,
+                lng: property.lng,
+                formatted_address: [property.address, property.city, property.state].filter(Boolean).join(", "),
+              }}
+              variant="onDark"
+            />
             <button
               onClick={sendToCompare}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm"
