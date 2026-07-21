@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.dependencies import get_current_user_id, get_supabase_admin
-from app.listing_alerts import record_browse_preference
+from app.listing_alerts import format_filter_summary, record_browse_preference
 
 router = APIRouter(tags=["browse-prefs-alerts"])
 
@@ -55,18 +55,7 @@ async def suggested_browse_presets(
     suggestions = []
     for row in rows:
         filters = row.get("filters") or {}
-        label_parts = []
-        sm = filters.get("score_mins") if isinstance(filters.get("score_mins"), dict) else {}
-        if sm:
-            for k, v in list(sm.items())[:2]:
-                label_parts.append(f"{k.replace('_', ' ')} ≥{v}")
-        if filters.get("beds") or filters.get("beds_min"):
-            label_parts.append(f"{filters.get('beds') or filters.get('beds_min')}+ beds")
-        pmin = filters.get("price_min") or filters.get("budget_min")
-        pmax = filters.get("price_max") or filters.get("budget_max")
-        if pmin or pmax:
-            label_parts.append("price range")
-        name = ", ".join(label_parts) if label_parts else "Frequent search"
+        name = format_filter_summary(filters) or "Frequent search"
         suggestions.append(
             {
                 "id": row.get("id"),
@@ -78,6 +67,86 @@ async def suggested_browse_presets(
             }
         )
     return {"suggestions": suggestions}
+
+
+@router.get("/browse-prefs/list")
+async def list_browse_presets(
+    user_id: str = Depends(get_current_user_id),
+    client_id: str | None = None,
+    limit: int = 20,
+):
+    """
+    Unified presets for Browse + SearchByPreset:
+    saved `user_presets` plus soft-learned `user_browse_preference_memory` rows.
+    """
+    supabase = get_supabase_admin()
+    lim = max(1, min(int(limit or 20), 40))
+
+    # Saved presets (same table/query as /api/entities/presets)
+    try:
+        q = supabase.table("user_presets").select("*").eq("user_id", user_id)
+        if client_id:
+            q = q.eq("client_id", client_id)
+        else:
+            q = q.is_("client_id", "null")
+        saved_rows = q.order("created_at", desc=True).limit(lim).execute().data or []
+    except Exception:
+        saved_rows = []
+
+    presets = []
+    for row in saved_rows:
+        filters = row.get("filters") or {}
+        name = (row.get("name") or "").strip() or format_filter_summary(filters) or "Saved search"
+        presets.append(
+            {
+                "id": row.get("id"),
+                "name": name,
+                "filters": filters,
+                "weights": row.get("weights") or {},
+                "client_id": row.get("client_id"),
+                "created_at": row.get("created_at"),
+                "kind": "preset",
+                "suggested": False,
+            }
+        )
+
+    # Soft-learned suggestions (skip when listing a realtor client's presets)
+    suggestions: list[dict] = []
+    if not client_id:
+        try:
+            r = (
+                supabase.table("user_browse_preference_memory")
+                .select("*")
+                .eq("user_id", user_id)
+                .gte("use_count", 2)
+                .order("use_count", desc=True)
+                .order("last_used_at", desc=True)
+                .limit(min(lim, 12))
+                .execute()
+            )
+            mem_rows = r.data or []
+        except Exception:
+            mem_rows = []
+        for row in mem_rows:
+            filters = row.get("filters") or {}
+            suggestions.append(
+                {
+                    "id": row.get("id"),
+                    "name": format_filter_summary(filters) or "Frequent search",
+                    "filters": filters,
+                    "use_count": row.get("use_count"),
+                    "last_used_at": row.get("last_used_at"),
+                    "kind": "suggested",
+                    "suggested": True,
+                }
+            )
+
+    return {
+        "presets": presets,
+        "suggestions": suggestions,
+        # Flat list for simple clients (suggestions first, then saved)
+        "items": suggestions + presets,
+    }
 
 
 # ---------------------------------------------------------------------------

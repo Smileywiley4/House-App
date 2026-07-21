@@ -37,6 +37,94 @@ def _filters_fingerprint(filters: dict) -> str:
     return hashlib.sha256(canonical.encode()).hexdigest()[:32]
 
 
+def _compact_price(value: Any) -> str | None:
+    try:
+        if value is None or value == "":
+            return None
+        n = float(value)
+    except (TypeError, ValueError):
+        return None
+    if n >= 1_000_000:
+        m = n / 1_000_000
+        rounded = round(m) if m >= 10 else round(m * 10) / 10
+        text = f"{int(rounded)}" if float(rounded).is_integer() else f"{rounded}"
+        return f"${text}M"
+    if n >= 1_000:
+        k = n / 1_000
+        rounded = round(k) if k >= 100 else round(k * 10) / 10
+        text = f"{int(rounded)}" if float(rounded).is_integer() else f"{rounded}"
+        return f"${text}K"
+    return f"${int(round(n)):,}"
+
+
+def _beds_or_baths_label(value: Any) -> str | None:
+    """Normalize beds/baths stored as int, '2', '5+', or ['2','3']."""
+    if value is None or value == "":
+        return None
+    items = value if isinstance(value, list) else [value]
+    parts = [str(v).strip() for v in items if v is not None and str(v).strip()]
+    if not parts:
+        return None
+    if len(parts) == 1:
+        one = parts[0]
+        return one if one.endswith("+") else f"{one}+"
+    def _sort_key(p: str):
+        try:
+            return (0, int("".join(ch for ch in p if ch.isdigit()) or 0))
+        except ValueError:
+            return (1, p)
+    parts = sorted(parts, key=_sort_key)
+    return f"{parts[0]}–{parts[-1]}"
+
+
+def format_filter_summary(filters: dict | None) -> str:
+    """Human label for browse filter chips, e.g. '2+ beds, $200K–$400K'."""
+    f = filters or {}
+    parts: list[str] = []
+
+    beds = (
+        _beds_or_baths_label(f.get("beds"))
+        or _beds_or_baths_label(f.get("beds_min"))
+        or _beds_or_baths_label(f.get("bedrooms"))
+    )
+    if beds:
+        parts.append(f"{beds} beds")
+
+    baths = (
+        _beds_or_baths_label(f.get("baths"))
+        or _beds_or_baths_label(f.get("baths_min"))
+        or _beds_or_baths_label(f.get("bathrooms"))
+    )
+    if baths:
+        parts.append(f"{baths} baths")
+
+    pmin = f.get("price_min") if f.get("price_min") not in (None, "") else f.get("budget_min")
+    pmax = f.get("price_max") if f.get("price_max") not in (None, "") else f.get("budget_max")
+    lo = _compact_price(pmin)
+    hi = _compact_price(pmax)
+    if lo and hi:
+        parts.append(f"{lo}–{hi}")
+    elif lo:
+        parts.append(f"{lo}+")
+    elif hi:
+        parts.append(f"up to {hi}")
+
+    sm = f.get("score_mins") if isinstance(f.get("score_mins"), dict) else {}
+    for k, v in list(sm.items())[:2]:
+        if v is None or v == "":
+            continue
+        parts.append(f"{str(k).replace('_', ' ')} ≥{v}")
+
+    if f.get("city"):
+        loc = ", ".join(x for x in [f.get("city"), f.get("state")] if x)
+        if loc:
+            parts.append(loc)
+    elif f.get("zip"):
+        parts.append(str(f.get("zip")))
+
+    return ", ".join(parts)
+
+
 def record_browse_preference(user_id: str, filters: dict | None) -> None:
     """Upsert soft-learning memory when a logged-in user applies browse filters."""
     f = filters or {}

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, Bookmark, Loader2, Sparkles, X } from "lucide-react";
 import { api } from "@/api";
+import { loadUserPresets } from "@/lib/loadUserPresets";
+import { presetDisplayName } from "@/lib/formatFilterSummary";
 
 function filtersMeaningful(filters) {
   if (!filters || typeof filters !== "object") return false;
@@ -25,7 +27,6 @@ export default function BrowsePresetsBar({
   placeQuery,
 }) {
   const [presets, setPresets] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [alerting, setAlerting] = useState(false);
@@ -36,15 +37,10 @@ export default function BrowsePresetsBar({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [presetList, suggested] = await Promise.all([
-        api.entities.Preset.list().catch(() => []),
-        api.browsePrefs?.getSuggested?.().catch(() => ({ suggestions: [] })),
-      ]);
-      setPresets(Array.isArray(presetList) ? presetList.slice(0, 8) : []);
-      setSuggestions(suggested?.suggestions || []);
+      const items = await loadUserPresets();
+      setPresets(Array.isArray(items) ? items.slice(0, 8) : []);
     } catch {
       setPresets([]);
-      setSuggestions([]);
     } finally {
       setLoading(false);
     }
@@ -130,7 +126,7 @@ export default function BrowsePresetsBar({
     }
   };
 
-  if (loading && !presets.length && !suggestions.length) {
+  if (loading && !presets.length) {
     return (
       <div className="flex items-center gap-2 text-xs text-slate-500 px-1 py-1">
         <Loader2 size={12} className="animate-spin" /> Loading your presets…
@@ -138,15 +134,7 @@ export default function BrowsePresetsBar({
     );
   }
 
-  const chips = [
-    ...suggestions.map((s) => ({ ...s, kind: "suggested" })),
-    ...presets.map((p) => ({
-      id: p.id,
-      name: p.name,
-      filters: p.filters || {},
-      kind: "preset",
-    })),
-  ];
+  const chips = presets;
 
   return (
     <div className="border-b border-slate-100 bg-white px-4 py-2">
@@ -158,22 +146,25 @@ export default function BrowsePresetsBar({
           {chips.length === 0 ? (
             <span className="text-xs text-slate-400">Use filters often to build suggestions</span>
           ) : (
-            chips.slice(0, 6).map((chip) => (
-              <button
-                key={`${chip.kind}-${chip.id}`}
-                type="button"
-                onClick={() => apply(chip.filters)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition max-w-[200px] truncate ${
-                  chip.kind === "suggested"
-                    ? "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"
-                    : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
-                }`}
-                title={chip.name}
-              >
-                {chip.kind === "suggested" ? <Sparkles size={11} /> : <Bookmark size={11} />}
-                <span className="truncate">{chip.name}</span>
-              </button>
-            ))
+            chips.slice(0, 6).map((chip) => {
+              const label = chip.displayName || presetDisplayName(chip);
+              return (
+                <button
+                  key={`${chip.kind}-${chip.id}`}
+                  type="button"
+                  onClick={() => apply(chip.filters)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition max-w-[200px] truncate ${
+                    chip.kind === "suggested"
+                      ? "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                  }`}
+                  title={label}
+                >
+                  {chip.kind === "suggested" ? <Sparkles size={11} /> : <Bookmark size={11} />}
+                  <span className="truncate">{label}</span>
+                </button>
+              );
+            })
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">

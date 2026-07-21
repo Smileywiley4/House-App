@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Bookmark, Lock } from "lucide-react";
+import { Search, MapPin, Bookmark, Lock, Sparkles } from "lucide-react";
 import { api } from "@/api";
 import { usePlan } from "@/core/hooks/usePlan";
 import PresetFiltersForm from "@/components/presets/PresetFiltersForm";
 import { ForSaleBadge } from "@/components/ForSaleBadge";
 import RequireAuth from "@/components/RequireAuth";
+import { loadUserPresets } from "@/lib/loadUserPresets";
+import { presetDisplayName } from "@/lib/formatFilterSummary";
 
 export default function SearchByPreset() {
   return (
@@ -32,7 +34,7 @@ function SearchByPresetInner() {
   const [results, setResults] = useState(null);
 
   useEffect(() => {
-    api.entities.Preset.list(clientId || null)
+    loadUserPresets({ clientId: clientId || null })
       .then((list) => {
         setPresets(list);
         if (presetId && list.length > 0) {
@@ -95,24 +97,39 @@ function SearchByPresetInner() {
           </h2>
           {presets.length === 0 ? (
             <p className="text-slate-500 text-sm">
-              No presets yet. Save your preferences as a preset in <Link to={createPageUrl("Profile")} className="text-[#10b981] font-semibold">Profile → Presets</Link>.
+              No presets yet. Save filters on{" "}
+              <Link to={createPageUrl("BrowseProperties")} className="text-[#10b981] font-semibold">
+                Search Properties
+              </Link>{" "}
+              or in{" "}
+              <Link to={createPageUrl("Profile")} className="text-[#10b981] font-semibold">
+                Profile → Presets
+              </Link>
+              .
             </p>
           ) : (
             <div className="flex flex-wrap gap-2 mb-6">
-              {presets.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => loadPreset(p)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
-                    preset?.id === p.id
-                      ? "bg-[#10b981] text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {p.name}
-                </button>
-              ))}
+              {presets.map((p) => {
+                const label = p.displayName || presetDisplayName(p);
+                return (
+                  <button
+                    key={`${p.kind || "preset"}-${p.id}`}
+                    type="button"
+                    onClick={() => loadPreset(p)}
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition ${
+                      preset?.id === p.id
+                        ? "bg-[#10b981] text-white"
+                        : p.kind === "suggested"
+                          ? "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                    title={label}
+                  >
+                    {p.kind === "suggested" ? <Sparkles size={14} /> : null}
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -201,7 +218,6 @@ function SearchByPresetInner() {
 
 function PropertyRow({ property }) {
   const fmt = (n) => n?.toLocaleString() ?? "—";
-  const addr = [property.address, property.city, property.state].filter(Boolean).join(", ");
   return (
     <div className="px-6 py-4 hover:bg-slate-50 transition">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">

@@ -315,6 +315,14 @@ export function createPythonBackendAdapter() {
     browsePrefs: {
       remember: (body) => request('POST', '/api/browse-prefs/remember', body),
       getSuggested: () => request('GET', '/api/browse-prefs/suggested'),
+      /** Unified saved presets + soft-learned suggestions (Browse + SearchByPreset). */
+      list: (params = {}) => {
+        const q = new URLSearchParams();
+        if (params.clientId) q.set('client_id', params.clientId);
+        if (params.limit != null) q.set('limit', String(params.limit));
+        const qs = q.toString();
+        return request('GET', `/api/browse-prefs/list${qs ? `?${qs}` : ''}`);
+      },
     },
     listingAlerts: {
       list: () => request('GET', '/api/listing-alerts'),
