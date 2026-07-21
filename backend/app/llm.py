@@ -1,10 +1,10 @@
 """LLM helpers: property search and generic invoke.
 
-Provider strategy (when both keys are set):
-- **Claude (Anthropic)** — primary for buyer-facing prose, property extraction, preference insights
-- **gpt-4o-mini (OpenAI)** — economy tier for structured JSON / high-volume tasks; also fallback if Claude fails
+Provider strategy:
+- **OpenAI** (default `gpt-4o-mini`) — primary for all AI features (cost control)
+- **Anthropic** — optional fallback only if `ANTHROPIC_API_KEY` is set and OpenAI fails
 
-Set ANTHROPIC_API_KEY + OPENAI_API_KEY on Railway for best reliability."""
+Set `OPENAI_API_KEY` on Railway. Anthropic is not required."""
 import json
 import logging
 from typing import Literal
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 LlmTier = Literal["quality", "economy"]
 
-# Frontend feature ids routed to economy tier (OpenAI mini first when both keys set)
+# Feature ids kept for API compatibility; all tiers use OpenAI first.
 ECONOMY_FEATURES = frozenset({
     "ai_auto_score",
     "visit_notes_to_scores",
@@ -58,10 +58,10 @@ def has_llm_provider() -> bool:
 def active_provider() -> str:
     """Primary configured provider (not necessarily last used for a call)."""
     s = get_settings()
-    if s.anthropic_api_key:
-        return "anthropic"
     if s.openai_api_key:
         return "openai"
+    if s.anthropic_api_key:
+        return "anthropic"
     return "none"
 
 
@@ -168,24 +168,19 @@ def _call_openai(system: str, prompt: str, expect_json: bool = True) -> str | No
 
 
 def _call_llm(system: str, prompt: str, expect_json: bool = True, tier: LlmTier = "quality") -> str | None:
-    """Route by tier: quality → Claude first; economy → OpenAI mini first (when both keys set)."""
+    """OpenAI first for all tiers; Anthropic only as optional fallback."""
     s = get_settings()
-    has_claude = bool(s.anthropic_api_key)
     has_openai = bool(s.openai_api_key)
+    has_claude = bool(s.anthropic_api_key)
+    _ = tier  # reserved for future per-feature model overrides
 
-    if tier == "economy" and has_openai:
+    if has_openai:
         text = _call_openai(system, prompt, expect_json)
         if text:
             return text
-        return _call_anthropic(system, prompt)
 
     if has_claude:
-        text = _call_anthropic(system, prompt)
-        if text:
-            return text
-
-    if has_openai:
-        return _call_openai(system, prompt, expect_json)
+        return _call_anthropic(system, prompt)
 
     return None
 
