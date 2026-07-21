@@ -38,11 +38,12 @@ export default function Home() {
         </div>
       </div>
 
-      <TrustBadges />
-
-      <div className="max-w-5xl mx-auto px-6 py-4">
+      {/* Above-the-fold for guests after sign-out — labeled AdSense/placeholder; paid plans: null via showAds */}
+      <div className="max-w-5xl mx-auto w-full px-6 py-3 bg-[#F8F7F4]">
         <AdSlot format="leaderboard" className="min-h-[90px]" />
       </div>
+
+      <TrustBadges />
 
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">

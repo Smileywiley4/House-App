@@ -45,7 +45,7 @@ Ads render only when `usePlan().showAds` is true (**free** / guest). **Premium, 
 
 | Page | Placement | Format |
 |------|-----------|--------|
-| **Home** | Below trust badges; after demo listing | leaderboard / rectangle |
+| **Home** | Immediately under hero (above fold after sign-out); after demo listing; below How-it-works CTAs | leaderboard / rectangle / leaderboard |
 | **Browse** | Above map/list; after every 8 list cards + end of list (≥3 results) | leaderboard / infeed / rectangle |
 | **Evaluate** | Bottom of page, below scoring categories (away from Save CTAs) | rectangle |
 | **Compare** | Below comparison results | leaderboard |
