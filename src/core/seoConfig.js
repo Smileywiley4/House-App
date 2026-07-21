@@ -41,6 +41,11 @@ export const SEO_BY_PAGE = {
     title: 'Your scored properties',
     description: `View and manage properties you have scored in ${APP_NAME}.`,
   },
+  Updates: {
+    title: 'Updates',
+    description: 'Notifications, shared project activity, and completed scores from your network.',
+    noindex: true,
+  },
   ProjectDetail: {
     title: 'Scoring projects',
     description: 'Organize homes into projects with custom scoring preferences and overall match scores.',

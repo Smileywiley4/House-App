@@ -68,6 +68,7 @@ import SharedComparison from './pages/SharedComparison';
 import SharedHomes from './pages/SharedHomes';
 import SideBySide from './pages/SideBySide';
 import PreferenceCard from './pages/PreferenceCard';
+import Updates from './pages/Updates';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "SharedComparison": SharedComparison,
     "SharedHomes": SharedHomes,
     "SideBySide": SideBySide,
+    "Updates": Updates,
 }
 
 export const pagesConfig = {

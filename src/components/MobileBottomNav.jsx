@@ -1,22 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import {
-  Map,
-  Home,
-  Columns,
-  Inbox,
-  MoreHorizontal,
-  Search,
-  BarChart3,
-  FolderKanban,
-  Users,
-  Building2,
-  Zap,
-  Camera,
-  UserCircle,
-  LogIn,
-} from "lucide-react";
+import { MoreHorizontal, LogIn } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -24,87 +9,58 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import PrimaryNavLink from "@/components/nav/PrimaryNavLink";
+import {
+  PRIMARY_NAV,
+  MORE_NAV,
+  filterNavForAuth,
+  isNavActive,
+  NAV_ACTIVE,
+  NAV_MUTED,
+} from "@/core/primaryNav";
 
-const ACCENT = "#10b981";
-
-const PRIMARY_TABS = [
-  { name: "BrowseProperties", label: "Search", icon: Map, public: true },
-  { name: "Home", label: "Score", icon: Home, public: true, alsoActive: ["Evaluate"] },
-  { name: "Compare", label: "Compare", icon: Columns, public: true },
-  { name: "SharedHomes", label: "Shared", icon: Inbox },
-];
-
-const MORE_ITEMS = [
-  { name: "SearchByPreset", label: "Find by Preset", icon: Search },
-  { name: "SavedProperties", label: "Properties", icon: BarChart3 },
-  { name: "ProjectDetail", label: "Projects", icon: FolderKanban },
-  { name: "Contacts", label: "Contacts", icon: Users },
-  { name: "RealtorPortal", label: "Realtors", icon: Building2 },
-  { name: "Pricing", label: "Pricing", icon: Zap, public: true },
-  { name: "PropertyVisits", label: "Visits", icon: Camera },
-  { name: "Profile", label: "Profile", icon: UserCircle },
-];
-
-function isTabActive(tab, currentPageName) {
-  if (currentPageName === tab.name) return true;
-  return Array.isArray(tab.alsoActive) && tab.alsoActive.includes(currentPageName);
-}
-
-/** App-style bottom tabs below the md (768px) breakpoint. */
 export default function MobileBottomNav({
   currentPageName,
   isAuthenticated,
   isLoadingAuth,
+  updatesBadge = 0,
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const tabs = isAuthenticated
-    ? PRIMARY_TABS
-    : PRIMARY_TABS.filter((t) => t.public);
-
-  const moreItems = isAuthenticated
-    ? MORE_ITEMS
-    : MORE_ITEMS.filter((t) => t.public);
-
-  const moreActive = moreItems.some((item) => item.name === currentPageName);
+  const moreItems = filterNavForAuth(
+    MORE_NAV.filter((i) => !PRIMARY_NAV.some((p) => p.name === i.name)),
+    isAuthenticated
+  );
+  const moreActive = moreItems.some((item) => isNavActive(item, currentPageName));
 
   return (
     <>
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#1a2234] pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white pb-[max(0.25rem,env(safe-area-inset-bottom))]"
         aria-label="Primary"
       >
-        <div className="flex items-stretch justify-around px-1 pt-1 pb-1">
-          {tabs.map(({ name, label, icon: Icon, alsoActive }) => {
-            const active = isTabActive({ name, alsoActive }, currentPageName);
-            return (
-              <Link
-                key={name}
-                to={createPageUrl(name)}
-                className={`flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 py-2 px-1 rounded-lg text-[10px] font-semibold transition-colors ${
-                  active ? "text-white" : "text-slate-400"
-                }`}
-                style={active ? { color: ACCENT } : undefined}
-                aria-current={active ? "page" : undefined}
-              >
-                <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-                <span className="truncate max-w-full">{label}</span>
-              </Link>
-            );
-          })}
+        <div className="flex items-stretch justify-around px-0.5 pt-1 pb-1">
+          {PRIMARY_NAV.map((item) => (
+            <PrimaryNavLink
+              key={item.id}
+              item={item}
+              currentPageName={currentPageName}
+              badge={item.badge === "notifications" ? updatesBadge : 0}
+              iconSize={22}
+              className="flex-1 py-1.5"
+            />
+          ))}
 
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 py-2 px-1 rounded-lg text-[10px] font-semibold transition-colors ${
-              moreActive || moreOpen ? "text-white" : "text-slate-400"
-            }`}
-            style={moreActive || moreOpen ? { color: ACCENT } : undefined}
+            className="flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 py-1.5 px-1 rounded-md text-[10px] transition-colors hover:bg-black/[0.04]"
+            style={{ color: moreActive || moreOpen ? NAV_ACTIVE : NAV_MUTED }}
             aria-label="More navigation"
             aria-expanded={moreOpen}
           >
-            <MoreHorizontal size={20} strokeWidth={moreActive || moreOpen ? 2.25 : 1.75} />
-            <span>More</span>
+            <MoreHorizontal size={22} strokeWidth={moreActive || moreOpen ? 2.1 : 1.75} />
+            <span className={moreActive || moreOpen ? "font-semibold" : "font-medium"}>More</span>
           </button>
         </div>
       </nav>
@@ -112,30 +68,26 @@ export default function MobileBottomNav({
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-2xl border-white/10 bg-[#1a2234] text-white px-4 pt-6 max-h-[85vh] overflow-y-auto md:hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+          className="rounded-t-2xl border-slate-200 bg-white text-[#2d3340] px-4 pt-6 max-h-[85vh] overflow-y-auto md:hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         >
           <SheetHeader className="text-left mb-4 pr-8">
-            <SheetTitle className="text-white">More</SheetTitle>
-            <SheetDescription className="text-slate-400">
-              Additional pages and tools
-            </SheetDescription>
+            <SheetTitle className="text-[#1a2234]">More</SheetTitle>
+            <SheetDescription className="text-slate-500">Additional pages and tools</SheetDescription>
           </SheetHeader>
 
           <ul className="grid gap-1">
-            {moreItems.map(({ name, label, icon: Icon }) => {
-              const active = currentPageName === name;
+            {moreItems.map(({ name, label, icon: Icon, alsoActive }) => {
+              const active = isNavActive({ name, alsoActive }, currentPageName);
               return (
                 <li key={name}>
                   <Link
                     to={createPageUrl(name)}
                     onClick={() => setMoreOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
-                      active ? "bg-white/10" : "hover:bg-white/5"
-                    }`}
-                    style={active ? { color: ACCENT } : undefined}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${active ? "bg-slate-100" : "hover:bg-slate-50"}`}
+                    style={active ? { color: NAV_ACTIVE } : { color: NAV_MUTED }}
                     aria-current={active ? "page" : undefined}
                   >
-                    <Icon size={18} className={active ? "" : "text-slate-400"} />
+                    <Icon size={18} />
                     {label}
                   </Link>
                 </li>
@@ -144,12 +96,7 @@ export default function MobileBottomNav({
 
             {!isLoadingAuth && !isAuthenticated && (
               <li>
-                <Link
-                  to="/login"
-                  onClick={() => setMoreOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white"
-                  style={{ backgroundColor: ACCENT }}
-                >
+                <Link to="/login" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white bg-[#10b981]">
                   <LogIn size={18} />
                   Sign In
                 </Link>

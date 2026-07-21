@@ -18,6 +18,7 @@ export const ROUTE_KEYS = {
   PROJECT_DETAIL: 'ProjectDetail',
   CONTACTS: 'Contacts',
   SHARED_HOMES: 'SharedHomes',
+  UPDATES: 'Updates',
   REALTOR_PORTAL: 'RealtorPortal',
   PRICING: 'Pricing',
   PROFILE: 'Profile',
