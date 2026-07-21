@@ -1,6 +1,7 @@
 /**
- * Browse → Side-by-Side compare handoff via sessionStorage.
+ * Browse → Compare handoff via sessionStorage.
  * Primary key cleared after successful load; backup kept ~2 min for browser back.
+ * Keys kept stable so legacy /SideBySide and /QuickCompare redirects still work.
  */
 const PRIMARY_KEY = "browseCompareProperties";
 const BACKUP_KEY = "browseComparePropertiesBackup";
@@ -47,7 +48,7 @@ export function clearBrowseCompareSelection() {
   }
 }
 
-/** Map a browse listing into a SideBySide / Compare-shaped score row. */
+/** Map a browse listing into a Compare-shaped score row. */
 export function browseListingToCompareRow(p) {
   const address =
     p.formatted_address ||

@@ -167,7 +167,7 @@ export default function Evaluate() {
         overall_percentage: percentage,
       },
     ]);
-    navigate(createPageUrl("SideBySide"));
+    navigate(createPageUrl("Compare"));
   };
 
   const saveScore = async () => {
@@ -293,7 +293,7 @@ export default function Evaluate() {
             ) : isAuthenticated ? (
               saved ? (
                 <Link
-                  to={createPageUrl("Compare")}
+                  to={createPageUrl("SavedProperties")}
                   className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-xl text-sm"
                 >
                   <BarChart3 size={15} /> View Comparison

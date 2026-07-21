@@ -22,7 +22,7 @@ const paths = [
   { path: '/', priority: '1.0' },
   { path: '/Home', priority: '0.9' },
   { path: '/Pricing', priority: '0.9' },
-  { path: '/QuickCompare', priority: '0.8' },
+  { path: '/Compare', priority: '0.8' },
   { path: '/SearchByPreset', priority: '0.8' },
   { path: '/Evaluate', priority: '0.7' },
 ];

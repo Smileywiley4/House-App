@@ -35,7 +35,7 @@ export function usePlan() {
   const canUseAIFeatures = isPremium;
   /** Can access Realtor portal (clients, private listings) */
   const canAccessRealtorPortal = isRealtor;
-  /** Max properties in a compare session (browse checkboxes / SideBySide) */
+  /** Max properties in a compare session (browse checkboxes / Compare) */
   const maxCompareCount = isPremium ? PAID_MAX_COMPARE : FREE_MAX_COMPARE;
   /** Max scoring projects (folders) */
   const maxProjects = isPremium ? PAID_MAX_PROJECTS : FREE_MAX_PROJECTS;

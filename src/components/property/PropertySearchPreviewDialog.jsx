@@ -132,7 +132,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
     saveCurrentProperty(property);
     storeBrowseCompareSelection([property]);
     onOpenChange(false);
-    navigate(createPageUrl("SideBySide"));
+    navigate(createPageUrl("Compare"));
   };
 
   return (

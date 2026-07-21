@@ -83,13 +83,13 @@ export default function Home() {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            to={createPageUrl("SideBySide")}
+            to={createPageUrl("Compare")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#10b981] text-white font-semibold rounded-xl hover:bg-[#059669] transition-colors"
           >
             Compare properties <ChevronRight size={16} />
           </Link>
           <Link
-            to={createPageUrl("Compare")}
+            to={createPageUrl("SavedProperties")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a2234] text-white font-semibold rounded-xl hover:bg-[#243050] transition-colors"
           >
             View My Saved Properties <ChevronRight size={16} />

@@ -61,6 +61,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import PropertyVisits from './pages/PropertyVisits';
 import QuickCompare from './pages/QuickCompare';
 import RealtorPortal from './pages/RealtorPortal';
+import SavedProperties from './pages/SavedProperties';
 import SearchByPreset from './pages/SearchByPreset';
 import SharedComparison from './pages/SharedComparison';
 import SideBySide from './pages/SideBySide';
@@ -82,6 +83,7 @@ export const PAGES = {
     "PropertyVisits": PropertyVisits,
     "QuickCompare": QuickCompare,
     "RealtorPortal": RealtorPortal,
+    "SavedProperties": SavedProperties,
     "SearchByPreset": SearchByPreset,
     "SharedComparison": SharedComparison,
     "SideBySide": SideBySide,

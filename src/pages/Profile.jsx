@@ -753,7 +753,7 @@ function ProfileInner() {
                 <p className="text-slate-400 text-sm">{scores.length} propert{scores.length !== 1 ? "ies" : "y"} scored</p>
               </div>
               <Link
-                to={createPageUrl("Compare")}
+                to={createPageUrl("SavedProperties")}
                 className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition"
               >
                 Full Comparison <ChevronRight size={15} />

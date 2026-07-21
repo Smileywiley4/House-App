@@ -29,12 +29,17 @@ export const SEO_BY_PAGE = {
     description: 'Search listings using saved preference presets—budget, beds, location, and custom score weights.',
   },
   Compare: {
-    title: 'Your scored properties',
-    description: `View and manage properties you have scored in ${APP_NAME}.`,
+    title: 'Compare properties',
+    description: 'Compare multiple homes side by side with totals, category breakdowns, and plan-based slot limits.',
   },
   SideBySide: {
     title: 'Compare properties',
     description: 'Compare multiple homes side by side with totals, category breakdowns, and plan-based slot limits.',
+    noindex: true,
+  },
+  SavedProperties: {
+    title: 'Your scored properties',
+    description: `View and manage properties you have scored in ${APP_NAME}.`,
   },
   ProjectDetail: {
     title: 'Scoring projects',

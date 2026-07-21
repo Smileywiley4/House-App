@@ -454,7 +454,7 @@ export default function BrowseProperties() {
     }
     storeBrowseCompareSelection(selectedProperties);
     setCompareIds(new Set());
-    navigate(createPageUrl("SideBySide"));
+    navigate(createPageUrl("Compare"));
   };
 
   const runStartProject = () => {
@@ -1035,7 +1035,7 @@ export default function BrowseProperties() {
                               type="button"
                               onClick={() => {
                                 storeBrowseCompareSelection([p]);
-                                navigate(createPageUrl("SideBySide"));
+                                navigate(createPageUrl("Compare"));
                               }}
                               className="inline-flex px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-white"
                             >

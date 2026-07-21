@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import { storeBrowseCompareSelection } from "@/lib/browseCompare";
 
 /**
- * Legacy /QuickCompare route — redirects to SideBySide (canonical compare).
+ * Legacy /QuickCompare — redirects to canonical /Compare.
  * Migrates old sessionStorage / ?address= handoffs into browse compare selection.
  */
 export default function QuickCompare() {
@@ -61,5 +61,5 @@ export default function QuickCompare() {
     );
   }
 
-  return <Navigate to={createPageUrl("SideBySide")} replace />;
+  return <Navigate to={createPageUrl("Compare")} replace />;
 }

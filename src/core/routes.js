@@ -6,12 +6,15 @@
 export const ROUTE_KEYS = {
   HOME: 'Home',
   BROWSE_PROPERTIES: 'BrowseProperties',
-  /** @deprecated Use SIDE_BY_SIDE — /QuickCompare redirects there */
+  /** @deprecated /QuickCompare redirects to Compare */
   QUICK_COMPARE: 'QuickCompare',
   SEARCH_BY_PRESET: 'SearchByPreset',
+  /** Canonical compare UI (side-by-side slots, browse handoff) */
   COMPARE: 'Compare',
-  /** Canonical quick-compare UI (header Compare, browse Compare properties) */
+  /** @deprecated /SideBySide redirects to Compare */
   SIDE_BY_SIDE: 'SideBySide',
+  /** Saved / scored property list (formerly the old Compare page) */
+  SAVED_PROPERTIES: 'SavedProperties',
   PROJECT_DETAIL: 'ProjectDetail',
   REALTOR_PORTAL: 'RealtorPortal',
   PRICING: 'Pricing',
