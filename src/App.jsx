@@ -73,6 +73,7 @@ function App() {
             <NavigationTracker />
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Login />} />
               <Route path="*" element={<AuthenticatedApp />} />
             </Routes>
           </Router>

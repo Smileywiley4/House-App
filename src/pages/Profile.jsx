@@ -48,7 +48,7 @@ const TABS = [
   { id: "preferences", label: "Score Preferences", icon: SlidersHorizontal },
   { id: "presets", label: "Presets", icon: Bookmark },
   { id: "foryou", label: "For You", icon: Sparkles },
-  { id: "invite", label: "Invite & share", icon: UserPlus },
+  { id: "invite", label: "Invite contacts", icon: UserPlus },
   { id: "history", label: "Saved Properties", icon: BarChart3 },
 ];
 
@@ -323,7 +323,7 @@ function ProfileInner() {
                 { id: "presets", title: "Presets", desc: "Saved filter sets", icon: Bookmark },
                 { id: "history", title: "Saved properties", desc: "Scored listings", icon: BarChart3 },
                 { id: "foryou", title: "For You", desc: "Recommendations", icon: Sparkles },
-                { id: "invite", title: "Invite & share", desc: "Friends & links", icon: UserPlus },
+                { id: "invite", title: "Invite contacts", desc: "Share link & referrals", icon: UserPlus },
               ].map(({ id, title, desc, icon: Icon }) => (
                 <button
                   key={id}

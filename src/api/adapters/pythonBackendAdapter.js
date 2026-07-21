@@ -2264,6 +2264,11 @@ export function createPythonBackendAdapter() {
       accept: (token) => request('POST', '/api/invitations/accept', { token }),
       listSent: () => request('GET', '/api/invitations/sent'),
     },
+    referrals: {
+      me: () => request('GET', '/api/referrals/me'),
+      validate: (code) => publicGet(`/api/referrals/validate?code=${encodeURIComponent(code)}`),
+      claim: (code) => request('POST', '/api/referrals/claim', { code }),
+    },
     preferences: {
       getLearned: () => request('GET', '/api/preferences/learned'),
       getInsights: () => request('GET', '/api/preferences/insights'),

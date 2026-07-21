@@ -1027,5 +1027,10 @@ export function createSupabaseAdapter() {
       accept: () => Promise.reject(new Error('Invitations require Python backend')),
       listSent: () => Promise.reject(new Error('Invitations require Python backend')),
     },
+    referrals: {
+      me: () => Promise.reject(new Error('Referrals require Python backend')),
+      validate: () => Promise.reject(new Error('Referrals require Python backend')),
+      claim: () => Promise.reject(new Error('Referrals require Python backend')),
+    },
   };
 }

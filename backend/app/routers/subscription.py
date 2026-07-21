@@ -10,6 +10,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from app.config import get_settings
 from app.dependencies import get_current_user_id, get_supabase_admin
+from app.referral_credits import handle_paid_subscription_for_referrals
 from app.stripe_billing import plan_from_subscription_price_ids
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
@@ -203,6 +204,12 @@ async def create_checkout_session(body: CreateCheckoutBody, user_id: str = Depen
                     },
                 )
                 supabase.table("profiles").update({"plan": body.plan_id}).eq("id", user_id).execute()
+                handle_paid_subscription_for_referrals(
+                    supabase,
+                    user_id=user_id,
+                    plan_id=body.plan_id,
+                    customer_id=existing_customer_id,
+                )
 
                 was_upgrade = PLAN_RANK.get(body.plan_id, 0) >= PLAN_RANK.get(previous_plan, 0)
                 logger.info(

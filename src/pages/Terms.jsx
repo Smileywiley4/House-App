@@ -257,12 +257,53 @@ export default function Terms() {
         law.
       </p>
 
-      <h2>18. Contact</h2>
+      <h2>19. Invite &amp; referral program</h2>
+      <p>
+        {APP_NAME} may offer an invite / referral program that lets you share a personal invite link with contacts.
+        Free accounts may invite others, and invitees may create a free account. Referral rewards are separate from
+        any admin promo codes or Stripe promotion codes entered at checkout.
+      </p>
+      <ul>
+        <li>
+          <strong>Eligibility for credit</strong> — A referral credit is earned only when an invitee signs up using
+          your valid invite link (or code) and later subscribes to a paid plan of <strong>Premium (Pro) or Realtor</strong>{' '}
+          (or higher). Signing up for Free alone does not create a billing credit.
+        </li>
+        <li>
+          <strong>Reward</strong> — When that paid subscription first becomes active, we may credit both the inviter
+          and the invitee an amount roughly equal to <strong>one month</strong> of the paid plan each person is on
+          (for monthly plans: about one billing cycle; for yearly plans: about one-twelfth of the annual price, or an
+          equivalent month of value). Credits are typically applied as a Stripe customer balance (or similar) toward
+          the <strong>next</strong> invoice / billing statement.
+        </li>
+        <li>
+          <strong>Yearly plans &amp; forfeiture</strong> — For annual subscriptions, unused referral credit is intended
+          for the next renewal statement. If you cancel before that next billing statement and the credit has not yet
+          been applied to a paid invoice, you <strong>forfeit</strong> the unused referral credit.
+        </li>
+        <li>
+          <strong>Limits</strong> — One reward path per invitee (no double-dipping). An inviter may invite many people.
+          Self-referrals are void. We may deny, reverse, or reclaim credits for fraud, abuse, chargebacks, or errors.
+          Credits have no cash value, are non-transferable, and may be modified or discontinued with notice where
+          required.
+        </li>
+        <li>
+          <strong>Inviter paid status</strong> — The invitee&apos;s credit applies when they pay for Pro/Realtor. The
+          inviter&apos;s matching credit applies when the inviter also has an active paid Pro/Realtor (or higher)
+          subscription with a billing customer on file at the time credits are applied.
+        </li>
+        <li>
+          Program details in the app are informational; this section and your checkout terms control. This is not legal
+          advice.
+        </li>
+      </ul>
+
+      <h2>20. Contact</h2>
       <p>
         Legal or terms questions: <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
       </p>
 
-      <h2>19. General</h2>
+      <h2>21. General</h2>
       <p>
         If any provision is found unenforceable, the remaining provisions remain in effect. These Terms, together
         with the Privacy Policy and any plan-specific checkout terms, are the entire agreement regarding the

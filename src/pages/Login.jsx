@@ -20,6 +20,11 @@ import {
   isOAuthReturnUrl,
   readOAuthErrorFromUrl,
 } from "@/lib/oauthPending";
+import {
+  captureReferralFromSearchParams,
+  claimStoredReferral,
+} from "@/lib/referralRef";
+import InviteContactsPanel from "@/components/InviteContactsPanel";
 
 function getSupabase() {
   return getSharedSupabase();
@@ -146,6 +151,8 @@ async function completePostAuth(session, inviteTokenFromUrl) {
     await acceptInviteToken(invite, session.access_token);
   }
 
+  await claimStoredReferral(api).catch(() => null);
+
   return pending?.intended_plan || "free";
 }
 
@@ -167,8 +174,9 @@ export default function Login() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [mode, setMode] = useState("signin"); // signin | signup
-  /** signup form → email code confirmation */
-  const [signupStep, setSignupStep] = useState("form"); // form | code
+  /** signup form → email code confirmation → invite contacts */
+  const [signupStep, setSignupStep] = useState("form"); // form | code | invite
+  const [pendingPostSignupHref, setPendingPostSignupHref] = useState(null);
   const [challengeToken, setChallengeToken] = useState("");
   const [codeExpiresAt, setCodeExpiresAt] = useState(null);
   const [otpCode, setOtpCode] = useState("");
@@ -188,6 +196,15 @@ export default function Login() {
     setCaptchaToken("");
     setCaptchaResetKey((key) => key + 1);
   }, []);
+
+  useEffect(() => {
+    captureReferralFromSearchParams(searchParams);
+    const modeParam = (searchParams.get("mode") || "").toLowerCase();
+    const onSignupPath = window.location.pathname.toLowerCase().startsWith("/signup");
+    if (onSignupPath || modeParam === "signup" || searchParams.get("ref") || inviteToken) {
+      setMode("signup");
+    }
+  }, [searchParams, inviteToken]);
 
   useEffect(() => {
     if (!error) return;
@@ -219,6 +236,7 @@ export default function Login() {
     setCodeExpiresAt(null);
     setOtpCode("");
     setResendCooldownSec(0);
+    setPendingPostSignupHref(null);
   }, []);
 
   const requireCaptchaToken = () => {
@@ -366,6 +384,7 @@ export default function Login() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         await acceptInviteToken(inviteToken, session.access_token);
+        await claimStoredReferral(api).catch(() => null);
       }
       window.location.href = resolveRedirectHref(redirect);
     } catch (err) {
@@ -433,9 +452,18 @@ export default function Login() {
         }).catch(() => {}),
         2500,
       );
+      await withTimeout(claimStoredReferral(api).catch(() => null), 2500);
     }
-    window.location.assign(postSignupHref(selectedPlan, redirect));
+    const dest = postSignupHref(selectedPlan, redirect);
+    setPendingPostSignupHref(dest);
+    setSignupStep("invite");
+    setMessage("");
     return true;
+  };
+
+  const leaveSignupInviteStep = () => {
+    const dest = pendingPostSignupHref || postSignupHref(selectedPlan, redirect);
+    window.location.assign(dest);
   };
 
   const handleSignupStart = async () => {
@@ -663,22 +691,29 @@ export default function Login() {
         </a>
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h1 className="text-xl font-bold text-[#1a2234] mb-2">
-            {mode === "signup" && signupStep === "code"
-              ? "Confirm your email"
-              : mode === "signup"
-                ? "Create account"
-                : "Sign in"}
+            {mode === "signup" && signupStep === "invite"
+              ? "Invite contacts"
+              : mode === "signup" && signupStep === "code"
+                ? "Confirm your email"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Sign in"}
           </h1>
           <p className="text-slate-500 text-sm mb-2">
-            {mode === "signup" && signupStep === "code"
-              ? `Enter the confirmation code we sent to ${email}.`
-              : mode === "signup"
-                ? "Choose Free, Pro, or Realtor to create your account."
-                : "Use your account to continue."}
+            {mode === "signup" && signupStep === "invite"
+              ? "Share your invite link, or skip and do it later from Profile."
+              : mode === "signup" && signupStep === "code"
+                ? `Enter the confirmation code we sent to ${email}.`
+                : mode === "signup"
+                  ? "Choose Free, Pro, or Realtor to create your account."
+                  : "Use your account to continue."}
           </p>
+          {signupStep !== "invite" && (
           <p className="text-slate-400 text-xs mb-6 leading-relaxed">
             You stay signed in on this browser until you sign out or clear site data for Property Pocket. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
           </p>
+          )}
+          {signupStep === "invite" && <div className="mb-4" />}
 
           {error && (
             <div
@@ -698,6 +733,7 @@ export default function Login() {
 
           {!forgotMode ? (
             <>
+              {!(mode === "signup" && signupStep === "invite") && (
               <div className="flex gap-1 mb-5 p-1 bg-slate-100 rounded-xl">
                 <button
                   type="button"
@@ -726,8 +762,18 @@ export default function Login() {
                   Create account
                 </button>
               </div>
+              )}
 
-              {mode === "signup" && signupStep === "code" ? (
+              {mode === "signup" && signupStep === "invite" ? (
+                <InviteContactsPanel
+                  compact
+                  showSkip
+                  onSkip={leaveSignupInviteStep}
+                  onDone={leaveSignupInviteStep}
+                  title="Invite contacts"
+                  subtitle="Optional — share your link via email, text, or copy. You can invite anytime from Profile."
+                />
+              ) : mode === "signup" && signupStep === "code" ? (
                 <form onSubmit={handleConfirmSignupCode} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-2">
@@ -987,7 +1033,7 @@ export default function Login() {
               </form>
               )}
 
-              {!(mode === "signup" && signupStep === "code") && (
+              {!(mode === "signup" && (signupStep === "code" || signupStep === "invite")) && (
               <div className="mt-4 flex items-center justify-between">
                 <button
                   type="button"
@@ -1070,7 +1116,7 @@ export default function Login() {
             </form>
           )}
 
-          {!forgotMode && !(mode === "signup" && signupStep === "code") && (
+          {!forgotMode && !(mode === "signup" && (signupStep === "code" || signupStep === "invite")) && (
           <div className="mt-6 pt-6 border-t border-slate-100">
             <button
               type="button"
