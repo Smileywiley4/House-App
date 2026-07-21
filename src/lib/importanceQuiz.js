@@ -630,7 +630,58 @@ export const CATEGORY_QUIZ_BANK = {
       },
     ],
   },
+  fireplace: {
+    categoryId: "fireplace",
+    label: "Fireplace",
+    questions: [
+      {
+        id: "fireplace_want",
+        prompt: "How much does having a fireplace matter in your search?",
+        options: IMPORTANCE_LADDER,
+      },
+      {
+        id: "fireplace_deal",
+        prompt: "Would you skip a home that has no fireplace?",
+        options: [
+          { id: "must", label: "Yes — must-have", importance: 10 },
+          { id: "prefer", label: "Strong preference", importance: 7 },
+          { id: "nice", label: "Nice bonus only", importance: 4 },
+          { id: "no", label: "Doesn’t matter", importance: 1 },
+        ],
+      },
+      {
+        id: "fireplace_type",
+        prompt: "Do wood / gas / electric fireplace type differences matter to you?",
+        options: IMPORTANCE_LADDER,
+      },
+    ],
+  },
 };
+
+/**
+ * Category IDs that Browse / Google autoscore can score automatically.
+ * Deep priority quiz may only generate questions for these (never invent unscorable cats).
+ * Keep in sync with `GoogleAutoScore` SCOREABLE_IDS.
+ */
+export const AUTOSCORE_CATEGORY_IDS = Object.freeze([
+  "hospital_distance",
+  "highway_access",
+  "schools",
+  "neighborhood_safety",
+  "public_transportation",
+  "location_lifestyle",
+  "location_investment",
+  "longterm_neighborhood_value",
+  "bedroom_count",
+  "bathroom_count",
+  "overall_living_space",
+  "property_tax_cost",
+  "hoa_cost",
+  "garage_storage",
+  "fireplace",
+]);
+
+export const AUTOSCORE_CATEGORY_ID_SET = new Set(AUTOSCORE_CATEGORY_IDS);
 
 /** Categories included in the full onboarding quiz (one lead question each). */
 export const ONBOARDING_CATEGORY_IDS = [
@@ -682,20 +733,36 @@ export function getFullOnboardingQuestions() {
 /**
  * Map selected option id(s) for one category → Importance 1–10.
  * Averages when multiple mini-quiz answers are provided.
+ * Optional `supplementalQuestions` lets AI deep-quiz options (not in the static bank) score.
  * @param {string} categoryId
  * @param {string | string[]} optionIds
+ * @param {{ categoryId?: string, question?: QuizQuestion, options?: AnswerOption[] }[]} [supplementalQuestions]
  * @returns {number | null}
  */
-export function importanceFromAnswers(categoryId, optionIds) {
-  const bank = getCategoryQuiz(categoryId);
-  if (!bank) return null;
-  const ids = Array.isArray(optionIds) ? optionIds : [optionIds];
+export function importanceFromAnswers(categoryId, optionIds, supplementalQuestions = []) {
+  const ids = Array.isArray(optionIds) ? optionIds.filter(Boolean) : [optionIds].filter(Boolean);
+  if (!ids.length) return null;
   const scores = [];
-  for (const q of bank.questions) {
-    for (const opt of q.options) {
-      if (ids.includes(opt.id)) scores.push(opt.importance);
+
+  const bank = getCategoryQuiz(categoryId);
+  if (bank) {
+    for (const q of bank.questions) {
+      for (const opt of q.options) {
+        if (ids.includes(opt.id)) scores.push(opt.importance);
+      }
     }
   }
+
+  for (const row of supplementalQuestions || []) {
+    if (row?.categoryId && row.categoryId !== categoryId) continue;
+    const opts = row?.question?.options || row?.options || [];
+    for (const opt of opts) {
+      if (opt?.id && ids.includes(opt.id) && Number.isFinite(Number(opt.importance))) {
+        scores.push(Number(opt.importance));
+      }
+    }
+  }
+
   if (!scores.length) return null;
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   return Math.max(1, Math.min(10, Math.round(avg)));
@@ -703,16 +770,96 @@ export function importanceFromAnswers(categoryId, optionIds) {
 
 /**
  * @param {Record<string, string | string[]>} answersByCategory — categoryId → option id(s)
+ * @param {{ categoryId?: string, question?: QuizQuestion, options?: AnswerOption[] }[]} [supplementalQuestions]
  * @returns {Record<string, number>}
  */
-export function weightsFromFullAnswers(answersByCategory) {
+export function weightsFromFullAnswers(answersByCategory, supplementalQuestions = []) {
   /** @type {Record<string, number>} */
   const weights = {};
   for (const [categoryId, optionIds] of Object.entries(answersByCategory || {})) {
-    const n = importanceFromAnswers(categoryId, optionIds);
+    const n = importanceFromAnswers(categoryId, optionIds, supplementalQuestions);
     if (n != null) weights[categoryId] = n;
   }
   return weights;
+}
+
+/**
+ * Static deep-quiz fallback: one lead question per autoscore category not already answered.
+ * Used when AI is unavailable or the user is gated — still only scoreable categories.
+ * @param {string[]} [excludeCategoryIds]
+ * @param {number} [maxQuestions=8]
+ * @returns {{ categoryId: string, label: string, question: QuizQuestion, source: 'bank' }[]}
+ */
+export function getDeepFallbackQuestions(excludeCategoryIds = [], maxQuestions = 8) {
+  const exclude = new Set(excludeCategoryIds || []);
+  const out = [];
+  for (const categoryId of AUTOSCORE_CATEGORY_IDS) {
+    if (exclude.has(categoryId)) continue;
+    const bank = getCategoryQuiz(categoryId);
+    if (!bank?.questions?.[0]) continue;
+    out.push({
+      categoryId,
+      label: bank.label,
+      question: bank.questions[0],
+      source: "bank",
+    });
+    if (out.length >= maxQuestions) break;
+  }
+  return out;
+}
+
+/**
+ * Normalize / validate AI-generated deep questions — drop anything not in AUTOSCORE_CATEGORY_IDS.
+ * @param {unknown} rawQuestions
+ * @param {string[]} [excludeCategoryIds]
+ * @param {number} [maxQuestions=8]
+ * @returns {{ categoryId: string, label: string, question: QuizQuestion, source: 'ai' }[]}
+ */
+export function normalizeDeepAiQuestions(rawQuestions, excludeCategoryIds = [], maxQuestions = 8) {
+  const exclude = new Set(excludeCategoryIds || []);
+  const list = Array.isArray(rawQuestions) ? rawQuestions : [];
+  /** @type {{ categoryId: string, label: string, question: QuizQuestion, source: 'ai' }[]} */
+  const out = [];
+  const seen = new Set();
+
+  for (const row of list) {
+    if (!row || typeof row !== "object") continue;
+    const categoryId = String(row.categoryId || row.category_id || "").trim();
+    if (!AUTOSCORE_CATEGORY_ID_SET.has(categoryId)) continue;
+    if (exclude.has(categoryId) || seen.has(categoryId)) continue;
+
+    const bank = getCategoryQuiz(categoryId);
+    const label = String(row.label || bank?.label || categoryId).trim() || categoryId;
+    const prompt = String(row.prompt || row.question || "").trim();
+    const rawOpts = Array.isArray(row.options) ? row.options : [];
+    /** @type {AnswerOption[]} */
+    const options = [];
+    for (let i = 0; i < rawOpts.length; i++) {
+      const opt = rawOpts[i];
+      if (!opt || typeof opt !== "object") continue;
+      const importance = Math.max(1, Math.min(10, Math.round(Number(opt.importance))));
+      if (!Number.isFinite(importance)) continue;
+      const id = String(opt.id || `ai_${categoryId}_${i}`).trim() || `ai_${categoryId}_${i}`;
+      const optLabel = String(opt.label || "").trim();
+      if (!optLabel) continue;
+      options.push({ id, label: optLabel, importance });
+    }
+    if (!prompt || options.length < 2) continue;
+
+    out.push({
+      categoryId,
+      label,
+      question: {
+        id: String(row.id || `deep_${categoryId}`).trim() || `deep_${categoryId}`,
+        prompt,
+        options: options.slice(0, 4),
+      },
+      source: "ai",
+    });
+    seen.add(categoryId);
+    if (out.length >= maxQuestions) break;
+  }
+  return out;
 }
 
 /**

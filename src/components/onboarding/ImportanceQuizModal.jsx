@@ -1,21 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Loader2, MapPin, Sparkles, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2, Lock, MapPin, Sparkles, X } from "lucide-react";
 import { api } from "@/api";
 import AddressAutocompleteInput from "@/components/AddressAutocompleteInput";
+import PaywallModal from "@/components/PaywallModal";
+import { usePlan } from "@/core/hooks/usePlan";
+import { createPageUrl } from "@/utils";
 import {
   browseAreaUrl,
   scoreMinsFromImportanceWeights,
   storeBoundaryHandoff,
 } from "@/lib/browseHandoff";
 import {
+  AUTOSCORE_CATEGORY_IDS,
+  getCategoryQuiz,
+  getDeepFallbackQuestions,
   getFullOnboardingQuestions,
   mergeWeights,
+  normalizeDeepAiQuestions,
   weightsFromFullAnswers,
 } from "@/lib/importanceQuiz";
 
 /**
- * Soft full-screen sheet: 5–8 priority questions → user_presets + default_weights.
+ * Soft full-screen sheet: simple priority questions first → optional deeper
+ * auto-scorable questions (AI when Premium, bank fallback otherwise) →
+ * user_presets + default_weights.
  * First-time signup also asks for a search area (city/ZIP/place) — location is NOT
  * stored on the preset; it only hands off to BrowseProperties map + filters.
  * Score side is never set.
@@ -29,32 +38,49 @@ export default function ImportanceQuizModal({
   onComplete,
 }) {
   const navigate = useNavigate();
-  const importanceSteps = useMemo(() => getFullOnboardingQuestions(), []);
+  const { canUseAIFeatures } = usePlan();
+  const simpleSteps = useMemo(() => getFullOnboardingQuestions(), []);
   /** Location step only on first-time signup/enter onboarding — not Profile retake. */
   const includeLocation = trigger === "signup";
-  const total = importanceSteps.length + (includeLocation ? 1 : 0);
 
+  const [steps, setSteps] = useState(simpleSteps);
   const [index, setIndex] = useState(0);
   /** @type {Record<string, string>} */
   const [answers, setAnswers] = useState({});
   const [locationQuery, setLocationQuery] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deepLoading, setDeepLoading] = useState(false);
+  const [deepPhase, setDeepPhase] = useState(false);
+  const [deepSource, setDeepSource] = useState(null);
+  /** @type {{ categoryId: string, question: object }[]} */
+  const [supplementalQuestions, setSupplementalQuestions] = useState([]);
   const [error, setError] = useState("");
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    const base = getFullOnboardingQuestions();
+    setSteps(base);
     setIndex(0);
     setAnswers({});
     setLocationQuery("");
     setError("");
     setSaving(false);
+    setDeepLoading(false);
+    setDeepPhase(false);
+    setDeepSource(null);
+    setSupplementalQuestions([]);
+    setShowPaywall(false);
   }, [open, trigger, projectId]);
 
   if (!open) return null;
 
-  const isLocationStep = includeLocation && index >= importanceSteps.length;
-  const step = isLocationStep ? null : importanceSteps[index];
+  const total = steps.length + (includeLocation ? 1 : 0);
+  const isLocationStep = includeLocation && index >= steps.length;
+  const step = isLocationStep ? null : steps[index];
   const isLast = index >= total - 1;
+  const onLastSimple =
+    !deepPhase && !isLocationStep && steps.length > 0 && index === simpleSteps.length - 1;
 
   const copy = (() => {
     if (trigger === "client") {
@@ -90,6 +116,7 @@ export default function ImportanceQuizModal({
       return `${projectName.trim()} priorities`.slice(0, 80);
     }
     if (trigger === "client") return "My client priorities";
+    if (deepPhase) return "My deep priorities";
     return "My defaults";
   })();
 
@@ -111,12 +138,103 @@ export default function ImportanceQuizModal({
     setIndex((i) => i + 1);
   };
 
+  const startDeepQuiz = async ({ preferAi = true } = {}) => {
+    if (deepLoading || deepPhase) return;
+    setDeepLoading(true);
+    setError("");
+    try {
+      const exclude = Object.keys(answers);
+      /** @type {ReturnType<typeof normalizeDeepAiQuestions>} */
+      let deep = [];
+      let source = "bank";
+
+      if (preferAi && canUseAIFeatures && api.integrations?.invokeLLM) {
+        try {
+          const catalog = AUTOSCORE_CATEGORY_IDS.filter((id) => !exclude.includes(id))
+            .map((id) => {
+              const bank = getCategoryQuiz(id);
+              return `${id}${bank?.label ? ` (${bank.label})` : ""}`;
+            })
+            .join(", ");
+          const raw = await api.integrations.invokeLLM({
+            feature: "deep_priority_quiz",
+            prompt: `Generate additional home-buyer priority quiz questions.
+Only use these category IDs (auto-scorable only): ${catalog || AUTOSCORE_CATEGORY_IDS.join(", ")}.
+Do not invent other categories.
+Return JSON: {"questions":[{"categoryId":"...","label":"...","prompt":"plain-language question","options":[{"id":"a","label":"...","importance":1-10},...]}]}
+Rules: 4–8 questions max; one category each; 2–4 options; importance 1–10; skip categories already answered: ${exclude.join(", ") || "none"}.`,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                questions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      categoryId: { type: "string" },
+                      label: { type: "string" },
+                      prompt: { type: "string" },
+                      options: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "string" },
+                            label: { type: "string" },
+                            importance: { type: "number" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          });
+          const payload = raw?.data ?? raw;
+          deep = normalizeDeepAiQuestions(payload?.questions || payload, exclude, 8);
+          if (deep.length) source = "ai";
+        } catch {
+          /* fall through to bank */
+        }
+      }
+
+      if (!deep.length) {
+        deep = getDeepFallbackQuestions(exclude, 8);
+        source = "bank";
+      }
+      if (!deep.length) {
+        setError("No more auto-scorable questions to ask.");
+        return;
+      }
+
+      setSupplementalQuestions((prev) => [...prev, ...deep.filter((d) => d.source === "ai")]);
+      const baseLen = steps.length;
+      setSteps((prev) => [...prev, ...deep]);
+      setIndex(baseLen);
+      setDeepPhase(true);
+      setDeepSource(source);
+    } catch (e) {
+      setError(e?.message || "Could not load deeper questions");
+    } finally {
+      setDeepLoading(false);
+    }
+  };
+
+  const onGoDeeper = () => {
+    // Logged-in free users deepen via bank questions; AI wording is Premium.
+    void startDeepQuiz({ preferAi: canUseAIFeatures });
+  };
+
   const finish = async () => {
     setSaving(true);
     setError("");
     try {
-      const quizWeights = weightsFromFullAnswers(answers);
-      const weights = mergeWeights(quizWeights);
+      const quizWeights = weightsFromFullAnswers(answers, supplementalQuestions);
+      const weightCategoryIds = [
+        ...new Set([...simpleSteps.map((s) => s.categoryId), ...Object.keys(quizWeights)]),
+      ];
+      const weights = mergeWeights(quizWeights, weightCategoryIds);
 
       const preset = await api.entities.Preset.create({
         name: presetName,
@@ -198,7 +316,7 @@ export default function ImportanceQuizModal({
 
   const selected = step ? answers[step.categoryId] : null;
   const progressUnits = isLocationStep
-    ? importanceSteps.length + (locationQuery.trim() ? 1 : 0.5)
+    ? steps.length + (locationQuery.trim() ? 1 : 0.5)
     : index + (selected ? 1 : 0);
 
   return (
@@ -219,7 +337,9 @@ export default function ImportanceQuizModal({
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[#106B49] mb-1">
               <Sparkles size={16} />
-              <span className="text-[11px] font-bold uppercase tracking-wide">Priority quiz</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide">
+                {deepPhase ? "Deep priority quiz" : "Priority quiz"}
+              </span>
             </div>
             <h2 id="priority-quiz-title" className="font-bold text-[#14192E] text-lg leading-snug">
               {copy.title}
@@ -240,6 +360,7 @@ export default function ImportanceQuizModal({
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
             <span>
               Question {Math.min(index + 1, total)} of {total}
+              {deepPhase && deepSource === "ai" ? " · AI" : deepPhase ? " · deeper" : ""}
             </span>
             <span>{Math.round((progressUnits / total) * 100)}%</span>
           </div>
@@ -278,7 +399,7 @@ export default function ImportanceQuizModal({
                   placeholder="City, ZIP, or neighborhood…"
                   ariaLabel="Search city, ZIP, or place"
                   showKindBadge
-                  inputClassName="w-full pl-10 pr-3 py-2.5 rounded-xl text-sm"
+                  inputClassName="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-[#14192E] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 focus:border-[#106B49]"
                 />
               </div>
             </>
@@ -323,7 +444,7 @@ export default function ImportanceQuizModal({
         <div className="px-5 py-4 border-t border-slate-100 flex flex-col gap-2.5 shrink-0">
           <button
             type="button"
-            disabled={saving || !canContinue}
+            disabled={saving || deepLoading || !canContinue}
             onClick={goNext}
             className="w-full py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
@@ -334,16 +455,53 @@ export default function ImportanceQuizModal({
                 : "Save preset"
               : "Next"}
           </button>
+          {onLastSimple && selected ? (
+            <button
+              type="button"
+              disabled={saving || deepLoading}
+              onClick={onGoDeeper}
+              className="w-full py-2.5 rounded-xl border border-[#106B49]/40 bg-white text-[#106B49] text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            >
+              {deepLoading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+              {canUseAIFeatures ? "Go deeper — more in-depth quiz" : "Go deeper"}
+            </button>
+          ) : null}
+          {onLastSimple && !canUseAIFeatures ? (
+            <p className="text-[11px] text-center text-slate-500">
+              Extra questions cover beds, baths, transit, hospital distance, and other auto-scorable
+              priorities.{" "}
+              <button
+                type="button"
+                onClick={() => setShowPaywall(true)}
+                className="inline-flex items-center gap-1 text-[#106B49] font-semibold underline-offset-2 hover:underline"
+              >
+                <Lock size={10} /> Upgrade for AI wording
+              </button>
+              {" · "}
+              <Link
+                to={createPageUrl("Pricing")}
+                className="text-[#106B49] font-semibold underline-offset-2 hover:underline"
+              >
+                Pricing
+              </Link>
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={skip}
-            disabled={saving}
+            disabled={saving || deepLoading}
             className="mx-auto text-xs font-medium text-slate-600 opacity-45 hover:opacity-80 transition-opacity disabled:pointer-events-none py-1"
           >
             {trigger === "retake" ? "Cancel" : "Skip"}
           </button>
         </div>
       </div>
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        featureName="AI in-depth priority quiz"
+        planId="premium"
+      />
     </div>
   );
 }

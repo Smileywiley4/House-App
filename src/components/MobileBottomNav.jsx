@@ -15,6 +15,7 @@ import {
   MORE_NAV,
   filterNavForAuth,
   isNavActive,
+  runMoreNavAction,
   NAV_ACTIVE,
   NAV_MUTED,
 } from "@/core/primaryNav";
@@ -76,7 +77,26 @@ export default function MobileBottomNav({
           </SheetHeader>
 
           <ul className="grid gap-1">
-            {moreItems.map(({ name, label, icon: Icon, alsoActive }) => {
+            {moreItems.map((item) => {
+              const { name, label, icon: Icon, alsoActive, action, id } = item;
+              if (action) {
+                return (
+                  <li key={id || action}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        runMoreNavAction(action);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors hover:bg-slate-50 text-left"
+                      style={{ color: NAV_MUTED }}
+                    >
+                      <Icon size={18} />
+                      {label}
+                    </button>
+                  </li>
+                );
+              }
               const active = isNavActive({ name, alsoActive }, currentPageName);
               return (
                 <li key={name}>

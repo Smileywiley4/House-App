@@ -35,6 +35,7 @@ import {
   MORE_NAV,
   filterNavForAuth,
   isNavActive,
+  runMoreNavAction,
   NAV_MUTED,
   NAV_ACTIVE,
 } from "@/core/primaryNav";
@@ -152,14 +153,33 @@ export default function Layout({ children, currentPageName }) {
                 <DropdownMenuContent align="end" className="w-56 z-[100]" sideOffset={8}>
                   <DropdownMenuLabel>More</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {moreItems.map(({ name, label, icon: Icon, alsoActive }) => (
-                    <DropdownMenuItem key={name} asChild>
-                      <Link to={createPageUrl(name)} className="cursor-pointer" aria-current={isNavActive({ name, alsoActive }, currentPageName) ? "page" : undefined}>
-                        <Icon className="text-muted-foreground" />
-                        {label}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
+                  {moreItems.map((item) => {
+                    const { name, label, icon: Icon, alsoActive, action, id } = item;
+                    if (action) {
+                      return (
+                        <DropdownMenuItem
+                          key={id || action}
+                          className="cursor-pointer"
+                          onSelect={() => runMoreNavAction(action)}
+                        >
+                          <Icon className="text-muted-foreground" />
+                          {label}
+                        </DropdownMenuItem>
+                      );
+                    }
+                    return (
+                      <DropdownMenuItem key={name} asChild>
+                        <Link
+                          to={createPageUrl(name)}
+                          className="cursor-pointer"
+                          aria-current={isNavActive({ name, alsoActive }, currentPageName) ? "page" : undefined}
+                        >
+                          <Icon className="text-muted-foreground" />
+                          {label}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
               <AccountCluster isLoadingAuth={isLoadingAuth} isAuthenticated={isAuthenticated} user={user} logout={logout} />

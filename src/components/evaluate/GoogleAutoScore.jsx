@@ -1,24 +1,9 @@
 import { useState } from "react";
 import { MapPin, Loader2, Check, RotateCw, Sparkles } from "lucide-react";
 import { api } from "@/api";
+import { AUTOSCORE_CATEGORY_ID_SET } from "@/lib/importanceQuiz";
 
-const SCOREABLE_IDS = new Set([
-  "hospital_distance",
-  "highway_access",
-  "schools",
-  "neighborhood_safety",
-  "public_transportation",
-  "location_lifestyle",
-  "location_investment",
-  "longterm_neighborhood_value",
-  "bedroom_count",
-  "bathroom_count",
-  "overall_living_space",
-  "property_tax_cost",
-  "hoa_cost",
-  "garage_storage",
-  "fireplace",
-]);
+const SCOREABLE_IDS = AUTOSCORE_CATEGORY_ID_SET;
 const LOCATION_SCORE_IDS = new Set([
   "hospital_distance",
   "highway_access",

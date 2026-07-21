@@ -20,6 +20,7 @@ ECONOMY_FEATURES = frozenset({
     "ai_auto_score",
     "visit_notes_to_scores",
     "realtor_draft",
+    "deep_priority_quiz",
     "invoke",  # generic invoke without a named feature
 })
 

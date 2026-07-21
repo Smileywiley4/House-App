@@ -11,6 +11,7 @@ import {
   Camera,
   UserCircle,
   Users,
+  Sparkles,
 } from "lucide-react";
 
 import { brand } from "../design-tokens.js";
@@ -28,10 +29,20 @@ export const PRIMARY_NAV = [
   { id: "inbox", name: "SharedHomes", label: "Inbox", public: false, alsoActive: [] },
 ];
 
-/** Secondary destinations — desktop “More” + mobile sheet. */
+/**
+ * Secondary destinations — desktop “More” + mobile sheet.
+ * Items with `action` (no `name`) are in-app actions, not routes.
+ */
 export const MORE_NAV = [
   { name: "Home", label: "Score address", icon: Home, public: true, alsoActive: ["Evaluate"] },
   { name: "Compare", label: "Compare", icon: Columns, public: true },
+  {
+    id: "priority-quiz",
+    action: "priority-quiz",
+    label: "Retake quiz",
+    icon: Sparkles,
+    authOnly: true,
+  },
   { name: "SearchByPreset", label: "Find by Preset", icon: Search },
   { name: "Contacts", label: "Contacts", icon: Users },
   { name: "RealtorPortal", label: "Realtors", icon: Building2 },
@@ -42,11 +53,21 @@ export const MORE_NAV = [
 
 export function isNavActive(item, currentPageName) {
   if (!item || !currentPageName) return false;
+  if (item.action) return false;
   if (currentPageName === item.name) return true;
   return Array.isArray(item.alsoActive) && item.alsoActive.includes(currentPageName);
 }
 
 export function filterNavForAuth(items, isAuthenticated) {
   if (isAuthenticated) return items;
-  return items.filter((i) => i.public);
+  return items.filter((i) => i.public && !i.authOnly && !i.action);
+}
+
+/** Open the global priority quiz (logged-in only). Safe no-op for guests. */
+export function runMoreNavAction(action) {
+  if (action === "priority-quiz") {
+    import("@/lib/importanceQuiz").then(({ requestPriorityQuiz }) => {
+      requestPriorityQuiz({ trigger: "retake", force: true });
+    });
+  }
 }
