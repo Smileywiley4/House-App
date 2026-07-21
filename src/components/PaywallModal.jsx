@@ -73,8 +73,20 @@ export default function PaywallModal({ open, onClose, featureName = "this featur
           <Lock size={24} className="text-[#c9a84c]" />
         </div>
         <h2 className="text-xl font-bold text-[#1a2234] mb-2">Premium feature</h2>
-        <p className="text-slate-600 text-sm mb-6">
+        <p className="text-slate-600 text-sm mb-4">
           {featureName} is available on Premium and Realtor plans. Upgrade to unlock ad-free experience, 3+ property comparison, AI insights, and more.
+        </p>
+        <p className="text-slate-500 text-xs mb-6 leading-relaxed">
+          Premium starts at $3.99/mo or $39.99/yr. Subscribes with auto-renewal; cancel anytime in Profile/billing.
+          See{' '}
+          <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline" onClick={onClose}>
+            Terms
+          </Link>
+          {' '}and{' '}
+          <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline" onClick={onClose}>
+            Privacy
+          </Link>
+          .
         </p>
         <div className="flex flex-col gap-3">
           <Link

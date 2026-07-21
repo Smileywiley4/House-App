@@ -65,8 +65,8 @@ const PLANS = [
   {
     id: "premium",
     name: "Premium",
-    monthly: 6.99,
-    annual: 74.99,
+    monthly: 3.99,
+    annual: 39.99,
     tagline: "For serious buyers who want every advantage.",
     badge: "✦ POPULAR",
     accent: true,
@@ -189,7 +189,9 @@ export default function Pricing() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-8 max-w-2xl mx-auto leading-relaxed">
-          Paid plans open secure Stripe checkout. You&apos;ll review payment details first, then accept our{' '}
+          Paid plans open secure Stripe checkout for a recurring subscription (auto-renewal).
+          Subscribes with auto-renewal; cancel anytime in Profile/billing.
+          You&apos;ll review payment details first, then accept our{' '}
           <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms of Service</Link>
           {' '}and{' '}
           <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy Policy</Link>
@@ -265,7 +267,8 @@ export default function Pricing() {
 
         {/* FAQ note */}
         <p className="text-center text-xs text-slate-400 mt-10">
-          Cancel anytime from your account. Questions?{' '}
+          Subscriptions auto-renew each billing period until canceled. Cancel anytime from Profile → Billing.
+          Questions?{' '}
           <Link to={createPageUrl("Support")} className="text-[#10b981] hover:underline">Contact support</Link>
           {' '}or email{' '}
           <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">{SUPPORT_EMAIL}</a>

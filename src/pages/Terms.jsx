@@ -1,3 +1,4 @@
+{/* Agent note: When the user asks to add Terms content, APPEND new sections below (do not replace existing sections unless they explicitly request a rewrite). Keep Auto-renewal current. */}
 import LegalPageShell from '@/components/trust/LegalPageShell';
 import { Link } from 'react-router-dom';
 import { APP_NAME } from '@/core/constants';
@@ -33,10 +34,40 @@ export default function Terms() {
 
       <h2>Subscriptions &amp; billing</h2>
       <ul>
-        <li>Paid plans renew automatically until canceled (web: Stripe; iOS: Apple In-App Purchase).</li>
+        <li>Paid plans are sold as recurring subscriptions and renew automatically until canceled (web: Stripe; iOS: Apple In-App Purchase).</li>
         <li>Prices are shown before purchase and may change with notice for future billing periods.</li>
         <li>You may cancel anytime via your account billing settings (web) or Apple subscription settings (iOS).</li>
         <li>Refunds are handled per the applicable platform policy (Stripe / Apple) unless required by law.</li>
+      </ul>
+
+      <h2>Auto-renewal</h2>
+      <p>
+        Premium (Pro) and Realtor subscriptions on the web are billed through Stripe on a recurring basis.
+        When you complete checkout, you authorize {APP_NAME} (via Stripe) to charge your payment method
+        automatically at the start of each billing period until you cancel.
+      </p>
+      <ul>
+        <li>
+          <strong>Billing period</strong> — Monthly plans renew every month; annual plans renew every year, on the
+          anniversary of your subscription start (or the interval shown at checkout).
+        </li>
+        <li>
+          <strong>Current Premium (Pro) list prices</strong> — $3.99 per month or $39.99 per year (USD), plus any
+          applicable taxes. Realtor and other plan prices are shown on the Pricing page at purchase.
+        </li>
+        <li>
+          <strong>Renewal charge</strong> — Unless you cancel before the renewal date, your payment method on file
+          is charged the then-current subscription price for the next period.
+        </li>
+        <li>
+          <strong>How to cancel</strong> — On the web, open Profile → Billing and use the Stripe customer portal
+          (or equivalent billing controls) to cancel. On iOS, manage or cancel in Apple ID subscription settings.
+          Cancellation stops future renewals; you typically retain access through the end of the paid period already charged.
+        </li>
+        <li>
+          <strong>Failed payments</strong> — If a renewal payment fails, Stripe (or Apple) may retry according to
+          their policies; access may be suspended if payment cannot be collected.
+        </li>
       </ul>
 
       <h2>Acceptable use</h2>

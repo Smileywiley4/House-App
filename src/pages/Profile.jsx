@@ -585,14 +585,18 @@ function ProfileInner() {
                   </button>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     {(plan || "").toLowerCase() === "premium"
-                      ? "Upgrade to Realtor anytime from Pricing — we’ll prorate the difference on your current subscription. Use the billing portal to update payment methods, view invoices, or cancel."
-                      : "In the Stripe portal you can update payment methods, view invoices, and cancel your subscription. If you cancel, charges stop after the current billing period ends."}
+                      ? "Your Premium plan auto-renews until canceled. Upgrade to Realtor anytime from Pricing — we’ll prorate the difference. Use the billing portal to update payment methods, view invoices, or cancel."
+                      : "Your plan auto-renews until canceled. In the Stripe portal you can update payment methods, view invoices, and cancel. If you cancel, charges stop after the current billing period ends."}
                   </p>
                 </>
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    You&apos;re on the free plan. Upgrade anytime for premium features.
+                    You&apos;re on the free plan. Upgrade anytime for premium features ($3.99/mo or $39.99/yr; auto-renews until canceled).
+                    See{' '}
+                    <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms</Link>
+                    {' '}and{' '}
+                    <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy</Link>.
                   </p>
                   <Link
                     to={createPageUrl("Pricing")}

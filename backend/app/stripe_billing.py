@@ -5,6 +5,15 @@ from typing import Any
 
 from app.config import Settings
 
+# Retired Premium/Pro list prices still used by existing auto-renewing subscribers.
+# Keep these in the match set so webhook plan mapping does not drop them to free.
+_LEGACY_PREMIUM_PRICE_IDS = frozenset(
+    {
+        "price_1TvhugCbne1ZmMBQ9gA0QPhF",  # $6.99/mo
+        "price_1TvhugCbne1ZmMBQF1VQcJHy",  # $74.99/yr
+    }
+)
+
 
 def stripe_customer_id(value: Any) -> str | None:
     """Stripe objects may send `customer` as an id string or an expanded object."""
@@ -47,7 +56,7 @@ def plan_from_subscription_price_ids(subscription: dict, s: Settings) -> str | N
             s.stripe_premium_annual_price_id,
         )
         if x and str(x).strip()
-    }
+    } | set(_LEGACY_PREMIUM_PRICE_IDS)
 
     if price_ids & realtor_ids:
         return "realtor"

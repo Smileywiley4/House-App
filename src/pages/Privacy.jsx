@@ -1,4 +1,6 @@
+{/* Agent note: When the user asks to add Privacy Policy content, APPEND new sections below (do not replace existing sections unless they explicitly request a rewrite). Structure supports growth over time. */}
 import LegalPageShell from '@/components/trust/LegalPageShell';
+import { Link } from 'react-router-dom';
 import { APP_NAME } from '@/core/constants';
 import { SUPPORT_EMAIL, PRODUCT_DISCLAIMER } from '@/core/companyConfig';
 
@@ -86,6 +88,12 @@ export default function Privacy() {
 
       <h2>Children</h2>
       <p>{APP_NAME} is not directed at children under 13. We do not knowingly collect data from children.</p>
+
+      <h2>Related policies</h2>
+      <p>
+        Subscription billing and auto-renewal are also described in our{' '}
+        <Link to="/Terms">Terms of Service</Link>.
+      </p>
 
       <h2>Changes</h2>
       <p>We may update this policy. Material changes will be reflected by updating the date at the top of this page.</p>

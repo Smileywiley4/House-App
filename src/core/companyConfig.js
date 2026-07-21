@@ -11,7 +11,7 @@ export const SUPPORT_EMAIL =
 export const SUPPORT_URL =
   import.meta.env.VITE_SUPPORT_URL || '/Support';
 
-export const LEGAL_LAST_UPDATED = 'July 9, 2026';
+export const LEGAL_LAST_UPDATED = 'July 21, 2026';
 
 export const PRODUCT_DISCLAIMER =
   `${APP_NAME} is a decision-support tool for home buyers and real estate professionals. Scores reflect your weights and inputs — not appraisals, inspections, or investment advice. Always verify facts independently and consult licensed professionals before making purchase decisions.`;

@@ -249,8 +249,8 @@ async def create_checkout_session(body: CreateCheckoutBody, user_id: str = Depen
                 "terms_of_service_acceptance": {
                     "message": (
                         f"I agree to the [Terms of Service]({base}/Terms) and "
-                        f"[Privacy Policy]({base}/Privacy), and authorize {billing_label} recurring billing "
-                        "for this subscription until I cancel."
+                        f"[Privacy Policy]({base}/Privacy). This is a {billing_label} auto-renewing "
+                        "subscription; cancel anytime in Profile/billing."
                     ),
                 },
             },
