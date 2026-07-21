@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useIncomingShare } from 'expo-sharing';
 
 /**
- * Shows shared images from other apps (Share → Property Pocket) and lets the user load them into the visit flow.
+ * Shows shared images from other apps (Share → Propurty) and lets the user load them into the visit flow.
  * Only mount on native — `useIncomingShare` is not supported on web.
  */
 export default function IncomingShareBanner({ onUseSharedImage }) {
@@ -23,9 +23,9 @@ export default function IncomingShareBanner({ onUseSharedImage }) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>Shared with Property Pocket</Text>
+      <Text style={styles.title}>Shared with Propurty</Text>
       {error ? <Text style={styles.err}>{error?.message ?? String(error)}</Text> : null}
-      {isResolving ? <ActivityIndicator color="#10b981" style={styles.spinner} /> : null}
+      {isResolving ? <ActivityIndicator color="#106B49" style={styles.spinner} /> : null}
       {firstImageUri ? (
         <>
           <Image source={{ uri: firstImageUri }} style={styles.thumb} contentFit="cover" />
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primary: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#106B49',
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,

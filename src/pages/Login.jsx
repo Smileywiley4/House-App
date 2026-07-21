@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Home, Mail, Lock, Loader2, AlertCircle, Phone } from "lucide-react";
+import { Mail, Lock, Loader2, AlertCircle, Phone } from "lucide-react";
 import { getSharedSupabase } from "@/lib/supabase";
 import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -622,8 +622,8 @@ export default function Login() {
 
   if (oauthLoading) {
     return (
-      <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#10b981] animate-spin mb-4" />
+      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
         <p className="text-white font-semibold">Signing you in...</p>
         <p className="text-slate-400 text-sm mt-1">Completing Google sign-in</p>
       </div>
@@ -632,8 +632,8 @@ export default function Login() {
 
   if (isSupabaseAuth && isLoadingAuth) {
     return (
-      <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#10b981] animate-spin mb-4" />
+      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
         <p className="text-white font-semibold text-sm">Checking your session…</p>
       </div>
     );
@@ -641,8 +641,8 @@ export default function Login() {
 
   if (isSupabaseAuth && isAuthenticated && !isOAuthReturnUrl() && !oauthLoading) {
     return (
-      <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#10b981] animate-spin mb-4" />
+      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
         <p className="text-white font-semibold text-sm">Taking you to the app…</p>
       </div>
     );
@@ -650,8 +650,8 @@ export default function Login() {
 
   if (isSupabaseAuth && isAuthenticated && isOAuthReturnUrl()) {
     return (
-      <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#10b981] animate-spin mb-4" />
+      <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-[#106B49] animate-spin mb-4" />
         <p className="text-white font-semibold">Signing you in...</p>
         <p className="text-slate-400 text-sm mt-1">Completing Google sign-in</p>
       </div>
@@ -660,13 +660,13 @@ export default function Login() {
 
   if (!isSupabaseAuth) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center p-6">
         <div className="max-w-sm w-full text-center">
           <p className="text-slate-600 mb-4">Login is not configured for this deployment (missing Supabase env).</p>
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="px-4 py-2 bg-[#10b981] text-white font-semibold rounded-xl"
+            className="px-4 py-2 bg-[#106B49] text-white font-semibold rounded-xl"
           >
             Go home
           </button>
@@ -679,18 +679,24 @@ export default function Login() {
     <>
       <SeoHelmet
         title="Sign in"
-        description="Sign in to Property Pocket to save property scores, comparisons, and your subscription."
+        description="Sign in to Propurty to save property scores, comparisons, and your subscription."
         noindex
       />
-    <div className="min-h-screen bg-[#1a2234] flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[#1a2234]/80" />
+    <div className="min-h-screen bg-[#14192E] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[#14192E]/80" />
       <div className="relative w-full max-w-md">
-        <a href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8">
-          <Home size={20} />
-          <span className="font-semibold">Property Pocket</span>
+        <a href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8" aria-label="Propurty home">
+          <img
+            src="/logo/propurty-logotype-horizontal-dark.svg"
+            alt="Propurty"
+            className="h-9 w-auto max-w-[200px] object-contain object-left"
+            width={200}
+            height={36}
+            decoding="async"
+          />
         </a>
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h1 className="text-xl font-bold text-[#1a2234] mb-2">
+          <h1 className="text-xl font-bold text-[#14192E] mb-2">
             {mode === "signup" && signupStep === "invite"
               ? "Invite contacts"
               : mode === "signup" && signupStep === "code"
@@ -710,7 +716,7 @@ export default function Login() {
           </p>
           {signupStep !== "invite" && (
           <p className="text-slate-400 text-xs mb-6 leading-relaxed">
-            You stay signed in on this browser until you sign out or clear site data for Property Pocket. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
+            You stay signed in on this browser until you sign out or clear site data for Propurty. Allow cookies / local storage for this site so your session persists across tabs and when you close and reopen the window.
           </p>
           )}
           {signupStep === "invite" && <div className="mb-4" />}
@@ -726,7 +732,7 @@ export default function Login() {
             </div>
           )}
           {message && (
-            <div className="text-[#10b981] text-sm bg-[#10b981]/10 rounded-xl p-3 mb-4">
+            <div className="text-[#106B49] text-sm bg-[#106B49]/10 rounded-xl p-3 mb-4">
               {message}
             </div>
           )}
@@ -744,7 +750,7 @@ export default function Login() {
                     resetSignupCodeStep();
                     refreshCaptcha();
                   }}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signin" ? "bg-white text-[#1a2234] shadow-sm" : "text-slate-500"}`}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signin" ? "bg-white text-[#14192E] shadow-sm" : "text-slate-500"}`}
                 >
                   Sign in
                 </button>
@@ -757,7 +763,7 @@ export default function Login() {
                     resetSignupCodeStep();
                     refreshCaptcha();
                   }}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signup" ? "bg-white text-[#1a2234] shadow-sm" : "text-slate-500"}`}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${mode === "signup" ? "bg-white text-[#14192E] shadow-sm" : "text-slate-500"}`}
                 >
                   Create account
                 </button>
@@ -789,7 +795,7 @@ export default function Login() {
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 12))}
                       placeholder="6-digit code"
                       disabled={loading}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm tracking-[0.35em] text-center font-semibold focus:outline-none focus:border-[#10b981]"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm tracking-[0.35em] text-center font-semibold focus:outline-none focus:border-[#106B49]"
                       required
                     />
                     <p className="text-center text-xs text-slate-500 mt-3">
@@ -810,7 +816,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading || otpCode.length < 6 || codeSecondsLeft <= 0}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : null}
                     Verify and create account
@@ -857,14 +863,14 @@ export default function Login() {
                             onClick={() => setSelectedPlan(plan.id)}
                             className={`w-full text-left rounded-xl border px-3 py-2.5 transition ${
                               selected
-                                ? "border-[#10b981] bg-[#10b981]/10 ring-1 ring-[#10b981]/40"
+                                ? "border-[#106B49] bg-[#106B49]/10 ring-1 ring-[#106B49]/40"
                                 : "border-slate-200 hover:border-slate-300 bg-white"
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-bold text-[#1a2234]">{plan.label}</span>
+                              <span className="text-sm font-bold text-[#14192E]">{plan.label}</span>
                               {plan.id === "premium" && (
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#10b981]">Popular</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#106B49]">Popular</span>
                               )}
                             </div>
                             <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{plan.blurb}</p>
@@ -885,7 +891,7 @@ export default function Login() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Jane Smith"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
                       autoComplete="name"
                     />
                   </div>
@@ -900,7 +906,7 @@ export default function Login() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(555) 000-0000"
-                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
                         autoComplete="tel"
                       />
                     </div>
@@ -915,7 +921,7 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
                       required
                     />
                   </div>
@@ -929,7 +935,7 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
                       required
                       minLength={mode === "signup" ? 8 : undefined}
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
@@ -949,7 +955,7 @@ export default function Login() {
                         className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none ${
                           confirmPassword && confirmPassword !== password
                             ? "border-red-400 focus:border-red-500"
-                            : "border-slate-200 focus:border-[#10b981]"
+                            : "border-slate-200 focus:border-[#106B49]"
                         }`}
                         required
                         minLength={8}
@@ -960,7 +966,7 @@ export default function Login() {
                       <p className="mt-1.5 text-xs font-semibold text-red-600">Passwords do not match.</p>
                     )}
                     {confirmPassword && password && confirmPassword === password && (
-                      <p className="mt-1.5 text-xs font-semibold text-[#059669]">Passwords match.</p>
+                      <p className="mt-1.5 text-xs font-semibold text-[#0C4F37]">Passwords match.</p>
                     )}
                   </div>
                 )}
@@ -971,15 +977,15 @@ export default function Login() {
                       checked={acceptTerms}
                       onChange={(e) => setAcceptTerms(e.target.checked)}
                       required
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#10b981] focus:ring-[#10b981]"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#106B49] focus:ring-[#106B49]"
                     />
                     <span className="text-xs text-slate-600 leading-relaxed">
                       By creating an account, I agree to the{" "}
-                      <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline" target="_blank" rel="noopener noreferrer">
+                      <Link to={createPageUrl("Terms")} className="text-[#106B49] hover:underline" target="_blank" rel="noopener noreferrer">
                         Terms of Service
                       </Link>{" "}
                       and{" "}
-                      <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline" target="_blank" rel="noopener noreferrer">
+                      <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline" target="_blank" rel="noopener noreferrer">
                         Privacy Policy
                       </Link>
                       . <span className="text-slate-400">(Required)</span>
@@ -992,11 +998,11 @@ export default function Login() {
                       type="checkbox"
                       checked={marketingOptIn}
                       onChange={(e) => setMarketingOptIn(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#10b981] focus:ring-[#10b981]"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#106B49] focus:ring-[#106B49]"
                     />
                     <span className="text-xs text-slate-600 leading-relaxed">
                       Send me product updates, new features, and promotions. See our{" "}
-                      <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">
+                      <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline">
                         Privacy Policy
                       </Link>
                       .
@@ -1024,7 +1030,7 @@ export default function Login() {
                       loading
                       || (mode === "signup" && (!acceptTerms || !selectedPlan || !password || password !== confirmPassword))
                     }
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : null}
                     {mode === "signup" ? "Send confirmation code" : "Sign in"}
@@ -1047,7 +1053,7 @@ export default function Login() {
                     setMessage("");
                     refreshCaptcha();
                   }}
-                  className="text-xs font-semibold text-[#10b981] hover:underline"
+                  className="text-xs font-semibold text-[#106B49] hover:underline"
                 >
                   Forgot password?
                 </button>
@@ -1065,7 +1071,7 @@ export default function Login() {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]"
                     required
                   />
                 </div>
@@ -1086,14 +1092,14 @@ export default function Login() {
               )}
 
               {forgotSent ? (
-                <div className="text-[#10b981] text-sm bg-[#10b981]/10 rounded-xl p-3">
+                <div className="text-[#106B49] text-sm bg-[#106B49]/10 rounded-xl p-3">
                   If an account exists for that email, we emailed you a password reset link. Check your inbox (and spam folder).
                 </div>
               ) : (
                 <button
                   type="submit"
                   disabled={forgotLoading || (isCaptchaConfigured() && !captchaToken)}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm disabled:opacity-60"
                 >
                   {forgotLoading ? <Loader2 size={18} className="animate-spin" /> : null}
                   Send reset link
@@ -1152,15 +1158,15 @@ export default function Login() {
           )}
         </div>
         <p className="mt-6 text-center text-[11px] text-slate-400">
-          <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">
+          <Link to={createPageUrl("Terms")} className="text-[#106B49] hover:underline">
             Terms
           </Link>
           {" · "}
-          <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">
+          <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline">
             Privacy
           </Link>
           {" · "}
-          <Link to={createPageUrl("Support")} className="text-[#10b981] hover:underline">
+          <Link to={createPageUrl("Support")} className="text-[#106B49] hover:underline">
             Support
           </Link>
         </p>

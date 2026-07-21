@@ -69,9 +69,9 @@ function SavedPropertiesInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0 bg-[#1a2234]/75" />
+    <div className="min-h-screen bg-[#F8F7F4]">
+      <div className="relative overflow-hidden bg-[#14192E] px-6 py-8">
+        <div className="absolute inset-0 bg-[#14192E]/75" />
         <div className="relative max-w-5xl mx-auto">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
             <ChevronLeft size={16} /> Back to Search
@@ -85,7 +85,7 @@ function SavedPropertiesInner() {
               <ShareComparison scores={sorted} />
               <Link
                 to={createPageUrl("Home")}
-                className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl transition-colors text-sm"
               >
                 <Plus size={15} /> Add Property
               </Link>
@@ -122,20 +122,20 @@ function SavedPropertiesInner() {
 }
 
 function PropertyScoreCard({ property, rank, isWinner, onDelete }) {
-  const scoreColor = property.percentage >= 70 ? "#10b981" : property.percentage >= 40 ? "#f59e0b" : "#ef4444";
+  const scoreColor = property.percentage >= 70 ? "#106B49" : property.percentage >= 40 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:shadow-md ${isWinner ? "border-[#10b981]" : "border-slate-100"}`}>
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:shadow-md ${isWinner ? "border-[#106B49]" : "border-slate-100"}`}>
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${isWinner ? "bg-[#10b981] text-white" : "bg-slate-100 text-slate-500"}`}>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${isWinner ? "bg-[#106B49] text-white" : "bg-slate-100 text-slate-500"}`}>
               {isWinner ? <Trophy size={22} /> : `#${rank}`}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-[#1a2234]">{property.property_address}</h3>
-                {isWinner && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{background:"rgba(16,185,129,0.1)", color:"#10b981"}}>Top Pick <span style={{color:"#c9a84c"}}>✦</span></span>}
+                <h3 className="font-bold text-[#14192E]">{property.property_address}</h3>
+                {isWinner && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{background:"rgba(16,185,129,0.1)", color:"#106B49"}}>Top Pick <span style={{color:"#E8A33D"}}>✦</span></span>}
               </div>
               <p className="text-slate-400 text-sm">{property.scores?.length} categories scored</p>
             </div>

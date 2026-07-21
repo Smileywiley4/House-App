@@ -76,28 +76,28 @@ export const SEO_BY_PAGE = {
   },
   SharedComparison: {
     title: 'Shared comparison',
-    description: 'A comparison shared with you in Property Pocket.',
+    description: 'A comparison shared with you in Propurty.',
   },
   PreferenceCard: {
     title: 'Preference pattern',
-    description: 'A preferences-only scoring pattern shared from Property Pocket — no addresses, prices, or photos.',
+    description: 'A preferences-only scoring pattern shared from Propurty — no addresses, prices, or photos.',
     noindex: true,
   },
   About: {
     title: 'About us',
-    description: 'Learn how Property Pocket helps home buyers compare properties with transparent, weighted scoring.',
+    description: 'Learn how Propurty helps home buyers compare properties with transparent, weighted scoring.',
   },
   Privacy: {
     title: 'Privacy policy',
-    description: 'How Property Pocket collects, uses, and protects your personal information.',
+    description: 'How Propurty collects, uses, and protects your personal information.',
   },
   Terms: {
     title: 'Terms of service',
-    description: 'Terms governing your use of Property Pocket and related subscriptions.',
+    description: 'Terms governing your use of Propurty and related subscriptions.',
   },
   Support: {
     title: 'Help & support',
-    description: 'Contact Property Pocket for account, billing, and product help.',
+    description: 'Contact Propurty for account, billing, and product help.',
   },
 };
 

@@ -1,5 +1,5 @@
 /**
- * Accessibility audit for main Property Pocket flows.
+ * Accessibility audit for main Propurty flows.
  * Usage: node scripts/a11y-audit.mjs
  */
 import { createServer } from "http";

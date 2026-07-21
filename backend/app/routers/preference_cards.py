@@ -1,4 +1,7 @@
-"""Opt-in shareable preference pattern cards (importance priorities only)."""
+"""Opt-in shareable preference pattern cards (importance priorities only).
+
+TODO(rebrand): final domain TBD — keep house-app-rho.vercel.app fallbacks until DNS is ready.
+"""
 from __future__ import annotations
 
 import secrets
@@ -372,7 +375,7 @@ async def public_card_og_html(token: str):
     settings = get_settings()
     app_url = (settings.app_public_url or "https://house-app-rho.vercel.app").rstrip("/")
     page_url = f"{app_url}/PreferenceCard?t={raw}"
-    title = "Preference pattern · Property Pocket"
+    title = "Preference pattern · Propurty"
     desc = (card.get("summary_line") or "A home-scoring preference pattern.").replace('"', "'")
     og_image = f"{app_url}/og-default.png"
     # Prefer site OG if configured via public URL path; crawlers still get text.

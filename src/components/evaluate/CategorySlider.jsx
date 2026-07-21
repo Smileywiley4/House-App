@@ -25,7 +25,7 @@ function RangeTrack({ value, rated, fillColor, onChange, ariaLabel }) {
         aria-valuemax={10}
         aria-valuenow={displayValue}
         aria-valuetext={rated ? `${displayValue} out of 10` : "Not yet rated"}
-        className={`w-full h-2 rounded-full appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2 ${rated ? "" : "opacity-80"}`}
+        className={`w-full h-2 rounded-full appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0C4F37] focus-visible:ring-offset-2 ${rated ? "" : "opacity-80"}`}
         style={{
           background: rated
             ? `linear-gradient(to right, ${fillColor} ${fillPct}%, #e2e8f0 ${fillPct}%)`
@@ -53,7 +53,7 @@ export default function CategorySlider({
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-[#1a2234] text-sm">{category.label}</h3>
+            <h3 className="font-semibold text-[#14192E] text-sm">{category.label}</h3>
             {scoreRated && scoreSource === "auto" && (
               <span className="text-[10px] font-semibold text-blue-800 bg-blue-50 border border-blue-200/70 px-2 py-0.5 rounded-md">
                 auto-filled
@@ -76,7 +76,7 @@ export default function CategorySlider({
           type="button"
           onClick={() => onRemove(category.id)}
           aria-label={`Remove ${category.label} category`}
-          className="w-7 h-7 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2"
+          className="w-7 h-7 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0C4F37] focus-visible:ring-offset-2"
         >
           <X size={14} aria-hidden />
         </button>
@@ -86,12 +86,12 @@ export default function CategorySlider({
         <div>
           <div className="flex justify-between text-xs mb-2">
             <span className="text-slate-600 font-medium">Importance to You</span>
-            <SliderLabel rated={importanceRated} value={category.importance} ratedClassName="text-[#047857]" />
+            <SliderLabel rated={importanceRated} value={category.importance} ratedClassName="text-[#0C4F37]" />
           </div>
           <RangeTrack
             value={category.importance}
             rated={importanceRated}
-            fillColor="#047857"
+            fillColor="#0C4F37"
             ariaLabel={`${category.label} importance, ${importanceRated ? `${category.importance} out of 10` : "not yet rated"}`}
             onChange={(val) => onImportanceChange(category.id, val)}
           />
@@ -113,12 +113,12 @@ export default function CategorySlider({
         <div>
           <div className="flex justify-between text-xs mb-2">
             <span className="text-slate-600 font-medium">Property Score</span>
-            <SliderLabel rated={scoreRated} value={category.score} ratedClassName="text-[#1a2234]" />
+            <SliderLabel rated={scoreRated} value={category.score} ratedClassName="text-[#14192E]" />
           </div>
           <RangeTrack
             value={category.score}
             rated={scoreRated}
-            fillColor="#1a2234"
+            fillColor="#14192E"
             ariaLabel={`${category.label} property score, ${scoreRated ? `${category.score} out of 10` : "not yet rated"}`}
             onChange={(val) => onScoreChange(category.id, val)}
           />

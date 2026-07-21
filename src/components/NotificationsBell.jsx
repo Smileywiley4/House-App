@@ -97,12 +97,12 @@ export default function NotificationsBell() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2234]"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#106B49] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14192E]"
           aria-label={badge ? `${badge} unread notifications` : "Notifications"}
         >
           <Bell size={18} strokeWidth={1.75} />
           {badge > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full bg-[#10b981] text-[10px] font-bold text-white flex items-center justify-center">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full bg-[#106B49] text-[10px] font-bold text-white flex items-center justify-center">
               {badge > 9 ? "9+" : badge}
             </span>
           )}
@@ -115,7 +115,7 @@ export default function NotificationsBell() {
             <button
               type="button"
               onClick={markAll}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#059669] hover:underline"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0C4F37] hover:underline"
             >
               <CheckCheck size={12} /> Mark all read
             </button>
@@ -125,7 +125,7 @@ export default function NotificationsBell() {
         {sharePending > 0 && (
           <>
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link to={createPageUrl("SharedHomes")} className="w-full text-sm font-semibold text-[#059669]">
+              <Link to={createPageUrl("SharedHomes")} className="w-full text-sm font-semibold text-[#0C4F37]">
                 {sharePending} shared home{sharePending === 1 ? "" : "s"} awaiting score →
               </Link>
             </DropdownMenuItem>
@@ -145,7 +145,7 @@ export default function NotificationsBell() {
             <DropdownMenuItem
               key={n.id}
               className={`flex flex-col items-start gap-0.5 cursor-pointer py-2.5 ${
-                !n.read_at ? "bg-[#10b981]/5" : ""
+                !n.read_at ? "bg-[#106B49]/5" : ""
               }`}
               onSelect={(e) => {
                 e.preventDefault();

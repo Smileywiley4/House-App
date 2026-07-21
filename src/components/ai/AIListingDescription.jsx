@@ -55,20 +55,20 @@ Keep it professional, vivid, and buyer-focused. Use "you'll" and second-person l
   };
 
   return (
-    <div className="mt-4 border border-[#10b981]/15 rounded-xl overflow-hidden">
-      <div className="bg-[#1a2234]/5 px-4 py-3 flex items-center justify-between">
+    <div className="mt-4 border border-[#106B49]/15 rounded-xl overflow-hidden">
+      <div className="bg-[#14192E]/5 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles size={13} className="text-[#10b981]" />
-          <span className="text-xs font-bold text-[#1a2234]">AI Description</span>
+          <Sparkles size={13} className="text-[#106B49]" />
+          <span className="text-xs font-bold text-[#14192E]">AI Description</span>
         </div>
         <div className="flex items-center gap-2">
           {description && (
-            <button onClick={copy} className="text-slate-400 hover:text-[#10b981] transition">
-              {copied ? <Check size={13} className="text-[#10b981]" /> : <Copy size={13} />}
+            <button onClick={copy} className="text-slate-400 hover:text-[#106B49] transition">
+              {copied ? <Check size={13} className="text-[#106B49]" /> : <Copy size={13} />}
             </button>
           )}
           <button onClick={generate} disabled={loading}
-            className="text-xs font-semibold text-[#10b981] hover:text-[#059669] transition disabled:opacity-50 flex items-center gap-1">
+            className="text-xs font-semibold text-[#106B49] hover:text-[#0C4F37] transition disabled:opacity-50 flex items-center gap-1">
             {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
             {loading ? "Generating..." : description ? "Regenerate" : "Generate"}
           </button>

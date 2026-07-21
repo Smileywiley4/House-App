@@ -143,7 +143,7 @@ export default function AddressAutocompleteInput({
         >
           {loading && suggestions.length === 0 ? (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-slate-500">
-              <Loader2 size={15} className="animate-spin text-[#10b981]" /> Finding matches...
+              <Loader2 size={15} className="animate-spin text-[#106B49]" /> Finding matches...
             </div>
           ) : suggestions.length > 0 ? (
             suggestions.map((suggestion, index) => (
@@ -156,12 +156,12 @@ export default function AddressAutocompleteInput({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => selectSuggestion(suggestion)}
                 className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 ${
-                  index === activeIndex ? "bg-[#10b981]/10" : "hover:bg-slate-50"
+                  index === activeIndex ? "bg-[#106B49]/10" : "hover:bg-slate-50"
                 }`}
               >
-                <MapPin size={16} className="mt-0.5 shrink-0 text-[#10b981]" />
+                <MapPin size={16} className="mt-0.5 shrink-0 text-[#106B49]" />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-[#1a2234]">
+                  <span className="block truncate text-sm font-semibold text-[#14192E]">
                     {suggestion.main_text}
                   </span>
                   <span className="flex items-center gap-2">

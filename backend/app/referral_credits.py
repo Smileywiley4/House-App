@@ -1,4 +1,7 @@
-"""Referral reward: one billing-month credit for inviter + invitee via Stripe Customer Balance."""
+"""Referral reward: one billing-month credit for inviter + invitee via Stripe Customer Balance.
+
+TODO(rebrand): final domain TBD — keep house-app-rho.vercel.app fallbacks until DNS is ready.
+"""
 from __future__ import annotations
 
 import logging
@@ -129,7 +132,7 @@ def _apply_customer_balance_credit(
         customer_id,
         amount=-abs(int(amount_cents)),
         currency="usd",
-        description=f"Property Pocket referral credit ({role})",
+        description=f"Propurty referral credit ({role})",
         metadata={
             "referral_redemption_id": redemption_id,
             "referral_role": role,

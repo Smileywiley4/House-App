@@ -1,6 +1,6 @@
 # App Store & Play Store compliance checklist
 
-Property Pocket (house-app). Use this when shipping **native iOS / Android wrappers**. Web compliance items live in Privacy, Terms, Profile (deletion/export), and Pricing.
+Propurty (house-app). Use this when shipping **native iOS / Android wrappers**. Web compliance items live in Privacy, Terms, Profile (deletion/export), and Pricing.
 
 **Recommend qualified attorney review before public launch.** Nothing here claims immunity from legal claims.
 

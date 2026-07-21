@@ -22,7 +22,7 @@ export default function PageNotFound({}) {
     
     return (
         <>
-        <SeoHelmet title="Page not found" description="The requested page does not exist on Property Pocket." noindex />
+        <SeoHelmet title="Page not found" description="The requested page does not exist on Propurty." noindex />
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
             <div className="max-w-md w-full">
                 <div className="text-center space-y-6">

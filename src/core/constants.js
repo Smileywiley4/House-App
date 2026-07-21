@@ -4,6 +4,6 @@
  */
 import { THEME as BRAND_THEME } from '../design-tokens.js';
 
-export const APP_NAME = 'Property Pocket';
+export const APP_NAME = 'Propurty';
 
 export const THEME = BRAND_THEME;

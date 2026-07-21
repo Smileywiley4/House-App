@@ -243,7 +243,7 @@ async def add_contact(body: AddContactBody, user_id: str = Depends(get_current_u
                 target_id,
                 kind="contact_accepted",
                 title="Contact accepted",
-                body="Someone accepted your contact request on Property Pocket.",
+                body="Someone accepted your contact request on Propurty.",
                 payload={"user_id": user_id},
             )
         else:
@@ -267,7 +267,7 @@ async def add_contact(body: AddContactBody, user_id: str = Depends(get_current_u
                 target_id,
                 kind="contact_request",
                 title="New contact request",
-                body="Someone wants to add you as a contact on Property Pocket.",
+                body="Someone wants to add you as a contact on Propurty.",
                 payload={"from_user_id": user_id, "contact_id": str(row["id"]) if row else None},
             )
 

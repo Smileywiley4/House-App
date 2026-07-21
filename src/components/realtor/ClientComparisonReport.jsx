@@ -27,8 +27,8 @@ function formatDate(iso) {
 
 function scoreColor(score) {
   if (score == null) return "#94a3b8";
-  if (score >= 70) return "#10b981";
-  if (score >= 40) return "#c9a84c";
+  if (score >= 70) return "#106B49";
+  if (score >= 40) return "#E8A33D";
   return "#ef4444";
 }
 
@@ -137,7 +137,7 @@ export default function ClientComparisonReport({ contactUserId, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
       <div className="bg-white w-full sm:max-w-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
-        <div className="bg-[#1a2234] px-5 py-4 flex items-start justify-between gap-3 shrink-0">
+        <div className="bg-[#14192E] px-5 py-4 flex items-start justify-between gap-3 shrink-0">
           <div>
             <h2 className="text-white font-bold text-lg">Client comparison report</h2>
             <p className="text-slate-400 text-sm mt-0.5">{clientName}</p>
@@ -158,7 +158,7 @@ export default function ClientComparisonReport({ contactUserId, onClose }) {
             onClick={copyLink}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 hover:bg-slate-50 transition"
           >
-            {copied ? <Check size={13} className="text-[#10b981]" /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="text-[#106B49]" /> : <Copy size={13} />}
             {copied ? "Copied" : "Copy link"}
           </button>
           <button
@@ -189,7 +189,7 @@ export default function ClientComparisonReport({ contactUserId, onClose }) {
         <div className="flex-1 overflow-auto p-5">
           {loading ? (
             <div className="flex justify-center py-16">
-              <Loader2 className="animate-spin text-[#10b981]" size={28} />
+              <Loader2 className="animate-spin text-[#106B49]" size={28} />
             </div>
           ) : error ? (
             <p className="text-sm text-red-500 text-center py-10">{error}</p>
@@ -211,7 +211,7 @@ export default function ClientComparisonReport({ contactUserId, onClose }) {
                 <tbody>
                   {report.properties.map((row) => (
                     <tr key={row.share_id} className="border-b border-slate-50 last:border-0">
-                      <td className="py-3 pr-3 font-medium text-[#1a2234]">{row.address}</td>
+                      <td className="py-3 pr-3 font-medium text-[#14192E]">{row.address}</td>
                       <td className="py-3 pr-3 text-slate-600 whitespace-nowrap">
                         {formatPrice(row.price)}
                       </td>

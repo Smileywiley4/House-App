@@ -41,8 +41,8 @@ export default function AppearanceSettings() {
                 onClick={() => setTheme(id)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
                   active
-                    ? "border-[#10b981] bg-[#10b981]/10 text-[#10b981] ring-2 ring-[#10b981]/20"
-                    : "border-border bg-card text-foreground hover:border-[#10b981]/40"
+                    ? "border-[#106B49] bg-[#106B49]/10 text-[#106B49] ring-2 ring-[#106B49]/20"
+                    : "border-border bg-card text-foreground hover:border-[#106B49]/40"
                 }`}
               >
                 <Icon size={18} />
@@ -60,7 +60,7 @@ export default function AppearanceSettings() {
         <h2 className="text-lg font-bold text-foreground mb-1">Display brightness</h2>
         <p className="text-sm text-muted-foreground mb-5">
           Dims or brightens the whole app in your browser. This does not change your monitor or phone hardware
-          brightness — only how Property Pocket is drawn.
+          brightness — only how Propurty is drawn.
         </p>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-4">
@@ -84,7 +84,7 @@ export default function AppearanceSettings() {
             <button
               type="button"
               onClick={resetBrightness}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#10b981] hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#106B49] hover:underline"
             >
               <RotateCcw size={14} />
               Reset to 100%

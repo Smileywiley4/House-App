@@ -3,7 +3,14 @@ import { useLocation } from 'react-router-dom';
 import { SITE_NAME, DEFAULT_SITE_DESCRIPTION, SEO_BY_PAGE } from '@/core/seoConfig';
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/$/, '');
-const OG_IMAGE = (import.meta.env.VITE_OG_IMAGE_URL || '').trim();
+// Prefer absolute OG URL from env; fall back to public brand asset (relative → absolute when SITE_URL set).
+// TODO(rebrand): final custom domain TBD — keep VITE_SITE_URL / prod house-app-rho.vercel.app until DNS is ready.
+const OG_IMAGE_RAW = (import.meta.env.VITE_OG_IMAGE_URL || '/og-image-1200x630.png').trim();
+const OG_IMAGE = OG_IMAGE_RAW.startsWith('http')
+  ? OG_IMAGE_RAW
+  : SITE_URL
+    ? `${SITE_URL}${OG_IMAGE_RAW.startsWith('/') ? '' : '/'}${OG_IMAGE_RAW}`
+    : OG_IMAGE_RAW;
 
 /**
  * @param {object} props

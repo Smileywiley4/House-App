@@ -113,7 +113,7 @@ export default function GoogleAutoScore({ address, property, categories, onApply
 
   return (
     <div className="bg-white border border-blue-200/60 rounded-2xl overflow-hidden">
-      <div className="bg-gradient-to-r from-[#1a2234] to-[#1e3a5f] px-5 py-3.5 flex items-center gap-2">
+      <div className="bg-gradient-to-r from-[#14192E] to-[#1e3a5f] px-5 py-3.5 flex items-center gap-2">
         <MapPin size={15} className="text-blue-400" />
         <span className="text-white font-semibold text-sm">Auto-Score</span>
       </div>
@@ -176,12 +176,12 @@ export default function GoogleAutoScore({ address, property, categories, onApply
                 return (
                   <div key={cat.id} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
                     <div className="shrink-0 w-8 text-center">
-                      <span className={`text-base font-bold ${score >= 8 ? "text-[#10b981]" : score >= 5 ? "text-[#c9a84c]" : "text-red-400"}`}>
+                      <span className={`text-base font-bold ${score >= 8 ? "text-[#106B49]" : score >= 5 ? "text-[#E8A33D]" : "text-red-400"}`}>
                         {score}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-[#1a2234]">{cat.label}</div>
+                      <div className="text-xs font-semibold text-[#14192E]">{cat.label}</div>
                       <div className="text-[10px] text-slate-400">
                         {CATEGORY_DETAIL[cat.id]}{detail ? ` · ${detail}` : ""}
                       </div>
@@ -208,13 +208,13 @@ export default function GoogleAutoScore({ address, property, categories, onApply
         )}
 
         {applied && (
-          <div className="rounded-xl border border-[#10b981]/20 bg-gradient-to-r from-[#10b981]/8 to-[#c9a84c]/8 p-4">
+          <div className="rounded-xl border border-[#106B49]/20 bg-gradient-to-r from-[#106B49]/8 to-[#E8A33D]/8 p-4">
             <div className="mb-3 flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#10b981] text-white shadow-sm">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#106B49] text-white shadow-sm">
                 <Check size={18} strokeWidth={3} />
               </div>
               <div>
-                <p className="text-sm font-bold text-[#1a2234]">Auto-scores applied</p>
+                <p className="text-sm font-bold text-[#14192E]">Auto-scores applied</p>
                 <p className="mt-0.5 text-xs leading-5 text-slate-500">
                   Added another supported category? Re-run Auto-Score to calculate and apply its score.
                 </p>
@@ -223,11 +223,11 @@ export default function GoogleAutoScore({ address, property, categories, onApply
             <button
               type="button"
               onClick={run}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a2234] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#243050] hover:shadow-md"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#14192E] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#2A3150] hover:shadow-md"
             >
-              <RotateCw size={17} className="text-[#c9a84c]" />
+              <RotateCw size={17} className="text-[#E8A33D]" />
               Re-run Auto-Score
-              <Sparkles size={15} className="text-[#10b981]" />
+              <Sparkles size={15} className="text-[#106B49]" />
             </button>
           </div>
         )}

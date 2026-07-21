@@ -1,0 +1,10 @@
+<svg width="320" height="80" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Propurty merged lockup</title>
+<desc>The icon mark stands in for the letter P, immediately followed by the rest of the wordmark, on a light background.</desc>
+<g transform="translate(8,8) scale(0.6875)">
+<rect x="2" y="2" width="60" height="60" rx="13" fill="#106B49"/>
+<path d="M26,24 L32,17.5 L38,24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21,36 L29,44 L46,26" fill="none" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="56" y="52" font-family="Manrope, 'Plus Jakarta Sans', Arial, sans-serif" font-size="60" font-weight="700" letter-spacing="-0.5" fill="#14192E">ropurty</text>
+</svg>

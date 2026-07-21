@@ -106,14 +106,14 @@ function SharedHomesInner() {
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a2234] flex items-center gap-2">
-            <Inbox size={22} className="text-[#10b981]" /> Shared homes
+          <h1 className="text-2xl font-bold text-[#14192E] flex items-center gap-2">
+            <Inbox size={22} className="text-[#106B49]" /> Shared homes
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Homes sent for scoring — private between you and your contact.
           </p>
         </div>
-        <Link to={createPageUrl("Contacts")} className="text-sm font-semibold text-[#10b981] hover:underline">
+        <Link to={createPageUrl("Contacts")} className="text-sm font-semibold text-[#106B49] hover:underline">
           Contacts →
         </Link>
       </div>
@@ -124,7 +124,7 @@ function SharedHomesInner() {
           onClick={() => setParams({})}
           className={`px-3 py-2 text-sm font-semibold border-b-2 -mb-px ${
             tab === "inbox"
-              ? "border-[#10b981] text-[#059669]"
+              ? "border-[#106B49] text-[#0C4F37]"
               : "border-transparent text-slate-500"
           }`}
         >
@@ -136,7 +136,7 @@ function SharedHomesInner() {
             onClick={() => setParams({ tab: "sent" })}
             className={`px-3 py-2 text-sm font-semibold border-b-2 -mb-px ${
               tab === "sent"
-                ? "border-[#10b981] text-[#059669]"
+                ? "border-[#106B49] text-[#0C4F37]"
                 : "border-transparent text-slate-500"
             }`}
           >
@@ -182,14 +182,14 @@ function SharedHomesInner() {
                 <button
                   type="button"
                   onClick={() => openItem(item)}
-                  className="w-full text-left rounded-2xl border border-slate-100 bg-white p-4 hover:border-[#10b981]/30 transition flex gap-3"
+                  className="w-full text-left rounded-2xl border border-slate-100 bg-white p-4 hover:border-[#106B49]/30 transition flex gap-3"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0">
-                    <Home size={18} className="text-[#10b981]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#106B49]/10 flex items-center justify-center shrink-0">
+                    <Home size={18} className="text-[#106B49]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-[#1a2234] text-sm truncate">{address}</p>
+                      <p className="font-semibold text-[#14192E] text-sm truncate">{address}</p>
                       <span
                         className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${shareStatusBadgeClass(label)}`}
                       >
@@ -243,7 +243,7 @@ function ShareDetail({ item, isSentTab, onClose, onScore, onRefresh }) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <h2 className="font-bold text-[#1a2234] text-sm truncate pr-4">{address}</h2>
+          <h2 className="font-bold text-[#14192E] text-sm truncate pr-4">{address}</h2>
           <button type="button" onClick={onClose} className="text-slate-400 text-sm font-semibold">
             Close
           </button>
@@ -280,7 +280,7 @@ function ShareDetail({ item, isSentTab, onClose, onScore, onRefresh }) {
               href={item.private_listing_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#10b981] hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#106B49] hover:underline"
             >
               <ExternalLink size={14} /> Open private listing link
             </a>
@@ -297,7 +297,7 @@ function ShareDetail({ item, isSentTab, onClose, onScore, onRefresh }) {
             <button
               type="button"
               onClick={onScore}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#10b981] py-3 text-sm font-bold text-white hover:bg-[#059669]"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#106B49] py-3 text-sm font-bold text-white hover:bg-[#0C4F37]"
             >
               <Send size={16} /> Score this home
             </button>

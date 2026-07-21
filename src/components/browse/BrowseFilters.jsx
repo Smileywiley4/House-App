@@ -56,7 +56,7 @@ function ChipGroup({ label, options, selected, onChange }) {
               onClick={() => onChange(toggleInList(selected, opt))}
               className={`min-w-[2.5rem] px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
                 active
-                  ? "bg-[#10b981] border-[#10b981] text-white"
+                  ? "bg-[#106B49] border-[#106B49] text-white"
                   : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
               }`}
             >
@@ -76,7 +76,7 @@ function ScoreMinRow({ label, value, onChange }) {
       <div className="flex items-center justify-between gap-2">
         <label className="text-xs text-slate-600">{label}</label>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-[#10b981] tabular-nums">
+          <span className="text-[11px] font-semibold text-[#106B49] tabular-nums">
             {active ? `≥ ${value}/10` : "Any"}
           </span>
           {active && (
@@ -143,7 +143,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs font-bold text-slate-700">Price</div>
-          <div className="text-[11px] font-semibold text-[#10b981]">{priceLabel}</div>
+          <div className="text-[11px] font-semibold text-[#106B49]">{priceLabel}</div>
         </div>
         <div className="grid grid-cols-2 gap-2 mb-3">
           <input
@@ -210,7 +210,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs font-bold text-slate-700">Auto-score minimums</div>
           {activeScoreCount > 0 && (
-            <span className="text-[11px] font-semibold text-[#10b981]">{activeScoreCount} active</span>
+            <span className="text-[11px] font-semibold text-[#106B49]">{activeScoreCount} active</span>
           )}
         </div>
         <p className="text-[11px] text-slate-500 mb-3">
@@ -241,7 +241,7 @@ export default function BrowseFilters({ filters, onChange, compact = false }) {
                 onClick={() => set({ property_types: toggleInList(f.property_types, t.id) })}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
                   active
-                    ? "bg-[#1a2234] border-[#1a2234] text-white"
+                    ? "bg-[#14192E] border-[#14192E] text-white"
                     : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >

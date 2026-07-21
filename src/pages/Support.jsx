@@ -24,8 +24,8 @@ export default function Support() {
           { icon: MessageCircle, title: 'Account help', desc: 'Billing, login, and subscription questions welcome.' },
         ].map(({ icon: Icon, title, desc }) => (
           <div key={title} className="rounded-xl border border-slate-200 bg-white p-5">
-            <Icon size={22} className="text-[#10b981] mb-2" />
-            <p className="font-semibold text-[#1a2234] text-sm">{title}</p>
+            <Icon size={22} className="text-[#106B49] mb-2" />
+            <p className="font-semibold text-[#14192E] text-sm">{title}</p>
             <p className="text-slate-500 text-xs mt-1 leading-relaxed">{desc}</p>
           </div>
         ))}
@@ -43,7 +43,7 @@ export default function Support() {
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30"
+            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#106B49]/30"
           >
             <option>General question</option>
             <option>Account / login</option>
@@ -60,12 +60,12 @@ export default function Support() {
             onChange={(e) => setBody(e.target.value)}
             rows={5}
             placeholder="Describe your question or issue..."
-            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 resize-y"
+            className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 resize-y"
           />
         </label>
         <a
           href={mailtoHref}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm transition-colors"
         >
           <Mail size={16} />
           Open in email app
@@ -90,7 +90,7 @@ export default function Support() {
 
       <h2>Resources</h2>
       <ul>
-        <li><Link to={createPageUrl('About')}>How Property Pocket works</Link></li>
+        <li><Link to={createPageUrl('About')}>How Propurty works</Link></li>
         <li><Link to={createPageUrl('Pricing')}>Plans &amp; pricing</Link></li>
         <li><Link to={createPageUrl('Privacy')}>Privacy policy</Link></li>
         <li><Link to={createPageUrl('Terms')}>Terms of service</Link></li>

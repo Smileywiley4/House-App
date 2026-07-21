@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Native Android adaptive icon definition. Place at
+  res/mipmap-anydpi-v26/ic_launcher.xml, with ic_launcher_foreground.png
+  placed in each res/mipmap-*dpi/ bucket (or as a single vector/PNG source
+  run through Android Studio's Image Asset tool, which will regenerate all
+  densities from this one 512x512 source).
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>

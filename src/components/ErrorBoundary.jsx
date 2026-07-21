@@ -24,12 +24,12 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center">
             <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
               <AlertTriangle size={28} className="text-amber-600" />
             </div>
-            <h1 className="text-xl font-bold text-[#1a2234] mb-2">Something went wrong</h1>
+            <h1 className="text-xl font-bold text-[#14192E] mb-2">Something went wrong</h1>
             <p className="text-slate-600 text-sm mb-6">
               We hit an unexpected error. Try refreshing or going back home.
             </p>
@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component {
               <button
                 type="button"
                 onClick={this.handleRetry}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition"
               >
                 <RefreshCw size={16} />
                 Try again

@@ -16,7 +16,7 @@ router = APIRouter(prefix="/geo", tags=["geo"])
 logger = logging.getLogger(__name__)
 
 NOMINATIM_SEARCH = "https://nominatim.openstreetmap.org/search"
-USER_AGENT = "PropertyPocket/1.0 (support@proppocket.com; geo-boundary)"
+USER_AGENT = "Propurty/1.0 (support@proppocket.com; geo-boundary)"
 _last_nominatim_at = 0.0
 _nominatim_lock = asyncio.Lock()
 

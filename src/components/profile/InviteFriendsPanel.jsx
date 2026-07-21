@@ -91,8 +91,8 @@ export default function InviteFriendsPanel() {
 
       {isPremium && (
         <div>
-          <h2 className="text-lg font-bold text-[#1a2234] mb-1 flex items-center gap-2">
-            <Mail size={20} className="text-[#10b981]" />
+          <h2 className="text-lg font-bold text-[#14192E] mb-1 flex items-center gap-2">
+            <Mail size={20} className="text-[#106B49]" />
             Email invites
           </h2>
           <p className="text-slate-400 text-sm mb-4">
@@ -105,7 +105,7 @@ export default function InviteFriendsPanel() {
               <button
                 type="button"
                 onClick={pickContacts}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a2234] text-white text-sm font-semibold hover:bg-[#243050] transition"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#14192E] text-white text-sm font-semibold hover:bg-[#2A3150] transition"
               >
                 <BookUser size={16} />
                 Choose from contacts
@@ -129,7 +129,7 @@ export default function InviteFriendsPanel() {
                 value={msg}
                 onChange={(e) => setMsg(e.target.value)}
                 rows={2}
-                placeholder="Join me on Property Pocket…"
+                placeholder="Join me on Propurty…"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
               />
             </div>
@@ -137,22 +137,22 @@ export default function InviteFriendsPanel() {
               type="button"
               disabled={loading}
               onClick={sendInvites}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#10b981] text-white font-bold text-sm disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#106B49] text-white font-bold text-sm disabled:opacity-50"
             >
               {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
               Send invite links
             </button>
 
             {sent?.invites?.length > 0 && (
-              <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 text-sm">
-                <p className="font-semibold text-emerald-900 mb-2">Created {sent.invites.length} invite(s)</p>
+              <div className="rounded-xl bg-propurty-green-tint border border-brand/20 p-4 text-sm">
+                <p className="font-semibold text-brand-hover mb-2">Created {sent.invites.length} invite(s)</p>
                 <ul className="space-y-2">
                   {sent.invites.map((inv) => (
-                    <li key={inv.email} className="flex flex-col sm:flex-row sm:items-center gap-2 text-emerald-800">
+                    <li key={inv.email} className="flex flex-col sm:flex-row sm:items-center gap-2 text-brand-hover">
                       <span>{inv.email}</span>
                       <button
                         type="button"
-                        className="text-xs flex items-center gap-1 text-[#10b981] font-semibold"
+                        className="text-xs flex items-center gap-1 text-[#106B49] font-semibold"
                         onClick={() => {
                           navigator.clipboard.writeText(inv.invite_url);
                           setCopied(inv.email);
@@ -173,7 +173,7 @@ export default function InviteFriendsPanel() {
 
       {sentList.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-[#1a2234] mb-2">Email invites you’ve sent</h3>
+          <h3 className="text-sm font-bold text-[#14192E] mb-2">Email invites you’ve sent</h3>
           <ul className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-50 text-sm">
             {sentList.map((row) => (
               <li key={row.id} className="px-4 py-3 flex justify-between gap-2">
@@ -187,11 +187,11 @@ export default function InviteFriendsPanel() {
 
       {outgoingShares.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-[#1a2234] mb-2">Folders & properties you’ve shared</h3>
+          <h3 className="text-sm font-bold text-[#14192E] mb-2">Folders & properties you’ve shared</h3>
           <ul className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-50 text-sm">
             {outgoingShares.map((row) => (
               <li key={row.share_id} className="px-4 py-3">
-                <div className="font-medium text-[#1a2234]">
+                <div className="font-medium text-[#14192E]">
                   {row.kind === "folder" ? `Folder: ${row.folder_name}` : row.property_address}
                 </div>
                 <div className="text-xs text-slate-500">→ {row.recipient?.full_name || row.recipient?.email}</div>

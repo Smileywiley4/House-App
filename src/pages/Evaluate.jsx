@@ -313,7 +313,7 @@ export default function Evaluate() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
+    <div className="min-h-screen bg-[#F8F7F4]">
       {/* Header */}
       <div className="relative overflow-hidden bg-navy px-6 py-6">
         <div className="absolute inset-0 bg-navy/75" />

@@ -1,102 +1,106 @@
 /**
- * Brand token CSS — values stay in sync with src/design-tokens.js
- * (injected again at runtime from that file). Edit hex in design-tokens.js.
- *
- * Spacing: prefer 4/8/12/16/24/32/48 (Tailwind p-1 … p-12).
+ * Brand token CSS — mirrors src/design-tokens.js + propurty-brand/tokens/tokens.css.
+ * Prefer editing propurty-brand/tokens/tokens.css; keep this file in sync for first paint.
  */
 
 :root {
-  /* Colors — placeholders match current Property Pocket greens/navy */
-  --brand-primary: #10b981;
-  --brand-primary-hover: #059669;
-  --brand-primary-deep: #047857;
-  --brand-navy: #1a2234;
-  --brand-navy-hover: #243050;
-  --brand-gold: #c9a84c;
-  --brand-charcoal: #2d3340;
-  --brand-muted: #6b7280;
-  --brand-active: #111827;
-  --brand-success: #22c55e;
-  --brand-warning: #eab308;
-  --brand-danger: #ef4444;
+  --brand-primary: #106B49;
+  --brand-primary-hover: #0C4F37;
+  --brand-primary-deep: #0C4F37;
+  --brand-navy: #14192E;
+  --brand-navy-hover: #2A3150;
+  --brand-gold: #E8A33D;
+  --brand-charcoal: #3A3935;
+  --brand-muted: #6B6963;
+  --brand-active: #14192E;
+  --brand-success: #106B49;
+  --brand-warning: #E8A33D;
+  --brand-danger: #C6493F;
 
-  --brand-primary-hsl: 160 84% 39%;
-  --brand-primary-hover-hsl: 161 94% 30%;
-  --brand-primary-deep-hsl: 163 94% 24%;
-  --brand-navy-hsl: 222 33% 15%;
-  --brand-navy-hover-hsl: 222 31% 23%;
-  --brand-gold-hsl: 43 54% 54%;
-  --brand-charcoal-hsl: 220 16% 22%;
-  --brand-muted-hsl: 220 9% 46%;
-  --brand-success-hsl: 142 71% 45%;
-  --brand-warning-hsl: 45 93% 47%;
-  --brand-danger-hsl: 0 84% 60%;
+  --brand-primary-hsl: 158 74% 24%;
+  --brand-primary-hover-hsl: 159 74% 18%;
+  --brand-primary-deep-hsl: 159 74% 18%;
+  --brand-navy-hsl: 228 39% 13%;
+  --brand-navy-hover-hsl: 229 31% 24%;
+  --brand-gold-hsl: 36 79% 57%;
+  --brand-charcoal-hsl: 48 5% 22%;
+  --brand-muted-hsl: 45 4% 40%;
+  --brand-success-hsl: 158 74% 24%;
+  --brand-warning-hsl: 36 79% 57%;
+  --brand-danger-hsl: 4 54% 51%;
 
-  --brand-primary-rgb: 16 185 129;
-  --brand-navy-rgb: 26 34 52;
-  --brand-gold-rgb: 201 168 76;
-  --pp-glow: 16 185 129;
+  --brand-primary-rgb: 16 107 73;
+  --brand-navy-rgb: 20 25 46;
+  --brand-gold-rgb: 232 163 61;
+  --pp-glow: 16 107 73;
 
-  --radius-card: 0.75rem;
-  --radius-control: 0.5rem;
-  --radius-pill: 9999px;
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
 
-  --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
-  --shadow-elev: 0 4px 14px -2px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.08);
+  --shadow-card: 0 1px 2px rgba(20, 25, 46, 0.06);
+  --shadow-elev: 0 4px 12px rgba(20, 25, 46, 0.08);
 
-  --motion-duration: 160ms;
-  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-duration: 200ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading: 'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 @layer components {
   .text-h1 {
-    font-family: var(--font-display);
+    font-family: var(--font-heading);
     font-size: 2.25rem;
     font-weight: 700;
     line-height: 1.2;
     color: var(--brand-navy);
   }
   .text-h2 {
-    font-family: var(--font-display);
+    font-family: var(--font-heading);
     font-size: 1.875rem;
     font-weight: 700;
     line-height: 1.25;
     color: var(--brand-navy);
   }
   .text-h3 {
-    font-family: var(--font-display);
+    font-family: var(--font-heading);
     font-size: 1.5rem;
     font-weight: 700;
     line-height: 1.3;
     color: var(--brand-navy);
   }
   .text-h4 {
+    font-family: var(--font-heading);
     font-size: 1.25rem;
     font-weight: 600;
     line-height: 1.35;
     color: var(--brand-navy);
   }
   .text-h5 {
+    font-family: var(--font-heading);
     font-size: 1.125rem;
     font-weight: 600;
     line-height: 1.4;
     color: var(--brand-navy);
   }
   .text-h6 {
+    font-family: var(--font-heading);
     font-size: 1rem;
     font-weight: 600;
     line-height: 1.4;
     color: var(--brand-navy);
   }
   .text-body {
+    font-family: var(--font-body);
     font-size: 0.875rem;
     font-weight: 400;
     line-height: 1.5;
   }
   .text-body-lg {
+    font-family: var(--font-body);
     font-size: 1rem;
     font-weight: 400;
     line-height: 1.55;
@@ -127,5 +131,12 @@
   }
   .shadow-elev {
     box-shadow: var(--shadow-elev);
+  }
+
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-body {
+    font-family: var(--font-body);
   }
 }

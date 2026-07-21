@@ -1,4 +1,4 @@
-# Property Pocket — Expo mobile
+# Propurty — Expo mobile
 
 ## App Store release checklist
 
@@ -15,7 +15,7 @@ npx expo install expo-notifications
 
 This project includes:
 
-- **`app.json`** — plugin with Android accent color `#10b981` and default FCM channel `default`.
+- **`app.json`** — plugin with Android accent color `#106B49` and default FCM channel `default`.
 - **`App.js`** — `setNotificationHandler` (banner + list, no sound/badge in foreground), Android channel `default`, `registerForPushNotificationsAsync` using **`expo-device`** + **`expo-constants`** for EAS `projectId`, listener for received notifications, **`useNotificationObserver()`** for tap / cold-start handling, and a **Push notifications** section with token, channel IDs, and **Schedule test notification (2s)**.
 - **`hooks/useNotificationObserver.js`** — Same idea as expo-router’s layout pattern: `getLastNotificationResponse()` plus `addNotificationResponseReceivedListener`, reads **`data.url`** from the payload. **Without expo-router:** opens `https://…` in the browser, other schemes via `Linking`, and app paths via **`expo-linking`** `createURL`. **With expo-router:** pass `useNotificationObserver({ navigate: (url) => router.push(url) })`.
 
@@ -70,7 +70,7 @@ Rebuild native projects after changing plugin options (`npx expo prebuild` or EA
 - **`Sharing.shareAsync(uri, { mimeType, dialogTitle })`** — opens the OS share sheet for a **local file URI** (e.g. the visit photo from `expo-camera`). Used by the **Share** button after you capture a photo in **`App.js`**.
 - **Text-only invites** use React Native **`Share.share`** (invite flow) — that’s the right API for a message string; `expo-sharing` is aimed at sharing files.
 
-**Receiving shares** (other apps → Property Pocket):
+**Receiving shares** (other apps → Propurty):
 
 - **`utils/redirectSystemPath.js`** — export **`redirectSystemPath`** for **Expo Router** `unstable_settings`: if the system URL’s hostname is **`expo-sharing`**, it returns **`/handle-share`** so you can route to a screen that reads payloads with **`useIncomingShare()`** or **`getSharedPayloads()`** from `expo-sharing`.
 - **`App.js`** — **`IncomingShareBannerGate`** (native only) uses **`useIncomingShare()`** so images shared into the app can be opened as the visit photo without a router.

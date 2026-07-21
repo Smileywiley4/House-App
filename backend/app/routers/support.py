@@ -1,4 +1,7 @@
-"""In-app feedback / bug reports → store + email support@proppocket.com via Resend."""
+"""In-app feedback / bug reports → store + email support@proppocket.com via Resend.
+
+TODO(rebrand): support@proppocket.com inbox / DNS not migrated — keep until new support address is live.
+"""
 from __future__ import annotations
 
 import base64
@@ -17,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/support", tags=["support"])
 
+# TODO(rebrand): leave @proppocket.com until support inbox migrates
 SUPPORT_INBOX = (os.environ.get("SUPPORT_EMAIL") or "").strip() or "support@proppocket.com"
 MAX_MESSAGE_LEN = 8000
 MAX_SCREENSHOT_BYTES = 2 * 1024 * 1024  # 2 MB decoded
@@ -109,7 +113,7 @@ async def _send_support_email(
         return False
     from_addr = (
         (os.environ.get("RESEND_FROM_EMAIL") or "").strip()
-        or "Property Pocket <onboarding@resend.dev>"
+        or "Propurty <onboarding@resend.dev>"
     )
     kind = "Bug report" if category == "problem" else "Feedback"
     reply_to = contact_email or user_email
@@ -127,7 +131,7 @@ async def _send_support_email(
     payload: dict = {
         "from": from_addr,
         "to": [SUPPORT_INBOX],
-        "subject": f"[Property Pocket] {kind}",
+        "subject": f"[Propurty] {kind}",
         "text": "\n".join(lines),
     }
     if reply_to:

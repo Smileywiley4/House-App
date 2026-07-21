@@ -19,18 +19,18 @@ export function PremiumGate({ children, featureName = "This feature", planId = "
 
   return (
     <>
-      <div className="rounded-2xl border border-[#c9a84c]/30 bg-[#c9a84c]/5 p-6 text-center">
-        <Lock size={28} className="text-[#c9a84c] mx-auto mb-3" />
-        <p className="text-[#1a2234] font-semibold mb-1">{featureName} is a Premium feature</p>
+      <div className="rounded-2xl border border-[#E8A33D]/30 bg-[#E8A33D]/5 p-6 text-center">
+        <Lock size={28} className="text-[#E8A33D] mx-auto mb-3" />
+        <p className="text-[#14192E] font-semibold mb-1">{featureName} is a Premium feature</p>
         <p className="text-slate-500 text-sm mb-4">Upgrade to unlock AI insights, 3+ property comparison, and ad-free experience.</p>
         <button
           onClick={() => setShowPaywall(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm transition"
         >
           Upgrade to Premium
         </button>
         <p className="mt-3">
-          <Link to={createPageUrl("Pricing")} className="text-xs text-slate-400 hover:text-[#10b981]">
+          <Link to={createPageUrl("Pricing")} className="text-xs text-slate-400 hover:text-[#106B49]">
             View pricing
           </Link>
         </p>
@@ -48,9 +48,9 @@ export function PremiumFeatureGroup({ children }) {
 
   return (
     <>
-      <div className="flex flex-col gap-4 rounded-xl border border-[#c9a84c]/25 bg-gradient-to-r from-[#1a2234] to-[#243050] px-4 py-4 shadow-sm sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-4 rounded-xl border border-[#E8A33D]/25 bg-gradient-to-r from-[#14192E] to-[#2A3150] px-4 py-4 shadow-sm sm:flex-row sm:items-center">
         <div className="flex min-w-0 flex-1 items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c9a84c]/15 text-[#c9a84c]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8A33D]/15 text-[#E8A33D]">
             <Sparkles size={18} />
           </div>
           <div className="min-w-0">
@@ -63,7 +63,7 @@ export function PremiumFeatureGroup({ children }) {
         <button
           type="button"
           onClick={() => setShowPaywall(true)}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#10b981] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#059669]"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#106B49] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#0C4F37]"
         >
           <Lock size={14} /> Unlock Premium
         </button>
@@ -90,7 +90,7 @@ export function PremiumBadge({ featureName = "Premium" }) {
       <button
         type="button"
         onClick={() => setShowPaywall(true)}
-        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#c9a84c] bg-[#c9a84c]/10 border border-[#c9a84c]/20 px-2 py-0.5 rounded-full"
+        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#E8A33D] bg-[#E8A33D]/10 border border-[#E8A33D]/20 px-2 py-0.5 rounded-full"
       >
         <Lock size={10} /> {featureName}
       </button>

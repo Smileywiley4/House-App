@@ -1,4 +1,4 @@
-# iOS In-App Purchase (IAP) Compliance — Property Pocket
+# iOS In-App Purchase (IAP) Compliance — Propurty
 
 This guide is the policy-safe path to avoid App Store rejections related to payments.
 

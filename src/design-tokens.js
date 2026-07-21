@@ -1,97 +1,98 @@
 /**
- * Property Pocket design tokens — single source of truth for brand hex.
+ * Propurty design tokens — single source of truth for brand hex.
  *
- * To rebrand: change one hex here (e.g. `primary`), then rebuild.
- * CSS variables are injected from this file in `main.jsx` + mirrored in
- * `src/styles/tokens.css` for Tailwind / first paint.
+ * Canonical CSS vars also live in `propurty-brand/tokens/tokens.css` (imported
+ * globally). This module mirrors those values for JS (THEME, runtime inject)
+ * and keeps shadcn `--primary` HSL in sync.
  *
- * Spacing scale (prefer Tailwind defaults): 4, 8, 12, 16, 24, 32, 48
- * (p-1, p-2, p-3, p-4, p-6, p-8, p-12)
+ * Spacing scale: 4, 8, 12, 16, 24, 32, 48, 64
  */
 
 /** @typedef {{ hex: string, hsl: string, rgb: string }} ColorToken */
 
 export const brand = {
-  /** Emerald — primary actions, links, focus */
-  primary: "#10b981",
-  primaryHover: "#059669",
-  primaryDeep: "#047857",
+  /** Propurty green — primary actions, links, focus */
+  primary: '#106B49',
+  primaryHover: '#0C4F37',
+  primaryDeep: '#0C4F37',
   /** Navy — headings, secondary CTAs, chrome */
-  navy: "#1a2234",
-  navyHover: "#243050",
-  /** Gold — premium / accent marks */
-  gold: "#c9a84c",
+  navy: '#14192E',
+  navyHover: '#2A3150',
+  /** Amber — accent only (sparingly) */
+  gold: '#E8A33D',
   /** Neutrals */
-  charcoal: "#2d3340",
-  muted: "#6b7280",
-  active: "#111827",
+  charcoal: '#3A3935',
+  muted: '#6B6963',
+  active: '#14192E',
   /** Semantic */
-  success: "#22c55e",
-  warning: "#eab308",
-  danger: "#ef4444",
+  success: '#106B49',
+  warning: '#E8A33D',
+  danger: '#C6493F',
 };
 
 /** HSL channels (no `hsl()`) for shadcn-style Tailwind opacity modifiers */
 export const brandHsl = {
-  primary: "160 84% 39%",
-  primaryHover: "161 94% 30%",
-  primaryDeep: "163 94% 24%",
-  navy: "222 33% 15%",
-  navyHover: "222 31% 23%",
-  gold: "43 54% 54%",
-  charcoal: "220 16% 22%",
-  muted: "220 9% 46%",
-  success: "142 71% 45%",
-  warning: "45 93% 47%",
-  danger: "0 84% 60%",
+  primary: '158 74% 24%',
+  primaryHover: '159 74% 18%',
+  primaryDeep: '159 74% 18%',
+  navy: '228 39% 13%',
+  navyHover: '229 31% 24%',
+  gold: '36 79% 57%',
+  charcoal: '48 5% 22%',
+  muted: '45 4% 40%',
+  success: '158 74% 24%',
+  warning: '36 79% 57%',
+  danger: '4 54% 51%',
 };
 
 /** RGB channels for glow / rgba helpers */
 export const brandRgb = {
-  primary: "16 185 129",
-  navy: "26 34 52",
-  gold: "201 168 76",
+  primary: '16 107 73',
+  navy: '20 25 46',
+  gold: '232 163 61',
 };
 
 export const radius = {
-  card: "0.75rem",
-  control: "0.5rem",
-  pill: "9999px",
+  card: '12px',
+  control: '8px',
+  pill: '999px',
 };
 
 export const shadow = {
-  card: "0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08)",
-  elev: "0 4px 14px -2px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.08)",
+  card: '0 1px 2px rgba(20, 25, 46, 0.06)',
+  elev: '0 4px 12px rgba(20, 25, 46, 0.08)',
 };
 
 /** Shared motion — hover, expand, modal */
 export const motion = {
-  duration: "160ms",
-  ease: "cubic-bezier(0.22, 1, 0.36, 1)",
+  duration: '200ms',
+  ease: 'cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
 export const fontFamily = {
-  sans: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  display: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  sans: "'Inter', system-ui, -apple-system, sans-serif",
+  display: "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif",
+  heading: "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif",
+  body: "'Inter', system-ui, -apple-system, sans-serif",
 };
 
 /** Type scale — use with `.text-h1` … `.text-caption` utilities */
 export const typeScale = {
-  h1: { size: "2.25rem", weight: "700", line: "1.2" },
-  h2: { size: "1.875rem", weight: "700", line: "1.25" },
-  h3: { size: "1.5rem", weight: "700", line: "1.3" },
-  h4: { size: "1.25rem", weight: "600", line: "1.35" },
-  h5: { size: "1.125rem", weight: "600", line: "1.4" },
-  h6: { size: "1rem", weight: "600", line: "1.4" },
-  body: { size: "0.875rem", weight: "400", line: "1.5" },
-  bodyLg: { size: "1rem", weight: "400", line: "1.55" },
-  caption: { size: "0.75rem", weight: "500", line: "1.4" },
-  micro: { size: "0.625rem", weight: "600", line: "1.3" },
+  h1: { size: '2.25rem', weight: '700', line: '1.2' },
+  h2: { size: '1.875rem', weight: '700', line: '1.25' },
+  h3: { size: '1.5rem', weight: '700', line: '1.3' },
+  h4: { size: '1.25rem', weight: '600', line: '1.35' },
+  h5: { size: '1.125rem', weight: '600', line: '1.4' },
+  h6: { size: '1rem', weight: '600', line: '1.4' },
+  body: { size: '0.875rem', weight: '400', line: '1.5' },
+  bodyLg: { size: '1rem', weight: '400', line: '1.55' },
+  caption: { size: '0.75rem', weight: '500', line: '1.4' },
+  micro: { size: '0.625rem', weight: '600', line: '1.3' },
 };
 
 /**
  * CSS custom properties string injected at startup.
- * Edit `brand.*` hex above — this block follows automatically.
+ * Keeps `--brand-*` aliases aligned with Propurty tokens for existing UI.
  */
 export function brandTokensCss() {
   const b = brand;
@@ -142,6 +143,8 @@ export function brandTokensCss() {
 
   --font-sans: ${fontFamily.sans};
   --font-display: ${fontFamily.display};
+  --font-heading: ${fontFamily.heading};
+  --font-body: ${fontFamily.body};
 
   /* Map shadcn semantic tokens → brand */
   --primary: ${h.primary};
@@ -158,7 +161,7 @@ export function brandTokensCss() {
 export const THEME = {
   accent: brand.primary,
   accentHover: brand.primaryHover,
-  accentLight: `rgba(${brandRgb.primary.replace(/ /g, ",")},0.12)`,
+  accentLight: `rgba(${brandRgb.primary.replace(/ /g, ',')},0.12)`,
   accentText: brand.primary,
   gold: brand.gold,
   navy: brand.navy,

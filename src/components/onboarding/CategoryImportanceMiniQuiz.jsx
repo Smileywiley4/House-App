@@ -62,7 +62,7 @@ export default function CategoryImportanceMiniQuiz({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-[#059669] transition-colors"
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-[#0C4F37] transition-colors"
           title="Not sure how much this matters?"
         >
           <HelpCircle size={12} className="shrink-0" />
@@ -99,18 +99,18 @@ export default function CategoryImportanceMiniQuiz({
             {questions.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 flex-1 rounded-full ${i <= index ? "bg-[#10b981]" : "bg-slate-100"}`}
+                className={`h-1 flex-1 rounded-full ${i <= index ? "bg-[#106B49]" : "bg-slate-100"}`}
               />
             ))}
           </div>
-          <p className="text-sm font-semibold text-[#1a2234] leading-snug">{q.prompt}</p>
+          <p className="text-sm font-semibold text-[#14192E] leading-snug">{q.prompt}</p>
           <div className="space-y-1.5">
             {q.options.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
                 onClick={() => choose(opt.id)}
-                className="w-full text-left rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:border-[#10b981]/50 hover:bg-[#10b981]/5 transition"
+                className="w-full text-left rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:border-[#106B49]/50 hover:bg-[#106B49]/5 transition"
               >
                 {opt.label}
               </button>

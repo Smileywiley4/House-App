@@ -67,7 +67,7 @@ Vignettes are full-screen ads shown by Google between page loads; Google control
 
 ### 6. Receiving revenue
 
-Revenue belongs to the AdSense payee account—not Vercel or Property Pocket. In AdSense:
+Revenue belongs to the AdSense payee account—not Vercel or Propurty. In AdSense:
 
 1. Complete identity, mailing-address/PIN, and tax verification when requested.
 2. Add and verify the bank account under **Payments → Payments info**.

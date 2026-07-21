@@ -146,11 +146,11 @@ export default function ImportanceQuizModal({
       >
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-100 shrink-0">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[#10b981] mb-1">
+            <div className="flex items-center gap-2 text-[#106B49] mb-1">
               <Sparkles size={16} />
               <span className="text-[11px] font-bold uppercase tracking-wide">Priority quiz</span>
             </div>
-            <h2 id="priority-quiz-title" className="font-bold text-[#1a2234] text-lg leading-snug">
+            <h2 id="priority-quiz-title" className="font-bold text-[#14192E] text-lg leading-snug">
               {copy.title}
             </h2>
             <p className="mt-1 text-sm text-slate-500">{copy.subtitle}</p>
@@ -174,7 +174,7 @@ export default function ImportanceQuizModal({
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#10b981] rounded-full transition-all duration-300"
+              className="h-full bg-[#106B49] rounded-full transition-all duration-300"
               style={{ width: `${((index + (selected ? 1 : 0)) / total) * 100}%` }}
             />
           </div>
@@ -187,7 +187,7 @@ export default function ImportanceQuizModal({
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1">
                   {step.label}
                 </p>
-                <p className="text-base font-semibold text-[#1a2234] leading-snug">
+                <p className="text-base font-semibold text-[#14192E] leading-snug">
                   {step.question.prompt}
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function ImportanceQuizModal({
                       onClick={() => pick(opt.id)}
                       className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition ${
                         active
-                          ? "border-[#10b981] bg-[#10b981]/10 text-[#1a2234] font-semibold"
+                          ? "border-[#106B49] bg-[#106B49]/10 text-[#14192E] font-semibold"
                           : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                       }`}
                     >
@@ -232,7 +232,7 @@ export default function ImportanceQuizModal({
             type="button"
             disabled={saving || !selected}
             onClick={goNext}
-            className="flex-1 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : null}
             {isLast ? "Save preset" : "Next"}

@@ -13,7 +13,7 @@ Preferred (reliable copy + TTL messaging):
 
 ```bash
 RESEND_API_KEY=re_...
-RESEND_FROM_EMAIL="Property Pocket <noreply@yourdomain.com>"
+RESEND_FROM_EMAIL="Propurty <noreply@yourdomain.com>"
 ```
 
 Fallback (no Resend key): Supabase Auth email OTP (`/auth/v1/otp`).

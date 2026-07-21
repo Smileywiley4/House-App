@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Property Pocket",
+    "name": "Propurty",
     "slug": "property-pocket-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,10 +12,10 @@
       "buildNumber": "1",
       "supportsTablet": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "Property Pocket uses the camera to capture in-person photos of homes you visit.",
-        "NSPhotoLibraryUsageDescription": "Property Pocket can read your photo library when you choose existing photos for visit notes.",
-        "NSPhotoLibraryAddUsageDescription": "Property Pocket saves visit photos you take to your photo library when you choose Save to Photos.",
-        "NSLocationWhenInUseUsageDescription": "Property Pocket uses your location to show where you are on the map and nearby homes.",
+        "NSCameraUsageDescription": "Propurty uses the camera to capture in-person photos of homes you visit.",
+        "NSPhotoLibraryUsageDescription": "Propurty can read your photo library when you choose existing photos for visit notes.",
+        "NSPhotoLibraryAddUsageDescription": "Propurty saves visit photos you take to your photo library when you choose Save to Photos.",
+        "NSLocationWhenInUseUsageDescription": "Propurty uses your location to show where you are on the map and nearby homes.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -32,7 +32,7 @@
         "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#106B49",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -56,7 +56,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#10b981",
+          "backgroundColor": "#106B49",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain"
@@ -65,7 +65,7 @@
       [
         "expo-notifications",
         {
-          "color": "#10b981",
+          "color": "#106B49",
           "defaultChannel": "default"
         }
       ],
@@ -105,8 +105,8 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Property Pocket to access your photos when you pick images for property visits.",
-          "savePhotosPermission": "Allow Property Pocket to save visit photos you capture to your library.",
+          "photosPermission": "Allow Propurty to access your photos when you pick images for property visits.",
+          "savePhotosPermission": "Allow Propurty to save visit photos you capture to your library.",
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": []
         }
@@ -114,7 +114,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Property Pocket to use the camera for in-person property visit photos.",
+          "cameraPermission": "Allow Propurty to use the camera for in-person property visit photos.",
           "microphonePermission": false
         }
       ],
@@ -122,7 +122,7 @@
         "expo-maps",
         {
           "requestLocationPermission": true,
-          "locationPermission": "Property Pocket uses your location to show where you are on the map and nearby homes."
+          "locationPermission": "Propurty uses your location to show where you are on the map and nearby homes."
         }
       ],
       "expo-status-bar"

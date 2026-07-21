@@ -1,4 +1,4 @@
-# iOS App Store Readiness (Property Pocket mobile)
+# iOS App Store Readiness (Propurty mobile)
 
 This checklist is specific to `mobile/` (Expo React Native app).
 

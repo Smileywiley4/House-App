@@ -12,7 +12,7 @@ export function shareDisplayStatus(item = {}) {
 export function shareStatusBadgeClass(label) {
   switch (label) {
     case "Scored":
-      return "bg-[#10b981]/10 text-[#059669]";
+      return "bg-[#106B49]/10 text-[#0C4F37]";
     case "Viewed":
       return "bg-sky-50 text-sky-700";
     case "Cancelled":

@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_IAP_ENTITLEMENT_ID": "Property Pocket Pro",
+        "EXPO_PUBLIC_IAP_ENTITLEMENT_ID": "Propurty Pro",
         "EXPO_PUBLIC_APP_URL": "https://house-app-rho.vercel.app",
         "EXPO_PUBLIC_API_BASE_URL": "https://house-app-production-cfea.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://onahsailasaeqlxcvcdr.supabase.co",
@@ -21,7 +21,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_IAP_ENTITLEMENT_ID": "Property Pocket Pro",
+        "EXPO_PUBLIC_IAP_ENTITLEMENT_ID": "Propurty Pro",
         "EXPO_PUBLIC_APP_URL": "https://house-app-rho.vercel.app",
         "EXPO_PUBLIC_API_BASE_URL": "https://house-app-production-cfea.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://onahsailasaeqlxcvcdr.supabase.co",
@@ -31,7 +31,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_IAP_ENTITLEMENT_ID": "Property Pocket Pro",
+        "EXPO_PUBLIC_IAP_ENTITLEMENT_ID": "Propurty Pro",
         "EXPO_PUBLIC_APP_URL": "https://house-app-rho.vercel.app",
         "EXPO_PUBLIC_API_BASE_URL": "https://house-app-production-cfea.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://onahsailasaeqlxcvcdr.supabase.co",

@@ -1,0 +1,90 @@
+/* Propurty design tokens — v0.1
+   Drop this file into the project (e.g. app/tokens.css or styles/tokens.css)
+   and import it once, globally, before component styles. */
+
+:root {
+  /* ---- Brand colors ---- */
+  --propurty-green: #106B49;
+  --propurty-green-hover: #0C4F37;
+  --propurty-green-tint: #E4F2EC;
+
+  --propurty-navy: #14192E;
+  --propurty-navy-soft: #2A3150;
+
+  --propurty-amber: #E8A33D;
+  --propurty-amber-hover: #B87A1F;
+  --propurty-amber-tint: #FCF1E1;
+
+  /* ---- Neutrals ---- */
+  --propurty-white: #FFFFFF;
+  --propurty-gray-50: #F8F7F4;
+  --propurty-gray-100: #EFEDE7;
+  --propurty-gray-200: #DEDCD3;
+  --propurty-gray-400: #9C9A91;
+  --propurty-gray-600: #6B6963;
+  --propurty-gray-800: #3A3935;
+
+  /* ---- Semantic roles ---- */
+  --color-primary: var(--propurty-green);
+  --color-primary-hover: var(--propurty-green-hover);
+  --color-accent: var(--propurty-amber);
+  --color-success: var(--propurty-green);
+  --color-warning: var(--propurty-amber);
+  --color-danger: #C6493F;
+
+  --text-primary: var(--propurty-navy);
+  --text-secondary: var(--propurty-gray-600);
+  --text-muted: var(--propurty-gray-400);
+  --text-on-dark: var(--propurty-white);
+
+  --surface-page: var(--propurty-gray-50);
+  --surface-card: var(--propurty-white);
+  --surface-dark: var(--propurty-navy);
+
+  --border-default: var(--propurty-gray-200);
+  --border-strong: var(--propurty-gray-400);
+
+  /* ---- Typography ---- */
+  --font-heading: 'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+  --text-4xl: 48px;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* ---- Spacing scale ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---- Radius ---- */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-tile: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Shadow ---- */
+  --shadow-sm: 0 1px 2px rgba(20, 25, 46, 0.06);
+  --shadow-md: 0 4px 12px rgba(20, 25, 46, 0.08);
+  --shadow-lg: 0 12px 32px rgba(20, 25, 46, 0.12);
+
+  /* ---- Motion ---- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}

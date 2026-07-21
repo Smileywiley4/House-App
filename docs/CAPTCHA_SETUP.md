@@ -1,12 +1,12 @@
 # Bot protection (Cloudflare Turnstile + Supabase Auth CAPTCHA)
 
-Property Pocket uses **Cloudflare Turnstile** on account creation (and other auth forms). Verification is
+Propurty uses **Cloudflare Turnstile** on account creation (and other auth forms). Verification is
 enforced by **Supabase Auth** when CAPTCHA protection is enabled in the project.
 
 ## 1. Create a Turnstile widget
 
 1. Open [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile).
-2. Create a widget for Property Pocket.
+2. Create a widget for Propurty.
 3. Add hostnames:
    - `house-app-rho.vercel.app`
    - your custom domain (when ready)

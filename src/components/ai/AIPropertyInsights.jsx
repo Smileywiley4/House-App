@@ -70,14 +70,14 @@ Be specific with real place names when possible. Write descriptions in second-pe
   };
 
   const scoreColor = (s) => {
-    if (s >= 8) return "text-[#10b981]";
-    if (s >= 6) return "text-[#c9a84c]";
+    if (s >= 8) return "text-[#106B49]";
+    if (s >= 6) return "text-[#E8A33D]";
     return "text-red-400";
   };
 
   const scoreBg = (s) => {
-    if (s >= 8) return "bg-[#10b981]";
-    if (s >= 6) return "bg-[#c9a84c]";
+    if (s >= 8) return "bg-[#106B49]";
+    if (s >= 6) return "bg-[#E8A33D]";
     return "bg-red-400";
   };
 
@@ -102,11 +102,11 @@ Be specific with real place names when possible. Write descriptions in second-pe
   return (
     <div className="border border-slate-100 rounded-2xl overflow-hidden mt-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a2234] to-[#243050] px-5 py-4 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#14192E] to-[#2A3150] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-[#10b981]" />
+          <Sparkles size={16} className="text-[#106B49]" />
           <span className="text-white font-semibold text-sm">AI Property Insights</span>
-          <span className="text-[10px] text-[#c9a84c] font-bold bg-[#c9a84c]/10 border border-[#c9a84c]/20 px-2 py-0.5 rounded-full">Powered by AI</span>
+          <span className="text-[10px] text-[#E8A33D] font-bold bg-[#E8A33D]/10 border border-[#E8A33D]/20 px-2 py-0.5 rounded-full">Powered by AI</span>
         </div>
         {insights && (
           <button onClick={() => setExpanded(e => !e)} className="text-slate-400 hover:text-white transition">
@@ -123,7 +123,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
             Get AI-powered neighborhood analysis, proximity scores, and an engaging buyer description for this property.
           </p>
           <button onClick={generate}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
             <Sparkles size={15} /> Generate AI Insights
           </button>
         </div>
@@ -132,7 +132,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
       {/* Loading */}
       {loading && (
         <div className="bg-white px-5 py-8 flex flex-col items-center gap-3">
-          <Loader2 size={24} className="text-[#10b981] animate-spin" />
+          <Loader2 size={24} className="text-[#106B49] animate-spin" />
           <p className="text-slate-500 text-sm">Researching neighborhood data, schools, amenities...</p>
         </div>
       )}
@@ -143,7 +143,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
           {/* Description */}
           <div className="px-5 py-5">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">AI-Generated Description</h3>
-            <p className="text-[#1a2234] text-sm leading-relaxed">{insights.description}</p>
+            <p className="text-[#14192E] text-sm leading-relaxed">{insights.description}</p>
           </div>
 
           {/* Buyer Highlights */}
@@ -153,7 +153,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
               <ul className="space-y-2">
                 {insights.buyer_highlights.map((h, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
-                    <span className="text-[#10b981] mt-0.5 shrink-0">✓</span> {h}
+                    <span className="text-[#106B49] mt-0.5 shrink-0">✓</span> {h}
                   </li>
                 ))}
               </ul>
@@ -190,7 +190,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
                     <span className="text-base">{PROXIMITY_ICONS[key] || "📍"}</span>
                     <div>
                       <div className="text-xs font-semibold text-slate-400 capitalize">{key.replace("_", " ")}</div>
-                      <div className="text-xs text-[#1a2234] font-medium">{val}</div>
+                      <div className="text-xs text-[#14192E] font-medium">{val}</div>
                     </div>
                   </div>
                 ))}
@@ -217,7 +217,7 @@ Be specific with real place names when possible. Write descriptions in second-pe
 
           {/* Regenerate */}
           <div className="px-5 py-3 border-t border-slate-100">
-            <button onClick={generate} className="text-xs text-slate-400 hover:text-[#10b981] transition flex items-center gap-1">
+            <button onClick={generate} className="text-xs text-slate-400 hover:text-[#106B49] transition flex items-center gap-1">
               <Sparkles size={11} /> Regenerate insights
             </button>
           </div>

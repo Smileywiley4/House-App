@@ -163,8 +163,8 @@ function PropertyVisitsInner() {
 
   if (!isPremium) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] px-4 py-12 max-w-lg mx-auto text-center">
-        <Camera className="w-14 h-14 mx-auto text-[#10b981] mb-4" />
+      <div className="min-h-screen bg-[#F8F7F4] px-4 py-12 max-w-lg mx-auto text-center">
+        <Camera className="w-14 h-14 mx-auto text-[#106B49] mb-4" />
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Property visits</h1>
         <p className="text-slate-600 mb-6">
           Upload in-person photos, save your visit score, organize homes into folders, and share with your subscribed
@@ -175,7 +175,7 @@ function PropertyVisitsInner() {
         </p>
         <Link
           to={createPageUrl("Pricing")}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#10b981] text-white font-semibold"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#106B49] text-white font-semibold"
         >
           View plans
           <ChevronRight size={18} />
@@ -198,11 +198,11 @@ function PropertyVisitsInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf8] pb-16">
-      <div className="bg-[#1a2234] px-4 sm:px-6 py-8">
+    <div className="min-h-screen bg-[#F8F7F4] pb-16">
+      <div className="bg-[#14192E] px-4 sm:px-6 py-8">
         <div className="max-w-5xl mx-auto flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[#10b981]/20 flex items-center justify-center shrink-0">
-            <Camera className="text-[#10b981]" size={24} />
+          <div className="w-12 h-12 rounded-xl bg-[#106B49]/20 flex items-center justify-center shrink-0">
+            <Camera className="text-[#106B49]" size={24} />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Property visits</h1>
@@ -216,7 +216,7 @@ function PropertyVisitsInner() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-4 grid lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
           <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-            <Home size={18} className="text-[#10b981]" />
+            <Home size={18} className="text-[#106B49]" />
             Saved properties
           </h2>
           {err && (
@@ -234,7 +234,7 @@ function PropertyVisitsInner() {
               type="button"
               disabled={creating}
               onClick={createProperty}
-              className="px-4 py-2 rounded-xl bg-[#10b981] text-white text-sm font-medium disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-[#106B49] text-white text-sm font-medium disabled:opacity-50"
             >
               {creating ? "…" : "Add"}
             </button>
@@ -248,7 +248,7 @@ function PropertyVisitsInner() {
                   type="button"
                   onClick={() => setSelectedId(s.id)}
                   className={`w-full text-left py-3 px-2 rounded-lg text-sm ${
-                    selectedId === s.id ? "bg-emerald-50 text-emerald-900" : "hover:bg-slate-50"
+                    selectedId === s.id ? "bg-propurty-green-tint text-brand-hover" : "hover:bg-slate-50"
                   }`}
                 >
                   <div className="font-medium text-slate-800 line-clamp-2">{s.property_address}</div>
@@ -295,7 +295,7 @@ function PropertyVisitsInner() {
                     <div className="flex gap-2 shrink-0">
                       <button
                         type="button"
-                        className="text-[#10b981] text-xs font-medium"
+                        className="text-[#106B49] text-xs font-medium"
                         onClick={() => setShareFolderOpen((x) => (x === f.id ? null : f.id))}
                       >
                         {shareFolderOpen === f.id ? "Close" : "Share"}
@@ -333,7 +333,7 @@ function PropertyVisitsInner() {
                             <span>{u.full_name || u.email}</span>
                             <button
                               type="button"
-                              className="text-[#10b981] font-medium"
+                              className="text-[#106B49] font-medium"
                               onClick={async () => {
                                 try {
                                   await api.library.createPeerShare({
@@ -385,7 +385,7 @@ function PropertyVisitsInner() {
             {sharedWithMe.length > 0 && (
               <div className="border-t border-slate-100 pt-4">
                 <h3 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  <Users size={16} className="text-[#10b981]" />
+                  <Users size={16} className="text-[#106B49]" />
                   Shared with you
                 </h3>
                 <ul className="space-y-3 max-h-56 overflow-y-auto text-sm">
@@ -398,7 +398,7 @@ function PropertyVisitsInner() {
                         <button
                           type="button"
                           onClick={() => setSelectedId(item.property.id)}
-                          className="text-left font-medium text-slate-800 hover:text-[#10b981]"
+                          className="text-left font-medium text-slate-800 hover:text-[#106B49]"
                         >
                           {item.property.property_address}
                         </button>
@@ -412,7 +412,7 @@ function PropertyVisitsInner() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedId(p.id)}
-                                  className="text-left text-xs text-slate-600 hover:text-[#10b981] underline"
+                                  className="text-left text-xs text-slate-600 hover:text-[#106B49] underline"
                                 >
                                   {p.property_address}
                                 </button>
@@ -586,7 +586,7 @@ function PropertyVisitsInner() {
                       </span>
                       <button
                         type="button"
-                        className="text-[#10b981] text-xs font-medium"
+                        className="text-[#106B49] text-xs font-medium"
                         onClick={async () => {
                           setSharing(true);
                           try {
@@ -647,7 +647,7 @@ function PropertyVisitsInner() {
                       </span>
                       <button
                         type="button"
-                        className="text-[#10b981] text-xs font-medium"
+                        className="text-[#106B49] text-xs font-medium"
                         onClick={async () => {
                           try {
                             await api.library.createPeerShare({

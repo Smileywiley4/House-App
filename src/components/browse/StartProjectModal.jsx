@@ -95,8 +95,8 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
       <div className="relative w-full max-w-lg max-h-[90vh] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
-            <FolderKanban size={20} className="text-[#10b981]" />
-            <h2 className="font-bold text-[#1a2234] text-lg">Start project</h2>
+            <FolderKanban size={20} className="text-[#106B49]" />
+            <h2 className="font-bold text-[#14192E] text-lg">Start project</h2>
           </div>
           <button
             type="button"
@@ -119,7 +119,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Family home search"
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#106B49]"
               maxLength={200}
               autoFocus
             />
@@ -132,7 +132,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
                 <div key={id}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="font-medium text-slate-700">{LABELS[id] || id}</span>
-                    <span className="font-bold text-[#10b981]">{weights[id]}/10</span>
+                    <span className="font-bold text-[#106B49]">{weights[id]}/10</span>
                   </div>
                   <input
                     type="range"
@@ -144,7 +144,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
                     }
                     className="w-full"
                     style={{
-                      background: `linear-gradient(to right, #10b981 ${weights[id] * 10}%, #e2e8f0 ${weights[id] * 10}%)`,
+                      background: `linear-gradient(to right, #106B49 ${weights[id] * 10}%, #e2e8f0 ${weights[id] * 10}%)`,
                     }}
                   />
                 </div>
@@ -189,7 +189,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
             type="button"
             disabled={saving || atLimit}
             onClick={create}
-            className="flex-1 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : null}
             Create project

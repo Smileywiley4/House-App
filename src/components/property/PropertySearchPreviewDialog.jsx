@@ -180,7 +180,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
           <div className="space-y-5 p-5 sm:p-7">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand">
                   {property.property_type || "Property"}
                 </p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">
@@ -220,7 +220,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
                 { icon: Ruler, value: property.sqft ? number(property.sqft) : null, label: "sq ft" },
               ].map(({ icon: Icon, value, label }) => (
                 <div key={label} className="text-center">
-                  <Icon className="mx-auto mb-1 text-emerald-600" size={18} />
+                  <Icon className="mx-auto mb-1 text-brand" size={18} />
                   <div className="text-lg font-bold text-slate-950">{value ?? "—"}</div>
                   <div className="text-xs text-slate-500">{label}</div>
                 </div>
@@ -291,7 +291,7 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
 
             {property.listing_agent?.name && (
               <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
-                <UserRound size={16} className="mt-0.5 text-emerald-600" />
+                <UserRound size={16} className="mt-0.5 text-brand" />
                 <div>
                   <div className="font-semibold text-slate-900">{property.listing_agent.name}</div>
                   {property.listing_agent.office && (
@@ -310,14 +310,14 @@ export default function PropertySearchPreviewDialog({ property, open, onOpenChan
             <button
               type="button"
               onClick={scoreProperty}
-              className="mt-5 flex w-full items-center justify-between rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
+              className="mt-5 flex w-full items-center justify-between rounded-xl bg-brand-hover px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-hover"
             >
               Score This Property <ArrowRight size={17} />
             </button>
             <button
               type="button"
               onClick={viewOnMap}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-propurty-green-tint bg-propurty-green-tint px-4 py-3 text-sm font-bold text-brand-hover transition hover:bg-propurty-green-tint"
             >
               <MapIcon size={17} /> View on map
             </button>

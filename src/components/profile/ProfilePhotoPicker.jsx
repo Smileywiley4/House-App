@@ -66,13 +66,13 @@ export default function ProfilePhotoPicker({
           type="button"
           onClick={openPicker}
           disabled={uploading}
-          className={`relative ${dim} rounded-2xl overflow-hidden bg-[#10b981]/20 flex items-center justify-center shrink-0 ring-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] disabled:opacity-60`}
+          className={`relative ${dim} rounded-2xl overflow-hidden bg-[#106B49]/20 flex items-center justify-center shrink-0 ring-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#106B49] disabled:opacity-60`}
           aria-label={avatarUrl ? 'Change profile photo' : 'Add profile photo'}
         >
           <Avatar className={`${dim} rounded-2xl`}>
             {displayUrl ? <AvatarImage src={displayUrl} alt="" className="object-cover" /> : null}
             <AvatarFallback className="rounded-2xl bg-transparent">
-              <User size={iconSize} className="text-[#10b981]" />
+              <User size={iconSize} className="text-[#106B49]" />
             </AvatarFallback>
           </Avatar>
           <span className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 hover:opacity-100 transition-opacity">
@@ -85,12 +85,12 @@ export default function ProfilePhotoPicker({
             type="button"
             onClick={openPicker}
             disabled={uploading}
-            className="text-sm font-semibold text-[#10b981] hover:underline disabled:opacity-60"
+            className="text-sm font-semibold text-[#106B49] hover:underline disabled:opacity-60"
           >
             {uploading ? 'Uploading…' : avatarUrl || previewUrl ? 'Change photo' : 'Add profile photo'}
           </button>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            Property Pocket needs access to your photos only to set a profile picture you choose. We do not browse
+            Propurty needs access to your photos only to set a profile picture you choose. We do not browse
             your library in the background — you&apos;ll be prompted when you tap Add/Change photo.
           </p>
         </div>

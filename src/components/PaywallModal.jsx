@@ -69,21 +69,21 @@ export default function PaywallModal({ open, onClose, featureName = "this featur
         >
           <X size={18} />
         </button>
-        <div className="w-12 h-12 rounded-xl bg-[#c9a84c]/10 flex items-center justify-center mb-5">
-          <Lock size={24} className="text-[#c9a84c]" />
+        <div className="w-12 h-12 rounded-xl bg-[#E8A33D]/10 flex items-center justify-center mb-5">
+          <Lock size={24} className="text-[#E8A33D]" />
         </div>
-        <h2 className="text-xl font-bold text-[#1a2234] mb-2">Premium feature</h2>
+        <h2 className="text-xl font-bold text-[#14192E] mb-2">Premium feature</h2>
         <p className="text-slate-600 text-sm mb-4">
           {featureName} is available on Premium and Realtor plans. Upgrade to unlock ad-free experience, 3+ property comparison, AI insights, and more.
         </p>
         <p className="text-slate-500 text-xs mb-6 leading-relaxed">
           Premium starts at $3.99/mo or $39.99/yr. Subscribes with auto-renewal; cancel anytime in Profile/billing.
           See{' '}
-          <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline" onClick={onClose}>
+          <Link to={createPageUrl("Terms")} className="text-[#106B49] hover:underline" onClick={onClose}>
             Terms
           </Link>
           {' '}and{' '}
-          <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline" onClick={onClose}>
+          <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline" onClick={onClose}>
             Privacy
           </Link>
           .
@@ -91,7 +91,7 @@ export default function PaywallModal({ open, onClose, featureName = "this featur
         <div className="flex flex-col gap-3">
           <Link
             to={createPageUrl("Pricing") + (planId ? `?plan=${planId}` : "")}
-            className="flex items-center justify-center gap-2 w-full py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-[#106B49] hover:bg-[#0C4F37] text-white font-bold rounded-xl text-sm transition"
           >
             <Zap size={16} />
             View plans & upgrade
@@ -122,7 +122,7 @@ export default function PaywallModal({ open, onClose, featureName = "this featur
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="Enter code"
                 autoComplete="off"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold tracking-wide text-[#1a2234] focus:outline-none focus:border-[#10b981]"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold tracking-wide text-[#14192E] focus:outline-none focus:border-[#106B49]"
               />
               <div className="flex items-center gap-2">
                 <label className="text-[11px] text-slate-400 shrink-0">Unlock as</label>
@@ -136,7 +136,7 @@ export default function PaywallModal({ open, onClose, featureName = "this featur
                 </select>
               </div>
               {codeError && <p className="text-xs text-red-600 font-semibold">{codeError}</p>}
-              {codeSuccess && <p className="text-xs text-[#059669] font-semibold">{codeSuccess}</p>}
+              {codeSuccess && <p className="text-xs text-[#0C4F37] font-semibold">{codeSuccess}</p>}
               <button
                 type="button"
                 onClick={applyCode}
@@ -147,7 +147,7 @@ export default function PaywallModal({ open, onClose, featureName = "this featur
               </button>
               {!isAuthenticated && (
                 <p className="text-[11px] text-slate-400">
-                  <Link to={createPageUrl("Login")} className="text-[#10b981] font-semibold hover:underline">
+                  <Link to={createPageUrl("Login")} className="text-[#106B49] font-semibold hover:underline">
                     Sign in
                   </Link>{" "}
                   first, then apply your code.

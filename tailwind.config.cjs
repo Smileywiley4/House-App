@@ -1,14 +1,21 @@
 /** @type {import('tailwindcss').Config} */
+const propurtyTokens = require('./propurty-brand/tokens/tailwind.tokens.cjs');
+
 module.exports = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
     extend: {
+      ...propurtyTokens,
       fontFamily: {
-        sans: ["var(--font-sans)"],
-        display: ["var(--font-display)"],
+        ...propurtyTokens.fontFamily,
+        sans: ["var(--font-body)"],
+        display: ["var(--font-heading)"],
+        heading: propurtyTokens.fontFamily.heading,
+        body: propurtyTokens.fontFamily.body,
       },
       borderRadius: {
+        ...propurtyTokens.borderRadius,
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -17,10 +24,12 @@ module.exports = {
         pill: "var(--radius-pill)",
       },
       boxShadow: {
+        ...propurtyTokens.boxShadow,
         card: "var(--shadow-card)",
         elev: "var(--shadow-elev)",
       },
       colors: {
+        ...propurtyTokens.colors,
         brand: {
           DEFAULT: "var(--brand-primary)",
           hover: "var(--brand-primary-hover)",

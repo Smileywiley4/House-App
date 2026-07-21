@@ -74,7 +74,7 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
       <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <div>
-            <h2 className="font-bold text-[#1a2234] text-lg">Add Categories</h2>
+            <h2 className="font-bold text-[#14192E] text-lg">Add Categories</h2>
             <p className="text-xs text-slate-500 mt-0.5">Select as many as you need. Changes apply instantly.</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
@@ -92,11 +92,11 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search categories..."
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 border border-transparent focus:border-[#10b981]"
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 border border-transparent focus:border-[#106B49]"
               />
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-[#10b981]/20 bg-[#10b981]/5 p-2">
-              <PenLine size={16} className="ml-1 shrink-0 text-[#10b981]" />
+            <div className="flex items-center gap-2 rounded-xl border border-[#106B49]/20 bg-[#106B49]/5 p-2">
+              <PenLine size={16} className="ml-1 shrink-0 text-[#106B49]" />
               <input
                 type="text"
                 value={customName}
@@ -109,13 +109,13 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
                 }}
                 placeholder="Add custom category"
                 maxLength={80}
-                className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-[#1a2234] outline-none placeholder:text-slate-400"
+                className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-[#14192E] outline-none placeholder:text-slate-400"
               />
               <button
                 type="button"
                 onClick={handleAddCustom}
                 disabled={!customName.trim()}
-                className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#10b981] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#059669] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#106B49] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#0C4F37] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus size={14} /> Add
               </button>
@@ -137,17 +137,17 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
                       aria-checked={isActive}
                       onClick={() => isActive ? onRemove(cat.id) : onAdd(cat)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                        isActive ? "bg-[#10b981]/5" : "hover:bg-slate-50"
+                        isActive ? "bg-[#106B49]/5" : "hover:bg-slate-50"
                       }`}
                     >
                       <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
                         isActive
-                          ? "border-[#10b981] bg-[#10b981] text-white"
+                          ? "border-[#106B49] bg-[#106B49] text-white"
                           : "border-slate-300 bg-white"
                       }`}>
                         {isActive && <Check size={14} strokeWidth={3} />}
                       </span>
-                      <span className={`text-sm font-medium ${isActive ? "text-[#047857]" : "text-[#1a2234]"}`}>
+                      <span className={`text-sm font-medium ${isActive ? "text-[#0C4F37]" : "text-[#14192E]"}`}>
                         {cat.label}
                       </span>
                     </button>
@@ -160,7 +160,7 @@ export default function CategoryPicker({ activeIds, onAdd, onRemove, onClose }) 
             <button
               type="button"
               onClick={onClose}
-              className="w-full rounded-xl bg-[#1a2234] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#243050]"
+              className="w-full rounded-xl bg-[#14192E] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#2A3150]"
             >
               Done
             </button>

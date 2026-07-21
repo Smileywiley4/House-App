@@ -8,7 +8,7 @@ export function ForSaleBadge({ onMarket, listingSource, className = "" }) {
   if (!onMarket) return null;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#10b981]/15 text-[#059669] border border-[#10b981]/30 ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#106B49]/15 text-[#0C4F37] border border-[#106B49]/30 ${className}`}
       title={listingSource ? `Listed via ${listingSource}` : "Listed for sale"}
     >
       <Tag size={12} />

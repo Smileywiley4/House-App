@@ -83,7 +83,7 @@ export default function PropertyMap() {
       if (!granted) {
         Alert.alert(
           'Location',
-          'Permission was not granted. You can enable location for Property Pocket in system Settings.'
+          'Permission was not granted. You can enable location for Propurty in system Settings.'
         );
         return;
       }
@@ -95,7 +95,7 @@ export default function PropertyMap() {
 
   const markers = buildMarkers(
     cameraPosition.coordinates,
-    locationGranted ? 'Near you' : 'Property Pocket'
+    locationGranted ? 'Near you' : 'Propurty'
   );
 
   if (Platform.OS === 'web') {
@@ -119,7 +119,7 @@ export default function PropertyMap() {
           disabled={loadingLocation}
         >
           {loadingLocation ? (
-            <ActivityIndicator color="#10b981" />
+            <ActivityIndicator color="#106B49" />
           ) : (
             <Text style={styles.locBtnText}>Allow location to center the map on you</Text>
           )}
@@ -127,7 +127,7 @@ export default function PropertyMap() {
       )}
       {locationGranted && loadingLocation && (
         <View style={styles.loadingRow}>
-          <ActivityIndicator color="#10b981" size="small" />
+          <ActivityIndicator color="#106B49" size="small" />
           <Text style={styles.loadingText}>Getting your location…</Text>
         </View>
       )}
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   locBtnText: {
-    color: '#10b981',
+    color: '#106B49',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',

@@ -58,7 +58,7 @@ async def maybe_email_user(user_id: str, title: str, body: str) -> bool:
         return False
     if not to_email:
         return False
-    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Property Pocket <onboarding@resend.dev>"
+    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Propurty <onboarding@resend.dev>"
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(

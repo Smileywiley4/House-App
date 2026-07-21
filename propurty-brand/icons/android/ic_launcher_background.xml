@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Add the color line below to res/values/colors.xml, then reference it from
+  ic_launcher.xml as @color/ic_launcher_background. Native Android only —
+  if this is an Expo/React Native project, skip this file and instead set
+  expo.android.adaptiveIcon.backgroundColor to #106B49 in app.json, pointing
+  foregroundImage at ic_launcher_foreground.png.
+-->
+<resources>
+    <color name="ic_launcher_background">#106B49</color>
+</resources>

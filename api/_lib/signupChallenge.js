@@ -123,7 +123,7 @@ export async function sendCodeEmail({ to, code, expiresMinutes = 15 }) {
   const resendKey = (process.env.RESEND_API_KEY || "").trim();
   const from =
     (process.env.RESEND_FROM_EMAIL || "").trim() ||
-    "Property Pocket <onboarding@resend.dev>";
+    "Propurty <onboarding@resend.dev>";
   if (!resendKey) return { sent: false, reason: "no_resend" };
 
   const r = await fetch("https://api.resend.com/emails", {
@@ -135,12 +135,12 @@ export async function sendCodeEmail({ to, code, expiresMinutes = 15 }) {
     body: JSON.stringify({
       from,
       to: [to],
-      subject: "Your Property Pocket confirmation code",
+      subject: "Your Propurty confirmation code",
       text:
-        `Your Property Pocket confirmation code is ${code}.\n\n` +
+        `Your Propurty confirmation code is ${code}.\n\n` +
         `It expires in ${expiresMinutes} minutes. If you did not request this, you can ignore this email.`,
       html:
-        `<p>Your Property Pocket confirmation code is:</p>` +
+        `<p>Your Propurty confirmation code is:</p>` +
         `<p style="font-size:28px;letter-spacing:6px;font-weight:700">${code}</p>` +
         `<p>This code expires in <strong>${expiresMinutes} minutes</strong>.</p>` +
         `<p>If you did not request this, you can ignore this email.</p>`,

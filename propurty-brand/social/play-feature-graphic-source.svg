@@ -1,0 +1,12 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Propurty Play Store feature graphic</title>
+<desc>Navy background with the reversed horizontal lockup centered, and a short tagline beneath it.</desc>
+<rect x="0" y="0" width="1024" height="500" fill="#14192E"/>
+<g transform="translate(204,140) scale(2.2)">
+<rect x="2" y="2" width="60" height="60" rx="13" fill="#106B49"/>
+<path d="M26,24 L32,17.5 L38,24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21,36 L29,44 L46,26" fill="none" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="80" y="44" font-family="Manrope, 'Plus Jakarta Sans', Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="-0.5" fill="#FFFFFF">Propurty</text>
+</g>
+<text x="512" y="345" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="26" fill="#B7BBC9">Score homes without the hype</text>
+</svg>

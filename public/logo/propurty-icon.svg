@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Propurty icon mark</title>
+<desc>A rounded square tile in brand green containing a white roofline chevron above a white checkmark, representing a verified, scored home.</desc>
+<rect x="2" y="2" width="60" height="60" rx="13" fill="#106B49"/>
+<path d="M26,24 L32,17.5 L38,24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21,36 L29,44 L46,26" fill="none" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

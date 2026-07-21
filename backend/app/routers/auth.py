@@ -141,7 +141,7 @@ async def _send_resend_code(email: str, code: str) -> bool:
     api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
     if not api_key:
         return False
-    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Property Pocket <onboarding@resend.dev>"
+    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Propurty <onboarding@resend.dev>"
     async with httpx.AsyncClient(timeout=30.0) as client:
         r = await client.post(
             "https://api.resend.com/emails",
@@ -149,13 +149,13 @@ async def _send_resend_code(email: str, code: str) -> bool:
             json={
                 "from": from_addr,
                 "to": [email],
-                "subject": "Your Property Pocket confirmation code",
+                "subject": "Your Propurty confirmation code",
                 "text": (
-                    f"Your Property Pocket confirmation code is {code}.\n\n"
+                    f"Your Propurty confirmation code is {code}.\n\n"
                     "It expires in 15 minutes. If you did not request this, you can ignore this email."
                 ),
                 "html": (
-                    "<p>Your Property Pocket confirmation code is:</p>"
+                    "<p>Your Propurty confirmation code is:</p>"
                     f'<p style="font-size:28px;letter-spacing:6px;font-weight:700">{code}</p>'
                     "<p>This code expires in <strong>15 minutes</strong>.</p>"
                     "<p>If you did not request this, you can ignore this email.</p>"

@@ -427,23 +427,23 @@ function ProfileInner() {
     setPresets(prev => prev.filter(x => x.id !== id));
   };
 
-  const scoreColor = (pct) => pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
+  const scoreColor = (pct) => pct >= 70 ? "#106B49" : pct >= 40 ? "#f59e0b" : "#ef4444";
   const sorted = [...scores].sort((a, b) => b.percentage - a.percentage);
   const winner = sorted[0];
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0 bg-[#1a2234]/75" />
+      <div className="relative overflow-hidden bg-[#14192E] px-6 py-8">
+        <div className="absolute inset-0 bg-[#14192E]/75" />
         <div className="relative max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
-            <Avatar className="w-14 h-14 rounded-2xl bg-[#10b981]/20">
+            <Avatar className="w-14 h-14 rounded-2xl bg-[#106B49]/20">
               {user?.avatar_url ? (
                 <AvatarImage src={user.avatar_url} alt="" className="object-cover rounded-2xl" />
               ) : null}
               <AvatarFallback className="rounded-2xl bg-transparent">
-                <User size={26} className="text-[#10b981]" />
+                <User size={26} className="text-[#106B49]" />
               </AvatarFallback>
             </Avatar>
             <div>
@@ -466,7 +466,7 @@ function ProfileInner() {
               onClick={() => selectTab(id)}
               className={`flex items-center gap-2 px-4 py-4 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 tab === id
-                  ? "border-[#10b981] text-[#10b981]"
+                  ? "border-[#106B49] text-[#106B49]"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -503,9 +503,9 @@ function ProfileInner() {
                   key={id}
                   type="button"
                   onClick={() => selectTab(id)}
-                  className="text-left bg-card rounded-2xl border border-border shadow-sm p-5 hover:border-[#10b981]/50 transition-colors"
+                  className="text-left bg-card rounded-2xl border border-border shadow-sm p-5 hover:border-[#106B49]/50 transition-colors"
                 >
-                  <Icon size={20} className="text-[#10b981] mb-2" />
+                  <Icon size={20} className="text-[#106B49] mb-2" />
                   <p className="font-bold text-foreground text-sm">{title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
                 </button>
@@ -513,12 +513,12 @@ function ProfileInner() {
             </div>
             <div className="bg-card rounded-2xl border border-border p-6">
               <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Shield size={18} className="text-[#10b981]" />
+                <Shield size={18} className="text-[#106B49]" />
                 Staying signed in
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Your session is kept in this browser&apos;s storage for the whole visit and across reloads. When you switch back to this tab, we refresh your login automatically. To remain signed in, avoid clearing site data or blocking storage for this site. Use{" "}
-                <button type="button" className="text-[#10b981] font-semibold hover:underline" onClick={() => selectTab("security")}>
+                <button type="button" className="text-[#106B49] font-semibold hover:underline" onClick={() => selectTab("security")}>
                   Security
                 </button>{" "}
                 to sign out on this device only.
@@ -583,7 +583,7 @@ function ProfileInner() {
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition"
                   placeholder="Your full name"
                 />
               </div>
@@ -600,7 +600,7 @@ function ProfileInner() {
                   <button
                     type="button"
                     onClick={() => selectTab("security")}
-                    className="text-[#10b981] hover:underline font-semibold"
+                    className="text-[#106B49] hover:underline font-semibold"
                   >
                     Security
                   </button>
@@ -611,7 +611,7 @@ function ProfileInner() {
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1.5">State (practice / location)</label>
                 <input type="text" value={stateVal} onChange={(e) => setStateVal(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition" placeholder="e.g. CA" />
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition" placeholder="e.g. CA" />
               </div>
               <div className="border-t border-border pt-5 space-y-4">
                 <div>
@@ -624,24 +624,24 @@ function ProfileInner() {
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1.5">License number</label>
                   <input type="text" value={realtorLicense} onChange={(e) => setRealtorLicense(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition" placeholder="License number" />
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition" placeholder="License number" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1.5">License state</label>
                   <select value={licenseState} onChange={(e) => setLicenseState(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition">
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition">
                     <option value="">Select state…</option>
                     {US_STATE_OPTIONS.map((code) => (<option key={code} value={code}>{code}</option>))}
                   </select>
                   {licenseLookupUrl(licenseState) && (
                     <a href={licenseLookupUrl(licenseState)} target="_blank" rel="noopener noreferrer"
-                      className="inline-block mt-1.5 text-xs font-semibold text-[#10b981] hover:underline">Official state license lookup →</a>
+                      className="inline-block mt-1.5 text-xs font-semibold text-[#106B49] hover:underline">Official state license lookup →</a>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1.5">Brokerage</label>
                   <input type="text" value={brokerage} onChange={(e) => setBrokerage(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition" placeholder="Brokerage name" />
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition" placeholder="Brokerage name" />
                 </div>
                 <button type="button" disabled={verifyingLicense || (user?.license_verification_status === "verified")}
                   onClick={async () => {
@@ -657,7 +657,7 @@ function ProfileInner() {
                       toast({ title: "Could not request verification", description: err?.message || "Try again.", variant: "destructive" });
                     } finally { setVerifyingLicense(false); }
                   }}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#10b981]/15 text-[#059669] hover:bg-[#10b981]/25 disabled:opacity-50">
+                  className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#106B49]/15 text-[#0C4F37] hover:bg-[#106B49]/25 disabled:opacity-50">
                   {user?.license_verification_status === "verified" ? "License verified" : verifyingLicense ? "Submitting…" : "Request verification"}
                 </button>
               </div>
@@ -667,7 +667,7 @@ function ProfileInner() {
                   onClick={saveAccount}
                   disabled={saving}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-                    saved ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                    saved ? "bg-[#106B49] text-white" : "bg-[#14192E] hover:bg-[#2A3150] text-white"
                   } disabled:opacity-60`}
                 >
                   {saved ? <><Check size={15} /> Saved!</> : saving ? "Saving..." : <><Save size={15} /> Save Changes</>}
@@ -682,7 +682,7 @@ function ProfileInner() {
           <div className="space-y-8">
             <div>
               <h2 className="text-lg font-bold text-foreground mb-1">Usage</h2>
-              <p className="text-slate-400 text-sm">How you&apos;re using Property Pocket.</p>
+              <p className="text-slate-400 text-sm">How you&apos;re using Propurty.</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
@@ -692,7 +692,7 @@ function ProfileInner() {
                 { label: "Avg score", value: scores.length ? `${Math.round(scores.reduce((a, s) => a + s.percentage, 0) / scores.length)}%` : "—" },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-card rounded-2xl border border-border shadow-sm p-5 text-center">
-                  <div className="text-2xl font-bold text-[#10b981]">{value}</div>
+                  <div className="text-2xl font-bold text-[#106B49]">{value}</div>
                   <div className="text-xs text-muted-foreground mt-1">{label}</div>
                 </div>
               ))}
@@ -701,7 +701,7 @@ function ProfileInner() {
               <button
                 type="button"
                 onClick={() => selectTab("history")}
-                className="px-4 py-2 rounded-xl bg-[#1a2234] text-white text-sm font-semibold hover:bg-[#243050]"
+                className="px-4 py-2 rounded-xl bg-[#14192E] text-white text-sm font-semibold hover:bg-[#2A3150]"
               >
                 View saved properties
               </button>
@@ -746,7 +746,7 @@ function ProfileInner() {
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder="New email address"
                   autoComplete="email"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition"
                 />
                 {emailError && <p className="text-xs text-red-600 font-semibold">{emailError}</p>}
                 <button
@@ -754,7 +754,7 @@ function ProfileInner() {
                   onClick={changeEmail}
                   disabled={emailSaving || !newEmail.trim()}
                   className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-                    emailSent ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                    emailSent ? "bg-[#106B49] text-white" : "bg-[#14192E] hover:bg-[#2A3150] text-white"
                   } disabled:opacity-60`}
                 >
                   {emailSaving
@@ -775,14 +775,14 @@ function ProfileInner() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="New password"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition"
                 />
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#10b981] text-sm text-foreground transition"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:outline-none focus:border-[#106B49] text-sm text-foreground transition"
                 />
                 {passwordError && <p className="text-xs text-red-600 font-semibold">{passwordError}</p>}
                 <button
@@ -790,7 +790,7 @@ function ProfileInner() {
                   onClick={changePassword}
                   disabled={passwordSaving}
                   className={`w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-                    passwordSaved ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                    passwordSaved ? "bg-[#106B49] text-white" : "bg-[#14192E] hover:bg-[#2A3150] text-white"
                   } disabled:opacity-60`}
                 >
                   {passwordSaving ? "Updating..." : passwordSaved ? "Password updated" : "Update password"}
@@ -817,13 +817,13 @@ function ProfileInner() {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Export a JSON snapshot of your profile, scores, presets, projects, contacts, and shares.
                 Payment card numbers are never stored by us (Stripe processes payments). You can also email{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#10b981] hover:underline">{SUPPORT_EMAIL}</a>.
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#106B49] hover:underline">{SUPPORT_EMAIL}</a>.
               </p>
               <button
                 type="button"
                 onClick={downloadMyData}
                 disabled={exportLoading}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#1a2234] hover:bg-[#243050] text-white disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#14192E] hover:bg-[#2A3150] text-white disabled:opacity-60"
               >
                 <Download size={16} />
                 {exportLoading ? "Preparing…" : "Download my data"}
@@ -838,9 +838,9 @@ function ProfileInner() {
                 <strong className="text-foreground">canceled immediately</strong> so you are{" "}
                 <strong className="text-foreground">not charged at the next billing period</strong>.
                 Access ends when deletion completes. Unused referral credits are forfeited. See{" "}
-                <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms</Link>
+                <Link to={createPageUrl("Terms")} className="text-[#106B49] hover:underline">Terms</Link>
                 {" "}and{" "}
-                <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy</Link>.
+                <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline">Privacy</Link>.
               </p>
               {!confirmDelete ? (
                 <button
@@ -906,7 +906,7 @@ function ProfileInner() {
               </p>
             </div>
             {upgradeBanner && (
-              <div className="bg-[#10b981]/10 border border-[#10b981]/25 text-[#059669] text-sm rounded-xl px-4 py-3">
+              <div className="bg-[#106B49]/10 border border-[#106B49]/25 text-[#0C4F37] text-sm rounded-xl px-4 py-3">
                 {isPremium
                   ? "Thank you! Your subscription is active."
                   : "Payment received — your plan should update in a few seconds. Refresh if it still shows Free."}
@@ -922,7 +922,7 @@ function ProfileInner() {
                   {(plan || "").toLowerCase() === "premium" && (
                     <Link
                       to={`${createPageUrl("Pricing")}?plan=realtor`}
-                      className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#1a2234] hover:bg-[#243049] text-white"
+                      className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#14192E] hover:bg-[#243049] text-white"
                     >
                       Upgrade to Realtor
                     </Link>
@@ -955,7 +955,7 @@ function ProfileInner() {
                       }
                     }}
                     disabled={portalLoading}
-                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#10b981] hover:bg-[#059669] text-white disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm bg-[#106B49] hover:bg-[#0C4F37] text-white disabled:opacity-60"
                   >
                     {portalLoading ? "Opening…" : "Manage subscription / Cancel"}
                   </button>
@@ -977,13 +977,13 @@ function ProfileInner() {
                   <p className="text-sm text-muted-foreground">
                     You&apos;re on the free plan. Upgrade anytime for premium features ($3.99/mo or $39.99/yr; auto-renews until canceled).
                     See{' '}
-                    <Link to={createPageUrl("Terms")} className="text-[#10b981] hover:underline">Terms</Link>
+                    <Link to={createPageUrl("Terms")} className="text-[#106B49] hover:underline">Terms</Link>
                     {' '}and{' '}
-                    <Link to={createPageUrl("Privacy")} className="text-[#10b981] hover:underline">Privacy</Link>.
+                    <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline">Privacy</Link>.
                   </p>
                   <Link
                     to={createPageUrl("Pricing")}
-                    className="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl font-bold text-sm bg-[#10b981] hover:bg-[#059669] text-white"
+                    className="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl font-bold text-sm bg-[#106B49] hover:bg-[#0C4F37] text-white"
                   >
                     View plans &amp; upgrade
                   </Link>
@@ -1006,7 +1006,7 @@ function ProfileInner() {
                 <button
                   type="button"
                   onClick={retakePriorityQuiz}
-                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:text-[#047857]"
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0C4F37] hover:text-[#0C4F37]"
                 >
                   <Sparkles size={14} /> Retake priority quiz
                 </button>
@@ -1015,7 +1015,7 @@ function ProfileInner() {
                 onClick={savePreferences}
                 disabled={savingPrefs}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition shrink-0 ${
-                  savedPrefs ? "bg-[#10b981] text-white" : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                  savedPrefs ? "bg-[#106B49] text-white" : "bg-[#14192E] hover:bg-[#2A3150] text-white"
                 } disabled:opacity-60`}
               >
                 {savedPrefs ? <><Check size={15} /> Saved!</> : savingPrefs ? "Saving..." : <><Save size={15} /> Save</>}
@@ -1028,14 +1028,14 @@ function ProfileInner() {
                 categories={MANDATORY_CATEGORIES}
                 weights={weights}
                 onChange={(id, v) => setWeights(w => ({ ...w, [id]: v }))}
-                accent="#c9a84c"
+                accent="#E8A33D"
               />
               <CategoryWeightGroup
                 title="Neighborhood"
                 categories={NEIGHBORHOOD_CATEGORIES}
                 weights={weights}
                 onChange={(id, v) => setWeights(w => ({ ...w, [id]: v }))}
-                accent="#10b981"
+                accent="#106B49"
               />
               <CategoryWeightGroup
                 title="Property Features"
@@ -1059,7 +1059,7 @@ function ProfileInner() {
               <button
                 type="button"
                 onClick={retakePriorityQuiz}
-                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:text-[#047857]"
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0C4F37] hover:text-[#0C4F37]"
               >
                 <Sparkles size={14} /> Retake priority quiz
               </button>
@@ -1089,7 +1089,7 @@ function ProfileInner() {
                 <button
                   onClick={savePreset}
                   disabled={savingPreset || !presetName.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm disabled:opacity-60"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#106B49] hover:bg-[#0C4F37] text-white font-bold rounded-xl text-sm disabled:opacity-60"
                 >
                   <Plus size={15} /> Save preset
                 </button>
@@ -1115,7 +1115,7 @@ function ProfileInner() {
                     <div className="flex items-center gap-2">
                       <Link
                         to={createPageUrl("SearchByPreset")}
-                        className="px-3 py-2 text-sm font-semibold text-[#10b981] hover:bg-[#10b981]/10 rounded-xl"
+                        className="px-3 py-2 text-sm font-semibold text-[#106B49] hover:bg-[#106B49]/10 rounded-xl"
                       >
                         Search
                       </Link>
@@ -1162,7 +1162,7 @@ function ProfileInner() {
               </div>
               <Link
                 to={createPageUrl("SavedProperties")}
-                className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition"
+                className="flex items-center gap-2 px-4 py-2 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm transition"
               >
                 Full Comparison <ChevronRight size={15} />
               </Link>
@@ -1170,14 +1170,14 @@ function ProfileInner() {
 
             {loadingScores ? (
               <div className="flex justify-center py-16">
-                <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#106B49] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : scores.length === 0 ? (
               <div className="text-center py-16 text-slate-400">
                 <BarChart3 size={40} className="mx-auto mb-3 text-slate-200" />
                 <p className="font-semibold text-foreground mb-1">No saved properties yet</p>
                 <p className="text-sm">Score a property to see it here.</p>
-                <Link to={createPageUrl("Home")} className="inline-flex mt-5 px-5 py-2.5 bg-[#1a2234] text-white font-bold rounded-xl text-sm">
+                <Link to={createPageUrl("Home")} className="inline-flex mt-5 px-5 py-2.5 bg-[#14192E] text-white font-bold rounded-xl text-sm">
                   Search Properties
                 </Link>
               </div>
@@ -1187,14 +1187,14 @@ function ProfileInner() {
                   const isWinner = s.id === winner?.id;
                   const color = scoreColor(s.percentage);
                   return (
-                    <div key={s.id} className={`bg-card rounded-2xl border shadow-sm p-5 flex items-center gap-5 ${isWinner ? "border-[#10b981]" : "border-border"}`}>
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold shrink-0 ${isWinner ? "bg-[#10b981] text-white" : "bg-slate-100 text-slate-500"}`}>
+                    <div key={s.id} className={`bg-card rounded-2xl border shadow-sm p-5 flex items-center gap-5 ${isWinner ? "border-[#106B49]" : "border-border"}`}>
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold shrink-0 ${isWinner ? "bg-[#106B49] text-white" : "bg-slate-100 text-slate-500"}`}>
                         {isWinner ? <Trophy size={18} /> : `#${i + 1}`}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-bold text-foreground text-sm truncate">{s.property_address}</p>
-                          {isWinner && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>Top Pick ✦</span>}
+                          {isWinner && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.1)", color: "#106B49" }}>Top Pick ✦</span>}
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">{s.scores?.length} categories · Scored out of 100</p>
                         <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden w-full max-w-xs">

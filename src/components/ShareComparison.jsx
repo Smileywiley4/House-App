@@ -44,9 +44,9 @@ export default function ShareComparison({ scores }) {
       {open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="bg-[#1a2234] px-6 py-5 flex items-center justify-between">
+            <div className="bg-[#14192E] px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Share2 size={16} className="text-[#10b981]" />
+                <Share2 size={16} className="text-[#106B49]" />
                 <span className="text-white font-bold">Share Comparison</span>
               </div>
               <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white transition">
@@ -68,8 +68,8 @@ export default function ShareComparison({ scores }) {
                 onClick={copy}
                 className={`w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${
                   copied
-                    ? "bg-[#10b981] text-white"
-                    : "bg-[#1a2234] hover:bg-[#243050] text-white"
+                    ? "bg-[#106B49] text-white"
+                    : "bg-[#14192E] hover:bg-[#2A3150] text-white"
                 }`}
               >
                 {copied ? <><Check size={15} /> Link Copied!</> : <><Copy size={15} /> Copy Link</>}

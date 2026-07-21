@@ -1,4 +1,4 @@
-# App Store Launch Checklist — Property Pocket
+# App Store Launch Checklist — Propurty
 
 Last updated after Expo SDK 57 stabilization. Use this as the single launch tracker.
 
@@ -6,13 +6,13 @@ Last updated after Expo SDK 57 stabilization. Use this as the single launch trac
 
 ## Done in code (no action needed)
 
-- [x] App branding: **Property Pocket** / **Prop Pocket**
+- [x] App branding: **Propurty** / **Propurty**
 - [x] iOS bundle ID: `com.proppocket.mobile`
 - [x] Permission strings (camera, photos, contacts, location)
 - [x] `ITSAppUsesNonExemptEncryption=false`
 - [x] App icons + splash assets in `mobile/assets/`
 - [x] RevenueCat IAP integration (`react-native-purchases`)
-- [x] Entitlement ID aligned: **`Property Pocket Pro`**
+- [x] Entitlement ID aligned: **`Propurty Pro`**
 - [x] Restore purchases UI
 - [x] Dev-only debug sections hidden in production (`__DEV__`)
 - [x] **Expo SDK 57 stable** (migrated off canary)
@@ -32,7 +32,7 @@ Last updated after Expo SDK 57 stabilization. Use this as the single launch trac
 ### 1.2 App Store Connect app record
 - [ ] **My Apps → + → New App**
 - [ ] Platform: iOS
-- [ ] Name: **Property Pocket**
+- [ ] Name: **Propurty**
 - [ ] Bundle ID: **com.proppocket.mobile** (register in Certificates, Identifiers & Profiles first if needed)
 - [ ] Copy the numeric **Apple ID** (ascAppId) — paste into `mobile/eas.json` → `submit.production.ios.ascAppId`
 
@@ -55,7 +55,7 @@ You already set up Test Store offerings. For **App Store submission** you need r
 
 ### 2.1 App Store Connect subscriptions
 - [ ] **Features → Subscriptions** (or In-App Purchases)
-- [ ] Create subscription group (e.g. "Property Pocket Pro")
+- [ ] Create subscription group (e.g. "Propurty Pro")
 - [ ] Add products, e.g.:
   - `com.proppocket.mobile.monthly`
   - `com.proppocket.mobile.yearly`
@@ -66,7 +66,7 @@ You already set up Test Store offerings. For **App Store submission** you need r
 - [ ] **Apps & providers → + → Apple App Store**
 - [ ] Bundle ID: `com.proppocket.mobile`
 - [ ] Link App Store Connect (Shared Secret / App Store Connect API key)
-- [ ] Map products to entitlement **`Property Pocket Pro`**
+- [ ] Map products to entitlement **`Propurty Pro`**
 - [ ] Copy **Apple public SDK key** (`appl_...`)
 
 ### 2.3 EAS secrets (never commit keys)
@@ -86,7 +86,7 @@ On Railway/host:
 
 ```bash
 REVENUECAT_WEBHOOK_SECRET=<random-secret>
-REVENUECAT_PREMIUM_ENTITLEMENT_ID="Property Pocket Pro"
+REVENUECAT_PREMIUM_ENTITLEMENT_ID="Propurty Pro"
 ```
 
 RevenueCat → Integrations → Webhooks:
@@ -126,7 +126,7 @@ Required before submission:
 
 | Item | Notes |
 |------|--------|
-| App name + subtitle | Property Pocket |
+| App name + subtitle | Propurty |
 | Description + keywords | Home comparison, scoring |
 | Privacy Policy URL | **Required** — host on your web domain |
 | Support URL | **Required** |

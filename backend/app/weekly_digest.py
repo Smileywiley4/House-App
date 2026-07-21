@@ -365,7 +365,7 @@ async def process_weekly_preset_digests() -> dict[str, Any]:
             if email:
                 email_body = (
                     body
-                    + "\n\nOpen Property Pocket → Search Properties to review."
+                    + "\n\nOpen Propurty → Search Properties to review."
                     + "\n\nTurn off weekly digests anytime in Profile → Settings → Notifications."
                 )
                 if await _send_match_email(email, title, email_body):

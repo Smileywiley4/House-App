@@ -1,4 +1,4 @@
-# Option B — RevenueCat IAP setup (Property Pocket)
+# Option B — RevenueCat IAP setup (Propurty)
 
 Follow these steps in order. Code is ready; this connects dashboards + env vars.
 
@@ -11,7 +11,7 @@ No Apple Developer account required yet. Uses your `test_...` key.
 ### 1.1 RevenueCat dashboard
 
 1. Sign in at [app.revenuecat.com](https://app.revenuecat.com)
-2. Create or open your **Property Pocket** project
+2. Create or open your **Propurty** project
 3. Go to **Apps and providers → Test Store** (create one if missing)
 4. Confirm your Test Store API key matches what’s in `mobile/.env`:
    - `EXPO_PUBLIC_RC_TEST_API_KEY=test_akUEFVWvHxtHEFXvStrcaxqkrXx`
@@ -20,7 +20,7 @@ No Apple Developer account required yet. Uses your `test_...` key.
 
 1. **Product catalog → Entitlements → + New**
 2. Identifier: **`property_pocket_pro`**
-3. Display name: **Property Pocket Pro**
+3. Display name: **Propurty Pro**
 
 ### 1.3 Test products + offering
 

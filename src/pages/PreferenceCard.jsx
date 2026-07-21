@@ -46,12 +46,12 @@ export default function PreferenceCard() {
   const title = "Preference pattern";
   const description =
     card?.summary_line ||
-    "A preferences-only home-scoring pattern shared from Property Pocket.";
+    "A preferences-only home-scoring pattern shared from Propurty.";
 
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#106B49] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -71,7 +71,7 @@ export default function PreferenceCard() {
           </p>
           <Link
             to={createPageUrl("Home")}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white font-bold rounded-xl text-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#106B49] text-white font-bold rounded-xl text-sm"
           >
             <HomeIcon size={15} /> Go to {APP_NAME}
           </Link>
@@ -100,10 +100,10 @@ export default function PreferenceCard() {
       <div className="max-w-lg mx-auto px-6 py-12">
         <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-[#0f172a] via-[#132337] to-[#0d3d36] text-white p-8 shadow-lg">
           <div
-            className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#10b981]/10"
+            className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#106B49]/10"
             aria-hidden
           />
-          <p className="text-[#10b981] text-xs font-bold uppercase tracking-widest mb-3">
+          <p className="text-[#106B49] text-xs font-bold uppercase tracking-widest mb-3">
             {APP_NAME} · Preference pattern
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold leading-snug mb-2">
@@ -118,7 +118,7 @@ export default function PreferenceCard() {
           <ol className="space-y-4">
             {priorities.map((p, i) => (
               <li key={`${p.label}-${i}`} className="flex items-baseline gap-3">
-                <span className="text-[#10b981] font-bold w-6">{i + 1}.</span>
+                <span className="text-[#106B49] font-bold w-6">{i + 1}.</span>
                 <div>
                   <p className="font-semibold text-lg">{p.label}</p>
                   {p.avg_importance != null && (
@@ -138,7 +138,7 @@ export default function PreferenceCard() {
 
         <p className="text-center text-sm text-muted-foreground mt-8">
           Curious how your own priorities stack up?{" "}
-          <Link to={createPageUrl("Home")} className="text-[#10b981] font-semibold hover:underline">
+          <Link to={createPageUrl("Home")} className="text-[#106B49] font-semibold hover:underline">
             Try {APP_NAME}
           </Link>
         </p>

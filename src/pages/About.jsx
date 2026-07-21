@@ -5,7 +5,7 @@ import { SUPPORT_EMAIL } from '@/core/companyConfig';
 export default function About() {
   return (
     <LegalPageShell
-      title="About Property Pocket"
+      title="About Propurty"
       description="We help home buyers compare properties objectively — with weighted scores you control, not guesswork."
     >
       <h2>Our mission</h2>

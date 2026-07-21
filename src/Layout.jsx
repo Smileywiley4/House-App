@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Home,
   UserCircle,
   Search,
   LogIn,
@@ -48,7 +47,7 @@ const t = {
   accentSolid: brand.primaryDeep,
   accentLight: THEME.accentLight,
   gold: THEME.gold,
-  label: "Prop Pocket",
+  label: "Propurty",
 };
 
 export default function Layout({ children, currentPageName }) {
@@ -71,12 +70,15 @@ export default function Layout({ children, currentPageName }) {
   const showMobileSearchPanel = showHeaderSearch && mobileSearchOpen;
 
   const logoBlock = (
-    <Link to={createPageUrl("Home")} className="flex items-center gap-2.5 min-w-0 shrink-0" aria-label={t.label}>
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: t.accent }}>
-        <Home size={18} className="text-white" />
-      </div>
-      <span className="font-bold text-navy tracking-tight text-lg truncate hidden sm:inline">{t.label}</span>
-      <span className="ml-0.5 text-[11px] font-bold shrink-0 hidden sm:inline" style={{ color: t.gold }}>✦</span>
+    <Link to={createPageUrl("Home")} className="flex items-center gap-2 min-w-0 shrink-0" aria-label={t.label}>
+      <img
+        src="/logo/propurty-logotype-horizontal.svg"
+        alt={t.label}
+        className="h-8 sm:h-9 w-auto max-w-[160px] sm:max-w-[200px] object-contain object-left"
+        width={200}
+        height={36}
+        decoding="async"
+      />
     </Link>
   );
 

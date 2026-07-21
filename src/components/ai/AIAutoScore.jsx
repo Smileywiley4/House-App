@@ -79,17 +79,17 @@ Return results as a JSON array.`,
   };
 
   const scoreColor = (s) => {
-    if (s >= 8) return "text-[#10b981]";
-    if (s >= 5) return "text-[#c9a84c]";
+    if (s >= 8) return "text-[#106B49]";
+    if (s >= 5) return "text-[#E8A33D]";
     return "text-red-400";
   };
 
   return (
-    <div className="bg-white border border-[#10b981]/20 rounded-2xl overflow-hidden">
-      <div className="bg-gradient-to-r from-[#1a2234] to-[#243050] px-5 py-3.5 flex items-center gap-2">
-        <Sparkles size={15} className="text-[#10b981]" />
+    <div className="bg-white border border-[#106B49]/20 rounded-2xl overflow-hidden">
+      <div className="bg-gradient-to-r from-[#14192E] to-[#2A3150] px-5 py-3.5 flex items-center gap-2">
+        <Sparkles size={15} className="text-[#106B49]" />
         <span className="text-white font-semibold text-sm">AI Auto-Score</span>
-        <span className="text-[10px] text-[#c9a84c] font-bold bg-[#c9a84c]/10 border border-[#c9a84c]/20 px-2 py-0.5 rounded-full ml-1">Beta</span>
+        <span className="text-[10px] text-[#E8A33D] font-bold bg-[#E8A33D]/10 border border-[#E8A33D]/20 px-2 py-0.5 rounded-full ml-1">Beta</span>
       </div>
 
       <div className="p-5">
@@ -101,7 +101,7 @@ Return results as a JSON array.`,
                 Let AI research this property and auto-fill suggested scores for all your categories based on real neighborhood data.
               </p>
               <button onClick={generate}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition">
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm transition">
                 <Zap size={14} /> Auto-Score with AI
               </button>
             </div>
@@ -110,7 +110,7 @@ Return results as a JSON array.`,
 
         {loading && (
           <div className="flex items-center gap-3 py-2">
-            <Loader2 size={18} className="text-[#10b981] animate-spin shrink-0" />
+            <Loader2 size={18} className="text-[#106B49] animate-spin shrink-0" />
             <span className="text-sm text-slate-500">Researching property data and scoring categories...</span>
           </div>
         )}
@@ -128,7 +128,7 @@ Return results as a JSON array.`,
                       <span className={`text-base font-bold ${scoreColor(s.score)}`}>{s.score}</span>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold text-[#1a2234]">{cat.label}</div>
+                      <div className="text-xs font-semibold text-[#14192E]">{cat.label}</div>
                       <div className="text-xs text-slate-400">{s.rationale}</div>
                     </div>
                   </div>
@@ -137,7 +137,7 @@ Return results as a JSON array.`,
             </div>
             <div className="flex gap-2">
               <button onClick={apply}
-                className="flex-1 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition">
+                className="flex-1 py-2.5 bg-[#106B49] hover:bg-[#0C4F37] text-white font-bold rounded-xl text-sm transition">
                 Apply All Scores
               </button>
               <button onClick={generate}
@@ -149,7 +149,7 @@ Return results as a JSON array.`,
         )}
 
         {applied && (
-          <div className="flex items-center gap-2 text-sm text-[#10b981] font-semibold py-1">
+          <div className="flex items-center gap-2 text-sm text-[#106B49] font-semibold py-1">
             <span>✓</span> Scores applied! Review and adjust as needed.
             <button onClick={() => { setSuggested(null); setApplied(false); }}
               className="ml-auto text-xs text-slate-400 hover:text-slate-600 font-normal">

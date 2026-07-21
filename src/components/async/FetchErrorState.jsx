@@ -39,7 +39,7 @@ export default function FetchErrorState({
     <div
       className={cn(
         "flex flex-col items-center justify-center text-center",
-        fullPage ? "min-h-screen bg-[#fafaf8] px-4" : "py-10 px-4",
+        fullPage ? "min-h-screen bg-[#F8F7F4] px-4" : "py-10 px-4",
         className,
       )}
       role="alert"
@@ -52,7 +52,7 @@ export default function FetchErrorState({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white font-semibold hover:bg-[#059669] transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#106B49] text-white font-semibold hover:bg-[#0C4F37] transition-colors"
           >
             <RefreshCw size={16} aria-hidden />
             Retry

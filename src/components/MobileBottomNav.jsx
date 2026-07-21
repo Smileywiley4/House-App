@@ -96,7 +96,7 @@ export default function MobileBottomNav({
 
             {!isLoadingAuth && !isAuthenticated && (
               <li>
-                <Link to="/login" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white bg-[#047857]">
+                <Link to="/login" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white bg-[#0C4F37]">
                   <LogIn size={18} />
                   Sign In
                 </Link>

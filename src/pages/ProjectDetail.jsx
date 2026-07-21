@@ -34,7 +34,7 @@ const LABELS = {
 };
 
 function scoreColor(pct) {
-  if (pct >= 70) return "#10b981";
+  if (pct >= 70) return "#106B49";
   if (pct >= 40) return "#f59e0b";
   return "#ef4444";
 }
@@ -158,8 +158,8 @@ function ProjectDetailInner() {
   if (!projectId) {
     return (
       <>
-        <div className="min-h-screen bg-[#fafaf8]">
-          <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
+        <div className="min-h-screen bg-[#F8F7F4]">
+          <div className="relative overflow-hidden bg-[#14192E] px-6 py-8">
             <div className="relative max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-white">Projects</h1>
@@ -170,7 +170,7 @@ function ProjectDetailInner() {
               <button
                 type="button"
                 onClick={() => setStartOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#10b981] text-white text-sm font-bold"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#106B49] text-white text-sm font-bold"
               >
                 <FolderKanban size={16} /> Start project
               </button>
@@ -194,9 +194,9 @@ function ProjectDetailInner() {
                   <li key={p.id}>
                     <Link
                       to={`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(p.id)}`}
-                      className="block bg-white rounded-2xl border border-slate-100 p-4 hover:border-[#10b981]/40 transition"
+                      className="block bg-white rounded-2xl border border-slate-100 p-4 hover:border-[#106B49]/40 transition"
                     >
-                      <div className="font-bold text-[#1a2234]">{p.title}</div>
+                      <div className="font-bold text-[#14192E]">{p.title}</div>
                       <div className="text-xs text-slate-500 mt-1">
                         {p.property_count ?? 0} propert{(p.property_count ?? 0) === 1 ? "y" : "ies"}
                         {p.membership === "collaborator" ? " · shared with you" : ""}
@@ -209,14 +209,14 @@ function ProjectDetailInner() {
 
             {invites.length > 0 && (
               <div className="mt-10 space-y-3">
-                <h2 className="text-sm font-bold text-[#1a2234]">Pending project invites</h2>
+                <h2 className="text-sm font-bold text-[#14192E]">Pending project invites</h2>
                 {invites.map((inv) => (
                   <div
                     key={inv.id}
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4"
                   >
                     <div>
-                      <p className="font-semibold text-[#1a2234] text-sm">
+                      <p className="font-semibold text-[#14192E] text-sm">
                         {inv.project?.title || "Project"}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -226,7 +226,7 @@ function ProjectDetailInner() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="rounded-lg bg-[#10b981] px-3 py-1.5 text-xs font-bold text-white"
+                        className="rounded-lg bg-[#106B49] px-3 py-1.5 text-xs font-bold text-white"
                         onClick={async () => {
                           try {
                             await api.projects.acceptInvite(inv.id);
@@ -266,13 +266,13 @@ function ProjectDetailInner() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center px-6">
         <FetchErrorState
           title="Project not found"
           message={error || "This project may have been deleted or you no longer have access."}
           onRetry={loadList}
         />
-        <Link to={createPageUrl("ProjectDetail")} className="text-[#10b981] font-semibold text-sm -mt-2">
+        <Link to={createPageUrl("ProjectDetail")} className="text-[#106B49] font-semibold text-sm -mt-2">
           Back to projects
         </Link>
       </div>
@@ -284,9 +284,9 @@ function ProjectDetailInner() {
   const isOwner = project.is_owner === true || project.membership === "owner";
 
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0 bg-[#1a2234]/75" />
+    <div className="min-h-screen bg-[#F8F7F4]">
+      <div className="relative overflow-hidden bg-[#14192E] px-6 py-8">
+        <div className="absolute inset-0 bg-[#14192E]/75" />
         <div className="relative max-w-5xl mx-auto">
           <Link
             to={createPageUrl("ProjectDetail")}
@@ -296,7 +296,7 @@ function ProjectDetailInner() {
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-[#10b981] text-xs font-bold uppercase tracking-wide mb-1">
+              <div className="flex items-center gap-2 text-[#106B49] text-xs font-bold uppercase tracking-wide mb-1">
                 <FolderKanban size={14} /> Project
                 {!isOwner && <span className="text-slate-400 font-semibold normal-case">· collaborator</span>}
               </div>
@@ -348,7 +348,7 @@ function ProjectDetailInner() {
 
         {isOwner && (
           <div className="mb-8 rounded-2xl border border-slate-100 bg-white p-4 space-y-3">
-            <h2 className="text-sm font-bold text-[#1a2234]">Invite collaborator</h2>
+            <h2 className="text-sm font-bold text-[#14192E]">Invite collaborator</h2>
             <p className="text-xs text-slate-500">
               Collaborators can add and edit properties. Only you manage preferences and deletion.
             </p>
@@ -357,7 +357,7 @@ function ProjectDetailInner() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="Their account email"
-                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#10b981]/30"
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#106B49]/30"
               />
               <button
                 type="button"
@@ -375,7 +375,7 @@ function ProjectDetailInner() {
                     setInviteBusy(false);
                   }
                 }}
-                className="rounded-xl bg-[#1a2234] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                className="rounded-xl bg-[#14192E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
               >
                 {inviteBusy ? "Inviting…" : "Invite"}
               </button>
@@ -438,7 +438,7 @@ function ProjectDetailInner() {
                     <span className="text-[9px] uppercase tracking-wide opacity-80">score</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-[#1a2234] truncate">{p.property_address}</h3>
+                    <h3 className="font-bold text-[#14192E] truncate">{p.property_address}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {[
                         snap.bedrooms != null ? `${snap.bedrooms} bd` : null,
@@ -475,7 +475,7 @@ function ProjectDetailInner() {
           />
           <div className="relative w-full max-w-md h-full bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <h2 className="font-bold text-[#1a2234]">Project scoring prefs</h2>
+              <h2 className="font-bold text-[#14192E]">Project scoring prefs</h2>
               <button
                 type="button"
                 onClick={() => setPrefsOpen(false)}
@@ -494,14 +494,14 @@ function ProjectDetailInner() {
                 <input
                   value={titleEdit}
                   onChange={(e) => setTitleEdit(e.target.value)}
-                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#106B49]"
                 />
               </div>
               {ALL_BROWSE_SCORE_IDS.map((id) => (
                 <div key={id}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="font-medium text-slate-700">{LABELS[id] || id}</span>
-                    <span className="font-bold text-[#10b981]">{weights[id] ?? 5}/10</span>
+                    <span className="font-bold text-[#106B49]">{weights[id] ?? 5}/10</span>
                   </div>
                   <input
                     type="range"
@@ -519,7 +519,7 @@ function ProjectDetailInner() {
                 type="button"
                 disabled={savingPrefs}
                 onClick={savePrefs}
-                className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
                 {savingPrefs ? <Loader2 className="animate-spin" size={16} /> : null}
                 Save &amp; rescore

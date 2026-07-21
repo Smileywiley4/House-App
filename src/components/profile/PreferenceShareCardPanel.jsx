@@ -24,10 +24,10 @@ function PreferenceCardVisual({ card }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-[#0f172a] via-[#132337] to-[#0d3d36] text-white p-6 sm:p-8 shadow-sm">
       <div
-        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#10b981]/10"
+        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#106B49]/10"
         aria-hidden
       />
-      <p className="text-[#10b981] text-xs font-bold uppercase tracking-widest mb-2">
+      <p className="text-[#106B49] text-xs font-bold uppercase tracking-widest mb-2">
         {APP_NAME} · Preference pattern
       </p>
       <h3 className="text-xl sm:text-2xl font-bold leading-snug mb-1">
@@ -43,7 +43,7 @@ function PreferenceCardVisual({ card }) {
       <ol className="space-y-3">
         {card.top_priorities.slice(0, 3).map((p, i) => (
           <li key={`${p.label}-${i}`} className="flex items-baseline gap-3">
-            <span className="text-[#10b981] font-bold text-sm w-5">{i + 1}.</span>
+            <span className="text-[#106B49] font-bold text-sm w-5">{i + 1}.</span>
             <div>
               <p className="font-semibold text-base">{p.label}</p>
               {p.avg_importance != null && (
@@ -205,8 +205,8 @@ export default function PreferenceShareCardPanel() {
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0">
-          <Sparkles size={18} className="text-[#10b981]" />
+        <div className="w-10 h-10 rounded-xl bg-[#106B49]/10 flex items-center justify-center shrink-0">
+          <Sparkles size={18} className="text-[#106B49]" />
         </div>
         <div>
           <h3 className="font-bold text-foreground">Preference pattern card</h3>
@@ -226,7 +226,7 @@ export default function PreferenceShareCardPanel() {
           type="button"
           onClick={createPreview}
           disabled={busy === "preview"}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#1a2234] hover:bg-[#243050] text-white disabled:opacity-60"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#14192E] hover:bg-[#2A3150] text-white disabled:opacity-60"
         >
           {busy === "preview" ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
           Create preference card
@@ -295,7 +295,7 @@ export default function PreferenceShareCardPanel() {
                   type="button"
                   onClick={() => enableShare({ rotate: false })}
                   disabled={!!busy}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#10b981] hover:bg-[#059669] text-white disabled:opacity-60"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#106B49] hover:bg-[#0C4F37] text-white disabled:opacity-60"
                 >
                   {busy === "enable" ? (
                     <Loader2 size={15} className="animate-spin" />
@@ -319,7 +319,7 @@ export default function PreferenceShareCardPanel() {
                     <button
                       type="button"
                       onClick={copyLink}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#1a2234] text-white"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#14192E] text-white"
                     >
                       {copied ? <Check size={14} /> : <Copy size={14} />}
                       {copied ? "Copied" : "Copy link"}

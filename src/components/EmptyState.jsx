@@ -15,7 +15,7 @@ export default function EmptyState({
   compact = false,
 }) {
   const actionClass =
-    "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--brand-navy,#1a2234)] text-white text-sm font-semibold hover:bg-[var(--brand-navy-hover,#243050)] transition-[background-color,transform] duration-[var(--motion-duration)] ease-[var(--motion-ease)]";
+    "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--brand-navy,#14192E)] text-white text-sm font-semibold hover:bg-[var(--brand-navy-hover,#2A3150)] transition-[background-color,transform] duration-[var(--motion-duration)] ease-[var(--motion-ease)]";
 
   return (
     <div
@@ -35,7 +35,7 @@ export default function EmptyState({
           strokeWidth={1.5}
         />
       ) : null}
-      <h2 className={cn("font-bold text-[#1a2234]", compact ? "text-base mb-1" : "text-xl mb-2")}>
+      <h2 className={cn("font-bold text-[#14192E]", compact ? "text-base mb-1" : "text-xl mb-2")}>
         {title}
       </h2>
       {description ? (

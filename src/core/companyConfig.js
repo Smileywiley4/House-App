@@ -6,6 +6,7 @@ import { APP_NAME } from '@/core/constants';
 
 export const COMPANY_LEGAL_NAME = 'WileyWorx LLC';
 export const COMPANY_TAGLINE = 'Compare & score homes with confidence';
+// TODO(rebrand): support@proppocket.com inbox / DNS not migrated yet — keep until new support address is live.
 export const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || 'support@proppocket.com';
 export const SUPPORT_URL =

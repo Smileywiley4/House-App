@@ -91,8 +91,8 @@ export default function InviteContactsPanel({
     <div className={compact ? "space-y-3" : "space-y-4"}>
       {!compact && (
         <div>
-          <h2 className="text-lg font-bold text-[#1a2234] flex items-center gap-2">
-            <Share2 size={20} className="text-[#10b981]" />
+          <h2 className="text-lg font-bold text-[#14192E] flex items-center gap-2">
+            <Share2 size={20} className="text-[#106B49]" />
             {title}
           </h2>
           <p className="text-slate-500 text-sm mt-1">{subtitle}</p>
@@ -111,14 +111,14 @@ export default function InviteContactsPanel({
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Your invite link</label>
               <div className="flex gap-2">
-                <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-[#1a2234] font-mono truncate">
+                <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-[#14192E] font-mono truncate">
                   <Link2 size={14} className="shrink-0 text-slate-400" />
                   <span className="truncate">{inviteUrl}</span>
                 </div>
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1a2234] text-white text-sm font-semibold hover:bg-[#243050] shrink-0"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#14192E] text-white text-sm font-semibold hover:bg-[#2A3150] shrink-0"
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                   {copied ? "Copied" : "Copy"}
@@ -136,7 +136,7 @@ export default function InviteContactsPanel({
                 <button
                   type="button"
                   onClick={nativeShare}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#10b981] text-white text-sm font-semibold hover:bg-[#0d9b6c]"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#106B49] text-white text-sm font-semibold hover:bg-[#0d9b6c]"
                 >
                   <Share2 size={16} />
                   Share
@@ -147,14 +147,14 @@ export default function InviteContactsPanel({
                   subject: `Join me on ${APP_NAME}`,
                   body: inviteMessage(inviteUrl),
                 })}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-[#1a2234] hover:bg-slate-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-[#14192E] hover:bg-slate-50"
               >
                 <Mail size={16} />
                 Email
               </a>
               <a
                 href={smsShareHref(inviteMessage(inviteUrl))}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-[#1a2234] hover:bg-slate-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-[#14192E] hover:bg-slate-50"
               >
                 <MessageSquare size={16} />
                 Text / SMS
@@ -177,7 +177,7 @@ export default function InviteContactsPanel({
             <button
               type="button"
               onClick={onSkip}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-[#1a2234] hover:bg-slate-100"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-[#14192E] hover:bg-slate-100"
             >
               <SkipForward size={16} />
               Skip for now
@@ -187,7 +187,7 @@ export default function InviteContactsPanel({
             <button
               type="button"
               onClick={onDone}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold hover:bg-[#0d9b6c]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold hover:bg-[#0d9b6c]"
             >
               Continue
             </button>

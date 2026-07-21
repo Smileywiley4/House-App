@@ -143,7 +143,7 @@ function CompareInner() {
   });
 
   const getScore = (property, catId) => property.scores?.find((s) => s.category_id === catId);
-  const scoreColor = (pct) => (pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444");
+  const scoreColor = (pct) => (pct >= 70 ? "#106B49" : pct >= 40 ? "#f59e0b" : "#ef4444");
 
   const saveSnapshots = comparing.map((c) => c._browseSnapshot).filter(Boolean);
 
@@ -193,9 +193,9 @@ function CompareInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-6 sticky top-[112px] sm:top-14 z-30">
-        <div className="absolute inset-0 bg-[#1a2234]/80" />
+    <div className="min-h-screen bg-[#F8F7F4]">
+      <div className="relative overflow-hidden bg-[#14192E] px-6 py-6 sticky top-[112px] sm:top-14 z-30">
+        <div className="absolute inset-0 bg-[#14192E]/80" />
         <div className="relative max-w-6xl mx-auto">
           <Link
             to={createPageUrl("SavedProperties")}
@@ -228,7 +228,7 @@ function CompareInner() {
                 <button
                   type="button"
                   onClick={() => setSendOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-[#10b981]/20 text-[#6ee7b7] hover:bg-[#10b981]/30"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-[#106B49]/20 text-[#6ee7b7] hover:bg-[#106B49]/30"
                 >
                   <Send size={14} /> Send to client for scoring
                 </button>
@@ -240,7 +240,7 @@ function CompareInner() {
                     key={id}
                     onClick={() => setViewMode(id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      viewMode === id ? "bg-[#10b981] text-white" : "text-slate-400 hover:text-white"
+                      viewMode === id ? "bg-[#106B49] text-white" : "text-slate-400 hover:text-white"
                     }`}
                   >
                     <Icon size={14} />
@@ -260,7 +260,7 @@ function CompareInner() {
                 return (
                   <div
                     key={`slot-${index}-${id}`}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border bg-[#10b981] border-[#10b981] text-white"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border bg-[#106B49] border-[#106B49] text-white"
                   >
                     <span className="truncate max-w-[10rem]">{score.property_address?.split(",")[0]}</span>
                     <SharePropertyButton
@@ -293,8 +293,8 @@ function CompareInner() {
                   onClick={() => setAddSlotIndex(isAdding ? null : index)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed transition-all ${
                     isAdding
-                      ? "border-[#10b981] text-[#10b981] bg-[#10b981]/10"
-                      : "border-white/30 text-slate-300 hover:border-[#10b981]/50 hover:text-white"
+                      ? "border-[#106B49] text-[#106B49] bg-[#106B49]/10"
+                      : "border-white/30 text-slate-300 hover:border-[#106B49]/50 hover:text-white"
                   }`}
                 >
                   <Plus size={12} className="inline mr-1" />
@@ -307,7 +307,7 @@ function CompareInner() {
               <button
                 type="button"
                 onClick={addEmptySlot}
-                className="w-8 h-8 rounded-lg border border-white/25 text-slate-300 hover:border-[#10b981] hover:text-[#10b981] flex items-center justify-center transition-all"
+                className="w-8 h-8 rounded-lg border border-white/25 text-slate-300 hover:border-[#106B49] hover:text-[#106B49] flex items-center justify-center transition-all"
                 title={`Add slot (${slots.length}/${maxCompareCount})`}
                 aria-label="Add comparison slot"
               >
@@ -335,7 +335,7 @@ function CompareInner() {
           )}
 
           {maxCompareCount === 2 && filledCount >= 2 && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-[#c9a84c]">
+            <div className="mt-2 flex items-center gap-2 text-xs text-[#E8A33D]">
               <Lock size={12} />
               Comparing more than 2 is a{" "}
               <Link to={createPageUrl("Pricing")} className="underline font-semibold">
@@ -452,12 +452,12 @@ function AddPropertyPanel({ availableScores, onPick, onClose }) {
           onChange={setAddress}
           onSelect={runSearch}
           placeholder="Search address..."
-          inputClassName="w-full pl-9 pr-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 text-xs focus:outline-none focus:border-[#10b981]"
+          inputClassName="w-full pl-9 pr-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 text-xs focus:outline-none focus:border-[#106B49]"
         />
         <button
           type="submit"
           disabled={searching}
-          className="px-3 py-2 bg-[#047857] hover:bg-[#065f46] text-white rounded-lg text-xs font-semibold disabled:opacity-60 flex items-center gap-1"
+          className="px-3 py-2 bg-[#0C4F37] hover:bg-[#065f46] text-white rounded-lg text-xs font-semibold disabled:opacity-60 flex items-center gap-1"
         >
           {searching ? (
             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -478,7 +478,7 @@ function AddPropertyPanel({ availableScores, onPick, onClose }) {
                 key={s.id}
                 type="button"
                 onClick={() => onPick(s)}
-                className="px-2.5 py-1 rounded-md text-[11px] border border-white/20 text-slate-200 hover:border-[#10b981]/50 hover:text-white"
+                className="px-2.5 py-1 rounded-md text-[11px] border border-white/20 text-slate-200 hover:border-[#106B49]/50 hover:text-white"
               >
                 {s.property_address?.split(",")[0]}
               </button>
@@ -490,7 +490,7 @@ function AddPropertyPanel({ availableScores, onPick, onClose }) {
       <div className="mt-3 flex items-center gap-3 text-xs">
         <Link
           to={createPageUrl("BrowseProperties")}
-          className="inline-flex items-center gap-1.5 text-[#10b981] hover:underline font-medium"
+          className="inline-flex items-center gap-1.5 text-[#106B49] hover:underline font-medium"
         >
           <MapPin size={12} /> Browse listings to compare
         </Link>
@@ -514,15 +514,15 @@ function ColumnsView({ comparing, winner, allCategories, getScore, scoreColor })
             <div
               key={p.id}
               className={`bg-white rounded-2xl border p-5 text-center shadow-sm ${
-                isWinner ? "border-[#10b981]" : "border-slate-100"
+                isWinner ? "border-[#106B49]" : "border-slate-100"
               }`}
             >
               {isWinner && (
-                <div className="flex items-center justify-center gap-1 text-[#10b981] text-xs font-bold mb-2">
-                  <Trophy size={12} /> Top Pick <span className="text-[#c9a84c]">✦</span>
+                <div className="flex items-center justify-center gap-1 text-[#106B49] text-xs font-bold mb-2">
+                  <Trophy size={12} /> Top Pick <span className="text-[#E8A33D]">✦</span>
                 </div>
               )}
-              <div className="text-sm font-bold text-[#1a2234] leading-tight">
+              <div className="text-sm font-bold text-[#14192E] leading-tight">
                 {p.property_address?.split(",")[0]}
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
@@ -552,7 +552,7 @@ function ColumnsView({ comparing, winner, allCategories, getScore, scoreColor })
             style={{ gridTemplateColumns: `200px repeat(${comparing.length}, 1fr)` }}
           >
             <div className="flex items-center">
-              <span className="text-sm font-semibold text-[#1a2234]">{cat.label}</span>
+              <span className="text-sm font-semibold text-[#14192E]">{cat.label}</span>
             </div>
             {comparing.map((p) => {
               const s = getScore(p, cat.id);
@@ -564,7 +564,7 @@ function ColumnsView({ comparing, winner, allCategories, getScore, scoreColor })
               });
               return (
                 <div key={p.id} className="flex flex-col items-center gap-1">
-                  <div className={`text-xl font-bold ${best ? "text-[#10b981]" : "text-[#1a2234]"}`}>
+                  <div className={`text-xl font-bold ${best ? "text-[#106B49]" : "text-[#14192E]"}`}>
                     {s.score}
                     <span className="text-xs text-slate-400">/10</span>
                   </div>
@@ -595,16 +595,16 @@ function CardsView({ comparing, winner, scoreColor }) {
           <div
             key={p.id}
             className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
-              isWinner ? "border-[#10b981]" : "border-slate-100"
+              isWinner ? "border-[#106B49]" : "border-slate-100"
             }`}
           >
-            <div className={`px-6 py-5 ${isWinner ? "bg-[#10b981]/5" : ""}`}>
+            <div className={`px-6 py-5 ${isWinner ? "bg-[#106B49]/5" : ""}`}>
               {isWinner && (
-                <div className="flex items-center gap-1 text-[#10b981] text-xs font-bold mb-1">
+                <div className="flex items-center gap-1 text-[#106B49] text-xs font-bold mb-1">
                   <Trophy size={12} /> Top Pick
                 </div>
               )}
-              <h3 className="font-bold text-[#1a2234] text-base">{p.property_address?.split(",")[0]}</h3>
+              <h3 className="font-bold text-[#14192E] text-base">{p.property_address?.split(",")[0]}</h3>
               <p className="text-slate-400 text-xs">
                 {p.property_address?.split(",").slice(1).join(",").trim()}
               </p>
@@ -630,11 +630,11 @@ function CardsView({ comparing, winner, scoreColor }) {
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#10b981]"
+                        className="h-full rounded-full bg-[#106B49]"
                         style={{ width: `${(cat.score / 10) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs font-bold text-[#1a2234] w-8 text-right">{cat.score}/10</span>
+                    <span className="text-xs font-bold text-[#14192E] w-8 text-right">{cat.score}/10</span>
                   </div>
                 </div>
               ))}
@@ -659,14 +659,14 @@ function TableView({ comparing, winner, allCategories, getScore, scoreColor }) {
             {comparing.map((p) => {
               const isWinner = p.id === winner?.id;
               return (
-                <th key={p.id} className={`px-5 py-4 text-center ${isWinner ? "bg-[#10b981]/5" : ""}`}>
+                <th key={p.id} className={`px-5 py-4 text-center ${isWinner ? "bg-[#106B49]/5" : ""}`}>
                   {isWinner && (
-                    <div className="flex items-center justify-center gap-1 text-[#10b981] text-[10px] font-bold mb-1">
+                    <div className="flex items-center justify-center gap-1 text-[#106B49] text-[10px] font-bold mb-1">
                       <Trophy size={10} />
                       Top Pick
                     </div>
                   )}
-                  <div className="text-xs font-bold text-[#1a2234] leading-tight">
+                  <div className="text-xs font-bold text-[#14192E] leading-tight">
                     {p.property_address?.split(",")[0]}
                   </div>
                   <div className="text-2xl font-bold mt-1" style={{ color: scoreColor(p.percentage) }}>
@@ -680,7 +680,7 @@ function TableView({ comparing, winner, allCategories, getScore, scoreColor }) {
         <tbody>
           {allCategories.map((cat, i) => (
             <tr key={cat.id} className={`border-b border-slate-50 ${i % 2 === 0 ? "" : "bg-slate-50/50"}`}>
-              <td className="px-5 py-3 font-medium text-[#1a2234] text-xs">{cat.label}</td>
+              <td className="px-5 py-3 font-medium text-[#14192E] text-xs">{cat.label}</td>
               {comparing.map((p) => {
                 const s = getScore(p, cat.id);
                 if (!s)
@@ -695,7 +695,7 @@ function TableView({ comparing, winner, allCategories, getScore, scoreColor }) {
                 });
                 return (
                   <td key={p.id} className="px-5 py-3 text-center">
-                    <span className={`text-sm font-bold ${best ? "text-[#10b981]" : "text-slate-600"}`}>
+                    <span className={`text-sm font-bold ${best ? "text-[#106B49]" : "text-slate-600"}`}>
                       {s.score}/10
                     </span>
                   </td>
@@ -703,7 +703,7 @@ function TableView({ comparing, winner, allCategories, getScore, scoreColor }) {
               })}
             </tr>
           ))}
-          <tr className="bg-[#1a2234]">
+          <tr className="bg-[#14192E]">
             <td className="px-5 py-4 text-xs font-bold text-white">TOTAL SCORE</td>
             {comparing.map((p) => (
               <td key={p.id} className="px-5 py-4 text-center">

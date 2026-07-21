@@ -4,7 +4,7 @@ import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
 import { SUPPORT_EMAIL } from "@/core/companyConfig";
 
-const ACCENT = "#047857";
+const ACCENT = "#0C4F37";
 const MAX_SCREENSHOT_BYTES = 2 * 1024 * 1024;
 
 /**
@@ -139,7 +139,7 @@ export default function FeedbackWidget() {
           className="w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 overflow-hidden"
         >
           <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/80">
-            <h2 id={panelTitleId} className="text-sm font-semibold text-[#1a2234]">
+            <h2 id={panelTitleId} className="text-sm font-semibold text-[#14192E]">
               Send feedback
             </h2>
             <button
@@ -154,11 +154,11 @@ export default function FeedbackWidget() {
 
           {done ? (
             <div className="p-5 space-y-3 text-center">
-              <CheckCircle2 size={36} className="mx-auto text-[#047857]" />
-              <p className="text-sm font-medium text-[#1a2234]">Thanks — we got it.</p>
+              <CheckCircle2 size={36} className="mx-auto text-[#0C4F37]" />
+              <p className="text-sm font-medium text-[#14192E]">Thanks — we got it.</p>
               <p className="text-xs text-slate-500 leading-relaxed">
                 For urgent account or billing help, email{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#047857] hover:underline">
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#0C4F37] hover:underline">
                   {SUPPORT_EMAIL}
                 </a>
                 .
@@ -185,7 +185,7 @@ export default function FeedbackWidget() {
                       key={opt.value}
                       className={`cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium text-center transition-colors ${
                         category === opt.value
-                          ? "border-[#10b981] bg-[rgba(16,185,129,0.08)] text-[#059669]"
+                          ? "border-[#106B49] bg-[rgba(16,185,129,0.08)] text-[#0C4F37]"
                           : "border-slate-200 text-slate-600 hover:border-slate-300"
                       }`}
                     >
@@ -216,7 +216,7 @@ export default function FeedbackWidget() {
                       ? "What went wrong? What did you expect?"
                       : "What’s on your mind?"
                   }
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-[#1a2234] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 resize-y"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-[#14192E] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#106B49]/30 resize-y"
                 />
               </label>
 
@@ -230,7 +230,7 @@ export default function FeedbackWidget() {
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="So we can reply"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#10b981]/30"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#106B49]/30"
                   />
                 </label>
               )}
@@ -293,7 +293,7 @@ export default function FeedbackWidget() {
 
               <p className="text-[10px] text-slate-400 text-center leading-relaxed">
                 Not live chat — we read these in email. Prefer writing us?{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#047857] hover:underline">
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#0C4F37] hover:underline">
                   {SUPPORT_EMAIL}
                 </a>
               </p>
@@ -305,7 +305,7 @@ export default function FeedbackWidget() {
       <button
         type="button"
         onClick={toggle}
-        className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg shadow-slate-900/20 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2"
+        className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg shadow-slate-900/20 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#106B49] focus-visible:ring-offset-2"
         style={{ backgroundColor: ACCENT }}
         aria-label={open ? "Close feedback" : "Send feedback or report a problem"}
         aria-expanded={open}

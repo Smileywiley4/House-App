@@ -201,14 +201,14 @@ function RealtorPortalInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
+    <div className="min-h-screen bg-[#F8F7F4]">
       {/* Header */}
-      <div className="relative overflow-hidden bg-[#1a2234] px-6 py-8">
-        <div className="absolute inset-0 bg-[#1a2234]/75" />
+      <div className="relative overflow-hidden bg-[#14192E] px-6 py-8">
+        <div className="absolute inset-0 bg-[#14192E]/75" />
         <div className="relative max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-[#10b981]/20 flex items-center justify-center">
-              <Building2 size={20} className="text-[#10b981]" />
+            <div className="w-10 h-10 rounded-xl bg-[#106B49]/20 flex items-center justify-center">
+              <Building2 size={20} className="text-[#106B49]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -234,8 +234,8 @@ function RealtorPortalInner() {
                 onClick={() => setTab(t)}
                 className={`px-5 py-4 text-sm font-semibold border-b-2 transition-all ${
                   tab === t
-                    ? "border-[#10b981] text-[#10b981]"
-                    : "border-transparent text-slate-500 hover:text-[#1a2234]"
+                    ? "border-[#106B49] text-[#106B49]"
+                    : "border-transparent text-slate-500 hover:text-[#14192E]"
                 }`}
               >
                 {t}
@@ -251,7 +251,7 @@ function RealtorPortalInner() {
         {tab === "Profile" && (
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl border border-slate-100 p-7 shadow-sm">
-              <h2 className="font-bold text-[#1a2234] text-lg mb-1">Professional Information</h2>
+              <h2 className="font-bold text-[#14192E] text-lg mb-1">Professional Information</h2>
               <p className="text-slate-400 text-sm mb-4">
                 License and brokerage are <span className="font-semibold text-slate-600">self-reported</span> until verified.
                 Portal access comes from your Realtor plan — not from typing a license number.
@@ -261,34 +261,34 @@ function RealtorPortalInner() {
                 <div>
                   <label className="text-xs font-semibold text-slate-500 block mb-1.5">Brokerage Name</label>
                   <input value={profile.brokerage_name} onChange={e => setProfile(p => ({ ...p, brokerage_name: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20 transition"
                     placeholder="e.g. Keller Williams, Compass..." />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 block mb-1.5">License number</label>
                   <input value={profile.license_number} onChange={e => setProfile(p => ({ ...p, license_number: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20 transition"
                     placeholder="License number" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 block mb-1.5">License state</label>
                   <select value={profile.license_state} onChange={e => setProfile(p => ({ ...p, license_state: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition bg-white">
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20 transition bg-white">
                     <option value="">Select state…</option>
                     {US_STATE_OPTIONS.map((code) => (<option key={code} value={code}>{code}</option>))}
                   </select>
                   {licenseLookupUrl(profile.license_state) && (
                     <a href={licenseLookupUrl(profile.license_state)} target="_blank" rel="noopener noreferrer"
-                      className="inline-block mt-1.5 text-xs font-semibold text-[#10b981] hover:underline">Look up your license on the official state site →</a>
+                      className="inline-block mt-1.5 text-xs font-semibold text-[#106B49] hover:underline">Look up your license on the official state site →</a>
                   )}
                 </div>
                 <button type="button" onClick={saveProfile} disabled={saving}
-                  className="w-full py-3 bg-[#1a2234] hover:bg-[#243050] text-white font-bold rounded-xl text-sm transition disabled:opacity-60 mt-2">
+                  className="w-full py-3 bg-[#14192E] hover:bg-[#2A3150] text-white font-bold rounded-xl text-sm transition disabled:opacity-60 mt-2">
                   {saved ? "✓ Saved!" : saving ? "Saving..." : "Save Profile"}
                 </button>
                 <button type="button" onClick={requestVerification}
                   disabled={verifying || licenseVerificationStatus(user) === "verified"}
-                  className="w-full py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl text-sm transition disabled:opacity-60">
+                  className="w-full py-3 bg-[#106B49] hover:bg-[#0C4F37] text-white font-bold rounded-xl text-sm transition disabled:opacity-60">
                   {licenseVerificationStatus(user) === "verified" ? "License verified" : verifying ? "Submitting…" : "Request verification"}
                 </button>
                 {verifyMsg && <p className="text-xs text-slate-500 leading-relaxed">{verifyMsg}</p>}
@@ -297,12 +297,12 @@ function RealtorPortalInner() {
 
             {/* Account status */}
             <div className="space-y-4">
-              <div className={`rounded-2xl p-6 border ${isRealtor ? "bg-[#10b981]/5 border-[#10b981]/20" : "bg-white border-slate-100"} shadow-sm`}>
+              <div className={`rounded-2xl p-6 border ${isRealtor ? "bg-[#106B49]/5 border-[#106B49]/20" : "bg-white border-slate-100"} shadow-sm`}>
                 <div className="flex items-center gap-3 mb-3">
-                  <BadgeCheck size={22} className={isRealtor ? "text-[#10b981]" : "text-slate-300"} />
+                  <BadgeCheck size={22} className={isRealtor ? "text-[#106B49]" : "text-slate-300"} />
                   <div>
-                    <div className="font-bold text-[#1a2234] text-sm">Realtor Access</div>
-                    <div className={`text-xs font-semibold ${isRealtor ? "text-[#10b981]" : "text-slate-400"}`}>
+                    <div className="font-bold text-[#14192E] text-sm">Realtor Access</div>
+                    <div className={`text-xs font-semibold ${isRealtor ? "text-[#106B49]" : "text-slate-400"}`}>
                       {isRealtor ? "Active" : "Not activated"}
                     </div>
                   </div>
@@ -311,7 +311,7 @@ function RealtorPortalInner() {
                   <div>
                     <p className="text-slate-500 text-xs mb-4">Upgrade to Realtor to unlock private listings, client tools, and comparison sharing.</p>
                     <Link to={createPageUrl("Pricing")}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a2234] text-white font-semibold rounded-xl text-xs hover:bg-[#243050] transition">
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#14192E] text-white font-semibold rounded-xl text-xs hover:bg-[#2A3150] transition">
                       View Realtor Plans <ChevronRight size={14} />
                     </Link>
                   </div>
@@ -319,7 +319,7 @@ function RealtorPortalInner() {
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                <h3 className="font-bold text-[#1a2234] text-sm mb-4">Realtor Tools</h3>
+                <h3 className="font-bold text-[#14192E] text-sm mb-4">Realtor Tools</h3>
                 <ul className="space-y-3">
                   {[
                     { label: "Private listing database", active: isRealtor },
@@ -331,14 +331,14 @@ function RealtorPortalInner() {
                   ].map(({ label, active, soon }) => (
                     <li key={label} className="flex items-center gap-3 text-sm">
                       {active ? (
-                        <div className="w-4 h-4 rounded-full bg-[#10b981] flex items-center justify-center shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-[#106B49] flex items-center justify-center shrink-0">
                           <span className="text-white text-[9px] font-bold">✓</span>
                         </div>
                       ) : (
                         <Lock size={14} className="text-slate-300 shrink-0" />
                       )}
-                      <span className={active ? "text-[#1a2234]" : "text-slate-400"}>{label}</span>
-                      {soon && <span className="text-[10px] text-[#c9a84c] font-semibold bg-[#c9a84c]/10 px-2 py-0.5 rounded-full">Soon</span>}
+                      <span className={active ? "text-[#14192E]" : "text-slate-400"}>{label}</span>
+                      {soon && <span className="text-[10px] text-[#E8A33D] font-semibold bg-[#E8A33D]/10 px-2 py-0.5 rounded-full">Soon</span>}
                     </li>
                   ))}
                 </ul>
@@ -356,22 +356,22 @@ function RealtorPortalInner() {
               <>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="font-bold text-[#1a2234] text-lg">Your Clients</h2>
+                    <h2 className="font-bold text-[#14192E] text-lg">Your Clients</h2>
                     <p className="text-slate-400 text-sm">{clients.length} client{clients.length !== 1 ? "s" : ""}</p>
                   </div>
                   <button onClick={() => setShowClientForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
+                    className="flex items-center gap-2 px-4 py-2 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
                     <Plus size={15} /> Add Client
                   </button>
                 </div>
 
                 <div className="mb-8 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0">
-                      <BarChart3 size={16} className="text-[#10b981]" />
+                    <div className="w-9 h-9 rounded-xl bg-[#106B49]/10 flex items-center justify-center shrink-0">
+                      <BarChart3 size={16} className="text-[#106B49]" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#1a2234] text-sm">Client comparison reports</h3>
+                      <h3 className="font-bold text-[#14192E] text-sm">Client comparison reports</h3>
                       <p className="text-slate-400 text-xs mt-0.5">
                         Select an in-app contact to see every property they scored for you — sorted by score.
                       </p>
@@ -380,7 +380,7 @@ function RealtorPortalInner() {
                   {reportableContacts.length === 0 ? (
                     <p className="text-xs text-slate-500">
                       No accepted contacts yet.{" "}
-                      <Link to={createPageUrl("Contacts")} className="text-[#10b981] font-semibold hover:underline">
+                      <Link to={createPageUrl("Contacts")} className="text-[#106B49] font-semibold hover:underline">
                         Add contacts
                       </Link>{" "}
                       and share homes for scoring to unlock reports.
@@ -401,7 +401,7 @@ function RealtorPortalInner() {
                         return (
                           <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
                             <div className="min-w-0">
-                              <div className="text-sm font-semibold text-[#1a2234] truncate">{label}</div>
+                              <div className="text-sm font-semibold text-[#14192E] truncate">{label}</div>
                               <div className="text-[11px] text-slate-400 truncate">
                                 {[c.contact_role, c.contact?.email, scoredCount ? `${scoredCount} scored` : null]
                                   .filter(Boolean)
@@ -411,7 +411,7 @@ function RealtorPortalInner() {
                             <button
                               type="button"
                               onClick={() => openClientReport(uid)}
-                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#10b981]/10 text-[#059669] hover:bg-[#10b981]/20 transition"
+                              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#106B49]/10 text-[#0C4F37] hover:bg-[#106B49]/20 transition"
                             >
                               <BarChart3 size={12} /> Report
                             </button>
@@ -471,11 +471,11 @@ function RealtorPortalInner() {
               <>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="font-bold text-[#1a2234] text-lg">Private Listings</h2>
+                    <h2 className="font-bold text-[#14192E] text-lg">Private Listings</h2>
                     <p className="text-slate-400 text-sm">Off-market & private properties for your clients</p>
                   </div>
                   <button onClick={() => setShowListingForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
+                    className="flex items-center gap-2 px-4 py-2 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm transition">
                     <Plus size={15} /> Add Listing
                   </button>
                 </div>
@@ -513,9 +513,9 @@ function RealtorPortalInner() {
                 <section>
                   <div className="flex items-center justify-between gap-3 mb-6">
                     <div className="flex items-center gap-3">
-                      <Share2 className="text-[#10b981]" size={22} />
+                      <Share2 className="text-[#106B49]" size={22} />
                       <div>
-                        <h2 className="font-bold text-[#1a2234] text-lg">Homes sent for scoring</h2>
+                        <h2 className="font-bold text-[#14192E] text-lg">Homes sent for scoring</h2>
                         <p className="text-slate-400 text-sm">
                           Status: Sent → Viewed → Scored. Same list as Shared homes → Sent.
                         </p>
@@ -523,7 +523,7 @@ function RealtorPortalInner() {
                     </div>
                     <Link
                       to={createPageUrl("SharedHomes") + "?tab=sent"}
-                      className="text-xs font-semibold text-[#10b981] hover:underline shrink-0"
+                      className="text-xs font-semibold text-[#106B49] hover:underline shrink-0"
                     >
                       Open Shared homes →
                     </Link>
@@ -563,7 +563,7 @@ function RealtorPortalInner() {
                             className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-wrap items-start justify-between gap-3"
                           >
                             <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-[#1a2234] text-sm truncate">{address}</div>
+                              <div className="font-semibold text-[#14192E] text-sm truncate">{address}</div>
                               <p className="text-xs text-slate-500 mt-1">
                                 To {peer}
                                 {item.created_at ? ` · Sent ${formatShareWhen(item.created_at)}` : ""}
@@ -590,9 +590,9 @@ function RealtorPortalInner() {
 
                 <section>
                   <div className="flex items-center gap-3 mb-6">
-                    <Share2 className="text-[#10b981]" size={22} />
+                    <Share2 className="text-[#106B49]" size={22} />
                     <div>
-                      <h2 className="font-bold text-[#1a2234] text-lg">Client visit shares</h2>
+                      <h2 className="font-bold text-[#14192E] text-lg">Client visit shares</h2>
                       <p className="text-slate-400 text-sm">
                         Premium clients can share in-person photos and scores from Property Visits.
                       </p>
@@ -627,7 +627,7 @@ function RealtorPortalInner() {
                           <div className="flex flex-wrap justify-between gap-2 mb-3">
                             <div>
                               <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide">From</div>
-                              <div className="font-bold text-[#1a2234]">
+                              <div className="font-bold text-[#14192E]">
                                 {item.buyer?.full_name || item.buyer?.email || "Client"}
                               </div>
                             </div>
@@ -636,12 +636,12 @@ function RealtorPortalInner() {
                             </div>
                           </div>
                           {item.message && (
-                            <p className="text-sm text-slate-600 mb-4 border-l-2 border-[#10b981]/40 pl-3">{item.message}</p>
+                            <p className="text-sm text-slate-600 mb-4 border-l-2 border-[#106B49]/40 pl-3">{item.message}</p>
                           )}
-                          <div className="font-semibold text-[#1a2234] mb-1">{item.property?.property_address}</div>
+                          <div className="font-semibold text-[#14192E] mb-1">{item.property?.property_address}</div>
                           {item.property?.personal_score != null && (
                             <p className="text-sm text-slate-600 mb-3">
-                              Visit score: <span className="font-bold text-[#10b981]">{item.property.personal_score}/10</span>
+                              Visit score: <span className="font-bold text-[#106B49]">{item.property.personal_score}/10</span>
                             </p>
                           )}
                           {item.property?.visit_notes && (
@@ -679,15 +679,15 @@ function RealtorPortalInner() {
 function UpgradeGate({ plan }) {
   return (
     <div className="text-center py-20">
-      <div className="w-16 h-16 bg-[#c9a84c]/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <Lock size={28} className="text-[#c9a84c]" />
+      <div className="w-16 h-16 bg-[#E8A33D]/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <Lock size={28} className="text-[#E8A33D]" />
       </div>
-      <h2 className="text-xl font-bold text-[#1a2234] mb-2">Realtor Feature</h2>
+      <h2 className="text-xl font-bold text-[#14192E] mb-2">Realtor Feature</h2>
       <p className="text-slate-400 text-sm max-w-sm mx-auto mb-6">
         This feature requires a Realtor account. Upgrade to access client management, private listings, and comparison sharing tools.
       </p>
       <Link to={createPageUrl("Pricing")}
-        className="inline-flex items-center gap-2 px-6 py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">
+        className="inline-flex items-center gap-2 px-6 py-3 bg-[#0C4F37] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">
         View Realtor Plans <ChevronRight size={15} />
       </Link>
     </div>
@@ -715,18 +715,18 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
     );
   }, [client.email, contacts]);
 
-  const statusColors = { active: "bg-[#10b981]/10 text-[#10b981]", under_contract: "bg-blue-50 text-blue-600", closed: "bg-slate-100 text-slate-500", inactive: "bg-red-50 text-red-400" };
+  const statusColors = { active: "bg-[#106B49]/10 text-[#106B49]", under_contract: "bg-blue-50 text-blue-600", closed: "bg-slate-100 text-slate-500", inactive: "bg-red-50 text-red-400" };
   const recentShares = shares.slice(0, 3);
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
       <div className="flex gap-4">
-        <div className="w-10 h-10 bg-[#10b981]/10 rounded-xl flex items-center justify-center shrink-0">
-          <Users size={18} className="text-[#10b981]" />
+        <div className="w-10 h-10 bg-[#106B49]/10 rounded-xl flex items-center justify-center shrink-0">
+          <Users size={18} className="text-[#106B49]" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="font-bold text-[#1a2234] text-sm">{client.name}</div>
+              <div className="font-bold text-[#14192E] text-sm">{client.name}</div>
               {client.status && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusColors[client.status] || "bg-slate-100 text-slate-500"}`}>{client.status?.replace("_", " ")}</span>}
             </div>
             <button onClick={() => onDelete(client.id)} className="text-slate-200 hover:text-red-400 transition"><Trash2 size={15} /></button>
@@ -772,7 +772,7 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
             <button
               type="button"
               onClick={() => onOpenReport(matchedContact.contact_user_id || matchedContact.contact?.id)}
-              className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#10b981] hover:underline"
+              className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#106B49] hover:underline"
             >
               <BarChart3 size={12} /> Comparison report
             </button>
@@ -780,7 +780,7 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
 
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#10b981] hover:underline"
+            className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#106B49] hover:underline"
           >
             <Bookmark size={12} />
             {expanded ? "Hide" : "Show"} client presets{expanded ? ` (${presets.length})` : ""}
@@ -794,7 +794,7 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
             <span className="text-xs font-semibold text-slate-500">Client presets</span>
             <button
               onClick={() => setShowPresetForm(true)}
-              className="text-xs font-semibold text-[#10b981] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-[#106B49] hover:underline flex items-center gap-1"
             >
               <Plus size={12} /> Add preset
             </button>
@@ -805,10 +805,10 @@ function ClientCard({ client, shares = [], contacts = [], onOpenReport, onDelete
             <div className="space-y-2">
               {presets.map(p => (
                 <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-xl">
-                  <span className="text-sm font-medium text-[#1a2234]">{p.name}</span>
+                  <span className="text-sm font-medium text-[#14192E]">{p.name}</span>
                   <Link
                     to={createPageUrl("SearchByPreset") + `?client_id=${client.id}&preset_id=${p.id}&source=private`}
-                    className="flex items-center gap-1 text-xs font-semibold text-[#10b981] hover:underline"
+                    className="flex items-center gap-1 text-xs font-semibold text-[#106B49] hover:underline"
                   >
                     <Search size={11} /> Search private listings
                   </Link>
@@ -849,7 +849,7 @@ function ClientPresetForm({ client, onSave, onClose }) {
   });
   return (
     <div className="mt-4 p-4 bg-slate-50 rounded-xl">
-      <h4 className="text-sm font-bold text-[#1a2234] mb-3">Add preset for {client.name}</h4>
+      <h4 className="text-sm font-bold text-[#14192E] mb-3">Add preset for {client.name}</h4>
       <div className="space-y-3">
         <input
           type="text"
@@ -862,7 +862,7 @@ function ClientPresetForm({ client, onSave, onClose }) {
         <div className="flex gap-2">
           <button
             onClick={() => onSave({ name, weights, filters })}
-            className="px-4 py-2 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm"
+            className="px-4 py-2 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl text-sm"
           >
             Save preset
           </button>
@@ -908,7 +908,7 @@ function SendToClientButton({ listing, client }) {
         type="button"
         onClick={send}
         disabled={loading}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1a2234] hover:bg-[#243050] px-3 py-2 rounded-lg disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#14192E] hover:bg-[#2A3150] px-3 py-2 rounded-lg disabled:opacity-60"
       >
         <Share2 size={12} />
         {loading ? "Sending…" : "Send to client for walk-through"}
@@ -920,36 +920,36 @@ function SendToClientButton({ listing, client }) {
 
 function ListingCard({ listing, clients, onDelete }) {
   const client = clients.find(c => c.id === listing.client_id);
-  const statusColors = { off_market: "bg-purple-50 text-purple-600", coming_soon: "bg-yellow-50 text-yellow-600", active: "bg-[#10b981]/10 text-[#10b981]", pending: "bg-blue-50 text-blue-600", sold: "bg-slate-100 text-slate-500" };
+  const statusColors = { off_market: "bg-purple-50 text-purple-600", coming_soon: "bg-yellow-50 text-yellow-600", active: "bg-[#106B49]/10 text-[#106B49]", pending: "bg-blue-50 text-blue-600", sold: "bg-slate-100 text-slate-500" };
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
-          <div className="font-bold text-[#1a2234] text-sm">{listing.address}</div>
+          <div className="font-bold text-[#14192E] text-sm">{listing.address}</div>
           <div className="text-xs text-slate-400">{listing.city}, {listing.state} {listing.zip}</div>
         </div>
         <button onClick={() => onDelete(listing.id)} className="text-slate-200 hover:text-red-400 transition shrink-0"><Trash2 size={15} /></button>
       </div>
       <div className="flex items-center gap-3 mb-3 flex-wrap">
         {listing.status && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusColors[listing.status] || "bg-slate-100"}`}>{listing.status?.replace("_", " ")}</span>}
-        {listing.price && <span className="text-sm font-bold text-[#10b981]">${Number(listing.price).toLocaleString()}</span>}
+        {listing.price && <span className="text-sm font-bold text-[#106B49]">${Number(listing.price).toLocaleString()}</span>}
       </div>
       <div className="grid grid-cols-3 gap-2 mb-3">
         {[["Beds", listing.bedrooms], ["Baths", listing.bathrooms], ["Sq Ft", listing.sqft?.toLocaleString()]].map(([l, v]) => v ? (
           <div key={l} className="bg-slate-50 rounded-lg p-2 text-center">
-            <div className="text-sm font-bold text-[#1a2234]">{v}</div>
+            <div className="text-sm font-bold text-[#14192E]">{v}</div>
             <div className="text-[10px] text-slate-400">{l}</div>
           </div>
         ) : null)}
       </div>
-      {client && <div className="text-xs text-slate-400 flex items-center gap-1 mb-1"><Users size={11} /> For: <span className="font-semibold text-[#1a2234]">{client.name}</span></div>}
+      {client && <div className="text-xs text-slate-400 flex items-center gap-1 mb-1"><Users size={11} /> For: <span className="font-semibold text-[#14192E]">{client.name}</span></div>}
       {client && (
         <SendToClientButton listing={listing} client={client} />
       )}
       <AIListingDescription listing={listing} />
       <AIPropertyInsights property={listing} />
       <Link to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(listing.address)}&city=${encodeURIComponent(listing.city || "")}&state=${encodeURIComponent(listing.state || "")}&price=${listing.price || ""}`}
-        className="mt-3 flex items-center gap-1 text-xs text-[#10b981] font-semibold hover:underline">
+        className="mt-3 flex items-center gap-1 text-xs text-[#106B49] font-semibold hover:underline">
         Score this property <ChevronRight size={12} />
       </Link>
     </div>
@@ -966,7 +966,7 @@ function ClientForm({ onSave, onClose }) {
           <div key={name}>
             <label className="text-xs font-semibold text-slate-500 block mb-1.5">{label}</label>
             <input name={name} value={form[name]} onChange={set} placeholder={placeholder}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20" />
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20" />
           </div>
         ))}
         <div className="grid grid-cols-2 gap-3">
@@ -974,23 +974,23 @@ function ClientForm({ onSave, onClose }) {
             <div key={name}>
               <label className="text-xs font-semibold text-slate-500 block mb-1.5">{label}</label>
               <input name={name} type="number" value={form[name]} onChange={set}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20" />
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20" />
             </div>
           ))}
         </div>
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1.5">Status</label>
           <select name="status" value={form.status} onChange={set}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]">
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]">
             {["active", "under_contract", "closed", "inactive"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
           </select>
         </div>
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1.5">Notes</label>
           <textarea name="notes" value={form.notes} onChange={set} rows={3} placeholder="Preferences, requirements, notes..."
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 resize-none" />
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20 resize-none" />
         </div>
-        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">Add Client</button>
+        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#0C4F37] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">Add Client</button>
       </div>
     </Modal>
   );
@@ -1005,14 +1005,14 @@ function ListingForm({ clients, onSave, onClose }) {
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1.5">Street Address</label>
           <input name="address" value={form.address} onChange={set} placeholder="123 Main St"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20" />
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20" />
         </div>
         <div className="grid grid-cols-3 gap-3">
           {[["city", "City"], ["state", "State"], ["zip", "ZIP"]].map(([name, label]) => (
             <div key={name}>
               <label className="text-xs font-semibold text-slate-500 block mb-1.5">{label}</label>
               <input name={name} value={form[name]} onChange={set}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20" />
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20" />
             </div>
           ))}
         </div>
@@ -1021,7 +1021,7 @@ function ListingForm({ clients, onSave, onClose }) {
             <div key={name}>
               <label className="text-xs font-semibold text-slate-500 block mb-1.5">{label}</label>
               <input name={name} type="number" value={form[name]} onChange={set}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20" />
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20" />
             </div>
           ))}
         </div>
@@ -1029,14 +1029,14 @@ function ListingForm({ clients, onSave, onClose }) {
           <div>
             <label className="text-xs font-semibold text-slate-500 block mb-1.5">Status</label>
             <select name="status" value={form.status} onChange={set}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]">
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]">
               {["off_market", "coming_soon", "active", "pending", "sold"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-500 block mb-1.5">Assign to Client</label>
             <select name="client_id" value={form.client_id} onChange={set}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981]">
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49]">
               <option value="">— No client —</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -1045,9 +1045,9 @@ function ListingForm({ clients, onSave, onClose }) {
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1.5">Notes</label>
           <textarea name="notes" value={form.notes} onChange={set} rows={2}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 resize-none" />
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#106B49] focus:ring-2 focus:ring-[#106B49]/20 resize-none" />
         </div>
-        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">Add Listing</button>
+        <button onClick={() => onSave(form)} className="w-full py-3 bg-[#0C4F37] hover:bg-[#065f46] text-white font-bold rounded-xl text-sm transition">Add Listing</button>
       </div>
     </Modal>
   );
@@ -1058,7 +1058,7 @@ function Modal({ title, children, onClose }) {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
-          <h2 className="font-bold text-[#1a2234] text-base">{title}</h2>
+          <h2 className="font-bold text-[#14192E] text-base">{title}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition">
             <X size={15} />
           </button>

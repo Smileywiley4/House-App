@@ -216,7 +216,7 @@ async def _send_match_email(to_email: str, title: str, body: str) -> bool:
     api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
     if not api_key or not to_email:
         return False
-    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Property Pocket <onboarding@resend.dev>"
+    from_addr = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "Propurty <onboarding@resend.dev>"
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.post(
@@ -356,7 +356,7 @@ async def process_listing_alerts() -> dict[str, Any]:
                         email = prof.data[0].get("email")
                 except Exception:
                     pass
-                if email and await _send_match_email(email, title, body + "\n\nOpen Property Pocket → Search Properties to review."):
+                if email and await _send_match_email(email, title, body + "\n\nOpen Propurty → Search Properties to review."):
                     summary["emails_sent"] += 1
         except Exception:
             summary["errors"] += 1

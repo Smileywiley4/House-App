@@ -1028,7 +1028,7 @@ export default function BrowseProperties() {
             <button
               type="submit"
               disabled={loading || locating}
-              className="px-4 py-2.5 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white text-sm font-bold shrink-0 disabled:opacity-60"
+              className="px-4 py-2.5 rounded-xl bg-[#0C4F37] hover:bg-[#065f46] text-white text-sm font-bold shrink-0 disabled:opacity-60"
             >
               Search
             </button>
@@ -1387,7 +1387,7 @@ export default function BrowseProperties() {
                     <li
                       key={key}
                       id={`browse-card-${p.id}`}
-                      className={`p-4 hover:bg-slate-50 transition relative ${selected ? "bg-emerald-50/60" : ""}`}
+                      className={`p-4 hover:bg-slate-50 transition relative ${selected ? "bg-propurty-green-tint/60" : ""}`}
                       onMouseEnter={() => setSelectedId(p.id)}
                     >
                       <label
@@ -1469,7 +1469,7 @@ export default function BrowseProperties() {
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Link
                               to={evaluateHref(p)}
-                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg bg-[#047857] hover:bg-[#065f46] text-white text-caption font-bold"
+                              className="inline-flex items-center px-3 py-1.5 min-h-9 rounded-lg bg-[#0C4F37] hover:bg-[#065f46] text-white text-caption font-bold"
                             >
                               Score this home
                             </Link>

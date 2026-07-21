@@ -106,7 +106,7 @@ export default function PropertyOverview({ property }) {
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-4">
               {facts.map(({ label, value, icon: Icon }) => (
                 <div key={label} className="rounded-xl bg-slate-50 p-3">
-                  <Icon size={16} className="mb-2 text-emerald-600" aria-hidden />
+                  <Icon size={16} className="mb-2 text-brand" aria-hidden />
                   <div className="text-xs text-slate-500">{label}</div>
                   <div className="mt-0.5 text-sm font-semibold text-slate-900">{value}</div>
                 </div>
@@ -160,7 +160,7 @@ export default function PropertyOverview({ property }) {
               to={`${createPageUrl("PropertyVisits")}?address=${encodeURIComponent(
                 property.formatted_address || [property.address, property.city, property.state].filter(Boolean).join(", "),
               )}`}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-hover px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover"
             >
               <Camera size={16} /> Manage visit photos
             </Link>

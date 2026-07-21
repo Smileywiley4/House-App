@@ -42,7 +42,7 @@ function formatStats(item) {
 }
 
 function scoreColorRgb(pct) {
-  if (pct >= 70) return [16, 185, 129];
+  if (pct >= 70) return [16, 107, 73];
   if (pct >= 40) return [245, 158, 11];
   return [239, 68, 68];
 }
@@ -233,7 +233,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
     // Header
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(26, 34, 52);
+    doc.setTextColor(20, 25, 46);
     doc.text(APP_NAME, MARGIN, y);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -248,7 +248,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
     // Address
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.setTextColor(26, 34, 52);
+    doc.setTextColor(20, 25, 46);
     const addrLines = wrapText(doc, item.address, contentW);
     doc.text(addrLines, MARGIN, y);
     y += addrLines.length * 7 + 2;
@@ -258,7 +258,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
     const stats = formatStats(item);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
-    doc.setTextColor(26, 34, 52);
+    doc.setTextColor(20, 25, 46);
     if (price) {
       doc.text(price, MARGIN, y);
       y += 6;
@@ -294,7 +294,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
     // Category breakdown
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(26, 34, 52);
+    doc.setTextColor(20, 25, 46);
     doc.text("Category breakdown", MARGIN, y);
     y += 6;
 
@@ -316,7 +316,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
         doc.setTextColor(51, 65, 85);
         doc.text(label, MARGIN, y);
         const scoreText = Number.isFinite(score) ? `${score}/${max}` : "—";
-        doc.setTextColor(26, 34, 52);
+        doc.setTextColor(20, 25, 46);
         doc.setFont("helvetica", "bold");
         doc.text(scoreText, pageW - MARGIN, y, { align: "right" });
         doc.setFont("helvetica", "normal");
@@ -344,7 +344,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
       }
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.setTextColor(26, 34, 52);
+      doc.setTextColor(20, 25, 46);
       doc.text("Notes", MARGIN, y);
       y += 5;
       doc.setFont("helvetica", "normal");
@@ -368,7 +368,7 @@ export async function downloadTourPacketPdf(items, opts = {}) {
       y = Math.max(y + 2, pageH - 42);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      doc.setTextColor(26, 34, 52);
+      doc.setTextColor(20, 25, 46);
       doc.text("Photos", MARGIN, y);
       y += 3;
       const thumbW = 42;

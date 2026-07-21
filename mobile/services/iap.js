@@ -5,7 +5,7 @@ const IOS_API_KEY = process.env.EXPO_PUBLIC_RC_APPLE_API_KEY || '';
 const ANDROID_API_KEY = process.env.EXPO_PUBLIC_RC_GOOGLE_API_KEY || '';
 /** RevenueCat Test Store key (test_...) — dev/debug only; never ship to App Store. */
 const TEST_API_KEY = process.env.EXPO_PUBLIC_RC_TEST_API_KEY || '';
-const ENTITLEMENT_ID = process.env.EXPO_PUBLIC_IAP_ENTITLEMENT_ID || 'Property Pocket Pro';
+const ENTITLEMENT_ID = process.env.EXPO_PUBLIC_IAP_ENTITLEMENT_ID || 'Propurty Pro';
 let configured = false;
 
 function currentApiKey() {

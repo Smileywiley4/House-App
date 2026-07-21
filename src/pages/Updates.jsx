@@ -88,14 +88,14 @@ function UpdatesInner() {
           <p className="text-sm text-slate-500 mt-1">Shared project activity, completed scores, and listing alerts.</p>
         </div>
         {unread > 0 && (
-          <button type="button" onClick={markAll} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#059669] hover:underline shrink-0">
+          <button type="button" onClick={markAll} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0C4F37] hover:underline shrink-0">
             <CheckCheck size={14} /> Mark all read
           </button>
         )}
       </div>
 
       {sharePending > 0 && (
-        <Link to={createPageUrl("SharedHomes")} className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#10b981]/25 bg-[#10b981]/8 px-4 py-3 text-sm font-semibold text-[#047857] hover:bg-[#10b981]/12 transition-colors">
+        <Link to={createPageUrl("SharedHomes")} className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#106B49]/25 bg-[#106B49]/8 px-4 py-3 text-sm font-semibold text-[#0C4F37] hover:bg-[#106B49]/12 transition-colors">
           <span>{sharePending} shared home{sharePending === 1 ? "" : "s"} awaiting score</span>
           <span aria-hidden>→</span>
         </Link>
@@ -113,7 +113,7 @@ function UpdatesInner() {
         <ul className="space-y-2">
           {items.map((n) => (
             <li key={n.id}>
-              <Link to={hrefForNotification(n)} onClick={() => markOne(n.id)} className={`block rounded-xl border px-4 py-3 transition-colors hover:border-[#10b981]/40 ${!n.read_at ? "border-[#10b981]/30 bg-[#10b981]/5" : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40"}`}>
+              <Link to={hrefForNotification(n)} onClick={() => markOne(n.id)} className={`block rounded-xl border px-4 py-3 transition-colors hover:border-[#106B49]/40 ${!n.read_at ? "border-[#106B49]/30 bg-[#106B49]/5" : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/40"}`}>
                 <span className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 block">{n.title}</span>
                 {n.body && <span className="text-xs text-slate-500 mt-0.5 line-clamp-2 whitespace-pre-wrap block">{n.body}</span>}
                 <span className="text-[10px] text-slate-400 mt-1.5 block">{n.created_at ? new Date(n.created_at).toLocaleString() : ""}</span>

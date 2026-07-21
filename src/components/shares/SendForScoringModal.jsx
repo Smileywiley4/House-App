@@ -80,7 +80,7 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
           </DialogHeader>
           <Link
             to="/login"
-            className="inline-flex justify-center rounded-xl bg-[#10b981] py-2.5 text-sm font-bold text-white"
+            className="inline-flex justify-center rounded-xl bg-[#106B49] py-2.5 text-sm font-bold text-white"
           >
             Sign in
           </Link>
@@ -101,7 +101,7 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
           </DialogHeader>
           <Link
             to={createPageUrl("Pricing")}
-            className="inline-flex justify-center rounded-xl bg-[#1a2234] py-2.5 text-sm font-bold text-white"
+            className="inline-flex justify-center rounded-xl bg-[#14192E] py-2.5 text-sm font-bold text-white"
           >
             View pricing
           </Link>
@@ -115,7 +115,7 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Send size={18} className="text-[#10b981]" /> Send to client for scoring
+            <Send size={18} className="text-[#106B49]" /> Send to client for scoring
           </DialogTitle>
           <DialogDescription>
             Creates a private inbox item for your contact. Optional off-market listing link stays
@@ -133,7 +133,7 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
             <p className="text-sm text-slate-500">Add a contact first, then send homes here.</p>
             <Link
               to={createPageUrl("Contacts")}
-              className="inline-flex text-sm font-semibold text-[#10b981] hover:underline"
+              className="inline-flex text-sm font-semibold text-[#106B49] hover:underline"
             >
               Open contacts →
             </Link>
@@ -152,10 +152,10 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
                         type="checkbox"
                         checked={selected.includes(id)}
                         onChange={() => toggle(id)}
-                        className="rounded border-slate-300 text-[#10b981] focus:ring-[#10b981]"
+                        className="rounded border-slate-300 text-[#106B49] focus:ring-[#106B49]"
                       />
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-[#1a2234] truncate">
+                        <span className="block text-sm font-semibold text-[#14192E] truncate">
                           {label}
                         </span>
                         <span className="block text-[11px] text-slate-500 truncate">
@@ -173,14 +173,14 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
               rows={2}
               maxLength={2000}
               placeholder="Note for your client (optional)"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#10b981]/30"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#106B49]/30"
             />
             <input
               value={privateUrl}
               onChange={(e) => setPrivateUrl(e.target.value)}
               type="url"
               placeholder="Private listing / channel URL (optional)"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#10b981]/30"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#106B49]/30"
             />
             <p className="text-[11px] text-slate-400">
               We only store and show this link to you and the recipient — never public browse or SEO.
@@ -190,7 +190,7 @@ export default function SendForScoringModal({ open, onClose, property, onSent })
               type="button"
               disabled={sending || !selected.length}
               onClick={send}
-              className="w-full rounded-xl bg-[#10b981] py-2.5 text-sm font-bold text-white hover:bg-[#059669] disabled:opacity-40"
+              className="w-full rounded-xl bg-[#106B49] py-2.5 text-sm font-bold text-white hover:bg-[#0C4F37] disabled:opacity-40"
             >
               {sending ? "Sending…" : `Send to ${selected.length || ""} contact${selected.length === 1 ? "" : "s"}`}
             </button>

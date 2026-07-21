@@ -143,8 +143,8 @@ function ContactsInner() {
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a2234] flex items-center gap-2">
-            <Users size={22} className="text-[#10b981]" /> Contacts
+          <h1 className="text-2xl font-bold text-[#14192E] flex items-center gap-2">
+            <Users size={22} className="text-[#106B49]" /> Contacts
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Add clients and colleagues to send homes for scoring.
@@ -152,7 +152,7 @@ function ContactsInner() {
         </div>
         <Link
           to={createPageUrl("SharedHomes")}
-          className="text-sm font-semibold text-[#10b981] hover:underline shrink-0"
+          className="text-sm font-semibold text-[#106B49] hover:underline shrink-0"
         >
           Shared homes →
         </Link>
@@ -172,7 +172,7 @@ function ContactsInner() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search…"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#10b981]/30"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#106B49]/30"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -183,7 +183,7 @@ function ContactsInner() {
               onClick={() => setRole(r.id)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
                 role === r.id
-                  ? "bg-[#10b981]/10 border-[#10b981]/40 text-[#059669]"
+                  ? "bg-[#106B49]/10 border-[#106B49]/40 text-[#0C4F37]"
                   : "border-slate-200 text-slate-500 hover:bg-slate-50"
               }`}
             >
@@ -201,7 +201,7 @@ function ContactsInner() {
             {results.map((u) => (
               <li key={u.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#1a2234] truncate">
+                  <p className="text-sm font-semibold text-[#14192E] truncate">
                     {u.full_name || u.username || u.email || "User"}
                   </p>
                   <p className="text-xs text-slate-500 truncate">
@@ -212,7 +212,7 @@ function ContactsInner() {
                   type="button"
                   disabled={busyId === u.id}
                   onClick={() => addUser(u)}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#1a2234] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#243050] disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#14192E] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2A3150] disabled:opacity-50"
                 >
                   <UserPlus size={12} /> Add
                 </button>
@@ -228,7 +228,7 @@ function ContactsInner() {
         <>
           {data.pending_incoming?.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-sm font-bold text-[#1a2234]">Incoming requests</h2>
+              <h2 className="text-sm font-bold text-[#14192E]">Incoming requests</h2>
               {data.pending_incoming.map((c) => (
                 <div
                   key={c.id}
@@ -245,7 +245,7 @@ function ContactsInner() {
                       type="button"
                       disabled={busyId === c.id}
                       onClick={() => accept(c.id)}
-                      className="rounded-lg bg-[#10b981] p-2 text-white"
+                      className="rounded-lg bg-[#106B49] p-2 text-white"
                       aria-label="Accept"
                     >
                       <Check size={14} />
@@ -266,7 +266,7 @@ function ContactsInner() {
           )}
 
           <section className="space-y-2">
-            <h2 className="text-sm font-bold text-[#1a2234]">Your contacts</h2>
+            <h2 className="text-sm font-bold text-[#14192E]">Your contacts</h2>
             {data.accepted?.length === 0 ? (
               <EmptyState
                 compact

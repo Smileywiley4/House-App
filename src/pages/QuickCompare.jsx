@@ -55,8 +55,8 @@ export default function QuickCompare() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#106B49] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }

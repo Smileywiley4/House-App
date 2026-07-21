@@ -87,7 +87,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h2 className="font-bold text-[#1a2234] text-lg">Save to project</h2>
+            <h2 className="font-bold text-[#14192E] text-lg">Save to project</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {properties.length} propert{properties.length === 1 ? "y" : "ies"} selected
             </p>
@@ -113,7 +113,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                   type="button"
                   onClick={() => setMode("pick")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    mode === "pick" ? "bg-white shadow text-[#1a2234]" : "text-slate-500"
+                    mode === "pick" ? "bg-white shadow text-[#14192E]" : "text-slate-500"
                   }`}
                 >
                   Existing
@@ -122,7 +122,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                   type="button"
                   onClick={() => setMode("create")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    mode === "create" ? "bg-white shadow text-[#1a2234]" : "text-slate-500"
+                    mode === "create" ? "bg-white shadow text-[#14192E]" : "text-slate-500"
                   }`}
                 >
                   New project
@@ -141,7 +141,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                         <label
                           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer ${
                             selectedId === p.id
-                              ? "border-[#10b981] bg-emerald-50/50"
+                              ? "border-[#106B49] bg-propurty-green-tint/50"
                               : "border-slate-200 hover:bg-slate-50"
                           }`}
                         >
@@ -150,10 +150,10 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                             name="project"
                             checked={selectedId === p.id}
                             onChange={() => setSelectedId(p.id)}
-                            className="accent-[#10b981]"
+                            className="accent-[#106B49]"
                           />
                           <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-bold text-[#1a2234] truncate">{p.title}</span>
+                            <span className="block text-sm font-bold text-[#14192E] truncate">{p.title}</span>
                             <span className="text-[11px] text-slate-500">
                               {p.property_count ?? 0} saved
                             </span>
@@ -170,7 +170,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Downtown condos"
-                    className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#10b981]"
+                    className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-[#106B49]"
                     maxLength={200}
                   />
                   {atLimit && (
@@ -207,7 +207,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
             type="button"
             disabled={saving || loading || (mode === "pick" && !selectedId && projects.length > 0)}
             onClick={save}
-            className="flex-1 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : mode === "create" ? <Plus size={16} /> : <FolderPlus size={16} />}
             Save

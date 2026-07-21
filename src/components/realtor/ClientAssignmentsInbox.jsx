@@ -42,7 +42,7 @@ export default function ClientAssignmentsInbox() {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-[#1a2234]">From your realtor</h3>
+      <h3 className="font-bold text-[#14192E]">From your realtor</h3>
       {!active && (
         <div className="grid gap-3">
           {items.map((item) => (
@@ -53,15 +53,15 @@ export default function ClientAssignmentsInbox() {
                 setActiveId(item.id);
                 api.realtor.markAssignmentRead(item.id).catch(() => {});
               }}
-              className="text-left rounded-2xl border border-slate-100 bg-white p-4 hover:border-[#10b981]/30 transition flex items-start gap-3 w-full"
+              className="text-left rounded-2xl border border-slate-100 bg-white p-4 hover:border-[#106B49]/30 transition flex items-start gap-3 w-full"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#10b981]/10 flex items-center justify-center shrink-0">
-                <Home size={18} className="text-[#10b981]" />
+              <div className="w-10 h-10 rounded-xl bg-[#106B49]/10 flex items-center justify-center shrink-0">
+                <Home size={18} className="text-[#106B49]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[#1a2234] text-sm truncate">{item.property_address}</p>
+                <p className="font-semibold text-[#14192E] text-sm truncate">{item.property_address}</p>
                 {item.message && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.message}</p>}
-                <span className="inline-flex items-center gap-1 text-xs text-[#10b981] font-semibold mt-2">
+                <span className="inline-flex items-center gap-1 text-xs text-[#106B49] font-semibold mt-2">
                   Start walk-through <ChevronRight size={12} />
                 </span>
               </div>
@@ -71,7 +71,7 @@ export default function ClientAssignmentsInbox() {
       )}
       {active && (
         <div className="space-y-3">
-          <button type="button" onClick={() => setActiveId(null)} className="text-xs text-slate-500 hover:text-[#1a2234]">
+          <button type="button" onClick={() => setActiveId(null)} className="text-xs text-slate-500 hover:text-[#14192E]">
             ← Back to list
           </button>
           <GamifiedWalkthrough
@@ -81,7 +81,7 @@ export default function ClientAssignmentsInbox() {
           />
           <Link
             to={createPageUrl("Evaluate") + `?address=${encodeURIComponent(active.property_address)}`}
-            className="inline-flex text-sm text-[#10b981] font-semibold"
+            className="inline-flex text-sm text-[#106B49] font-semibold"
           >
             Full score sheet for this home →
           </Link>

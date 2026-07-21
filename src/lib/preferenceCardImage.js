@@ -33,10 +33,10 @@ export function downloadPreferenceCardPng(card) {
   // Subtle arc accent
   ctx.beginPath();
   ctx.arc(width - 80, 80, 220, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(16, 185, 129, 0.08)";
+  ctx.fillStyle = "rgba(16, 107, 73, 0.08)";
   ctx.fill();
 
-  ctx.fillStyle = "#10b981";
+  ctx.fillStyle = "#106B49";
   ctx.font = "700 28px system-ui, -apple-system, sans-serif";
   ctx.fillText(APP_NAME, 64, 72);
 
@@ -59,7 +59,7 @@ export function downloadPreferenceCardPng(card) {
   priorities.forEach((p, i) => {
     const label = p?.label || `Priority ${i + 1}`;
     const avg = p?.avg_importance != null ? Number(p.avg_importance).toFixed(1) : "—";
-    ctx.fillStyle = "#10b981";
+    ctx.fillStyle = "#106B49";
     ctx.font = "700 22px system-ui, -apple-system, sans-serif";
     ctx.fillText(`${i + 1}.`, 64, y);
     ctx.fillStyle = "#f1f5f9";

@@ -41,7 +41,7 @@ export default function PresetPicker({ activeCategories, onLoadPreset, clientId,
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-xl text-sm font-medium text-[#1a2234] hover:bg-slate-50 transition"
+        className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-xl text-sm font-medium text-[#14192E] hover:bg-slate-50 transition"
       >
         <Bookmark size={14} />
         Load preset

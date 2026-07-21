@@ -1,0 +1,7 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Propurty icon, full bleed</title>
+<desc>Full-bleed square version of the icon mark with no pre-applied corner rounding or transparency, for App Store and Play Store icon uploads where the platform applies its own mask.</desc>
+<rect x="0" y="0" width="512" height="512" fill="#106B49"/>
+<path d="M208,190 L256,140 L304,190" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M170,290 L230,350 L370,210" fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -29,7 +29,7 @@ export default function LoadingWithTimeout({
 
   const shell = cn(
     "flex flex-col items-center justify-center text-center",
-    fullPage ? "min-h-screen bg-[#fafaf8] px-4" : "py-12 px-4",
+    fullPage ? "min-h-screen bg-[#F8F7F4] px-4" : "py-12 px-4",
     className,
   );
 
@@ -44,7 +44,7 @@ export default function LoadingWithTimeout({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-semibold hover:bg-[#059669] transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-semibold hover:bg-[#0C4F37] transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)]"
           >
             <RefreshCw size={16} aria-hidden />
             Retry
@@ -56,7 +56,7 @@ export default function LoadingWithTimeout({
 
   if (skeleton === "browse") {
     return (
-      <div className={cn(fullPage && "min-h-screen bg-[#fafaf8] px-4 py-8", className)} role="status" aria-busy="true" aria-label={label}>
+      <div className={cn(fullPage && "min-h-screen bg-[#F8F7F4] px-4 py-8", className)} role="status" aria-busy="true" aria-label={label}>
         <BrowseListSkeleton rows={skeletonRows} />
       </div>
     );
@@ -67,7 +67,7 @@ export default function LoadingWithTimeout({
       <div
         className={cn(
           "space-y-4",
-          fullPage && "min-h-screen bg-[#fafaf8] px-6 py-8 max-w-5xl mx-auto",
+          fullPage && "min-h-screen bg-[#F8F7F4] px-6 py-8 max-w-5xl mx-auto",
           className,
         )}
         role="status"
@@ -84,7 +84,7 @@ export default function LoadingWithTimeout({
   if (skeleton === "list") {
     return (
       <div
-        className={cn(fullPage && "min-h-screen bg-[#fafaf8] px-6 py-8 max-w-5xl mx-auto", className)}
+        className={cn(fullPage && "min-h-screen bg-[#F8F7F4] px-6 py-8 max-w-5xl mx-auto", className)}
         role="status"
         aria-busy="true"
         aria-label={label}
@@ -97,7 +97,7 @@ export default function LoadingWithTimeout({
   return (
     <div className={shell} role="status" aria-live="polite" aria-busy="true">
       <Loader2
-        className="animate-spin text-[#10b981]"
+        className="animate-spin text-[#106B49]"
         size={size}
         aria-hidden
       />

@@ -168,7 +168,7 @@ export default function BrowsePresetsBar({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {message && <span className="text-[11px] text-[#059669] font-medium">{message}</span>}
+          {message && <span className="text-[11px] text-[#0C4F37] font-medium">{message}</span>}
           {showSave ? (
             <div className="flex items-center gap-1">
               <input
@@ -181,7 +181,7 @@ export default function BrowsePresetsBar({
                 type="button"
                 disabled={saving}
                 onClick={savePreset}
-                className="px-2.5 py-1 rounded-lg bg-[#1a2234] text-white text-[11px] font-bold disabled:opacity-50"
+                className="px-2.5 py-1 rounded-lg bg-[#14192E] text-white text-[11px] font-bold disabled:opacity-50"
               >
                 {saving ? "…" : "Save"}
               </button>
@@ -202,7 +202,7 @@ export default function BrowsePresetsBar({
             type="button"
             disabled={alerting}
             onClick={createAlert}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#10b981]/40 bg-[#10b981]/10 text-[11px] font-bold text-[#059669] hover:bg-[#10b981]/15 disabled:opacity-50"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#106B49]/40 bg-[#106B49]/10 text-[11px] font-bold text-[#0C4F37] hover:bg-[#106B49]/15 disabled:opacity-50"
           >
             <Bell size={12} /> {alerting ? "Saving…" : "Alert me"}
           </button>

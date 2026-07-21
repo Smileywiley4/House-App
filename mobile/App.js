@@ -58,8 +58,8 @@ Notifications.setNotificationHandler({
 const APP_URL = (process.env.EXPO_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
 function getInviteMessage() {
-  if (!APP_URL) return 'Join me on Property Pocket.';
-  return `Join me on Property Pocket: ${APP_URL}/login`;
+  if (!APP_URL) return 'Join me on Propurty.';
+  return `Join me on Propurty: ${APP_URL}/login`;
 }
 
 function openWebPage(path) {
@@ -73,7 +73,7 @@ function openWebPage(path) {
 }
 
 /**
- * Property Pocket mobile shell — camera for in-person visit photos.
+ * Propurty mobile shell — camera for in-person visit photos.
  * Wire EXPO_PUBLIC_API_BASE_URL to your FastAPI backend + Supabase auth to upload
  * to POST /api/library/saved-properties/{id}/photos (same as web).
  */
@@ -220,7 +220,7 @@ export default function App() {
 
   const inviteFromContacts = async () => {
     try {
-      await Share.share({ message: getInviteMessage(), title: 'Property Pocket' });
+      await Share.share({ message: getInviteMessage(), title: 'Propurty' });
     } catch (e) {
       Alert.alert('Invite friends', e?.message || 'Could not open the share sheet.');
     }
@@ -302,7 +302,7 @@ export default function App() {
 
       {!permission ? (
         <View style={styles.permissionCard}>
-          <ActivityIndicator color="#10b981" />
+          <ActivityIndicator color="#106B49" />
           <Text style={styles.hint}>Checking camera availability…</Text>
         </View>
       ) : !permission.granted ? (
@@ -362,7 +362,7 @@ export default function App() {
 
       {Platform.OS !== 'web' && (
         <View style={styles.iapSection}>
-          <Text style={styles.pushTitle}>Property Pocket subscription</Text>
+          <Text style={styles.pushTitle}>Propurty subscription</Text>
           {!isIapAvailableOnThisBuild() ? (
             <Text style={styles.pushHint}>
               Store purchases are not configured in this build.
@@ -475,7 +475,7 @@ export default function App() {
               if (v) await recordLocalSessionIfConsented();
               await refreshLocalStatsPreview();
             }}
-            trackColor={{ false: '#475569', true: '#059669' }}
+            trackColor={{ false: '#475569', true: '#0C4F37' }}
             thumbColor="#f8fafc"
           />
         </View>
@@ -545,7 +545,7 @@ async function schedulePushNotification() {
 async function registerForPushNotificationsAsync() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'Property Pocket',
+      name: 'Propurty',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
@@ -588,11 +588,11 @@ async function registerForPushNotificationsAsync() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: '#1a2234',
+    backgroundColor: '#14192E',
   },
   root: {
     flexGrow: 1,
-    backgroundColor: '#1a2234',
+    backgroundColor: '#14192E',
     paddingTop: Platform.OS === 'ios' ? 56 : 40,
     paddingHorizontal: 16,
     paddingBottom: 32,
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#10b981',
+    borderColor: '#106B49',
     alignItems: 'center',
   },
   inviteSmsBtn: {
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inviteBtnText: {
-    color: '#10b981',
+    color: '#106B49',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#fafaf8',
+    backgroundColor: '#F8F7F4',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     backgroundColor: '#fff',
     borderWidth: 3,
-    borderColor: '#10b981',
+    borderColor: '#106B49',
   },
   preview: {
     flex: 1,
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   btn: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#106B49',
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 12,
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
   },
   iapBuyBtn: {
     marginTop: 10,
-    backgroundColor: '#10b981',
+    backgroundColor: '#106B49',
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 14,

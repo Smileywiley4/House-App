@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     stripe_realtor_annual_price_id: str = ""
     # RevenueCat webhook + entitlement sync (iOS IAP)
     revenuecat_webhook_secret: str = ""
-    revenuecat_premium_entitlement_id: str = "Property Pocket Pro"
+    revenuecat_premium_entitlement_id: str = "Propurty Pro"
     revenuecat_realtor_entitlement_id: str = "realtor"
     openai_api_key: str = ""
     # OpenAI fallback / economy tier — gpt-4o-mini is cost-effective for structured JSON tasks
@@ -114,7 +114,7 @@ class Settings(BaseSettings):
     google_servicenetworking_base_url: str = ""
     cors_origins: str = "http://localhost:5173"
     # Public web app URL for invite links (e.g. https://app.example.com)
-    app_public_url: str = "http://localhost:5173"
+    app_public_url: str = "http://localhost:5173"  # TODO(rebrand): final domain TBD; prod fallback house-app-rho.vercel.app
     # Shared secret for GitHub Actions / cron → POST /api/cron/rentcast-daily-refresh
     cron_secret: str = ""
     # Comma-separated Supabase user UUIDs allowed to run publisher revenue sync etc. (in addition to profiles.plan=admin)

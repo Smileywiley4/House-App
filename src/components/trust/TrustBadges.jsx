@@ -22,13 +22,13 @@ export default function TrustBadges() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {BADGES.map(({ icon: Icon, title, desc, href, linkLabel }) => (
             <div key={title} className="text-center sm:text-left">
-              <div className="inline-flex w-10 h-10 rounded-xl bg-[#10b981]/10 items-center justify-center mb-3">
-                <Icon size={20} className="text-[#10b981]" aria-hidden />
+              <div className="inline-flex w-10 h-10 rounded-xl bg-[#106B49]/10 items-center justify-center mb-3">
+                <Icon size={20} className="text-[#106B49]" aria-hidden />
               </div>
-              <p className="font-semibold text-[#1a2234] text-sm mb-1">{title}</p>
+              <p className="font-semibold text-[#14192E] text-sm mb-1">{title}</p>
               {href ? (
                 <p className="text-slate-600 text-xs leading-relaxed">
-                  <Link to={href} className="text-[#047857] hover:underline font-medium">
+                  <Link to={href} className="text-[#0C4F37] hover:underline font-medium">
                     {linkLabel || desc}
                   </Link>
                   {' — self-serve, no support ticket required.'}

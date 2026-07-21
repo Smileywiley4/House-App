@@ -43,7 +43,7 @@ export default function NotificationSettings({ user, onUpdated }) {
   return (
     <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#10b981]/10 text-[#059669]">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#106B49]/10 text-[#0C4F37]">
           <Bell size={18} />
         </div>
         <div className="min-w-0 flex-1">
@@ -58,7 +58,7 @@ export default function NotificationSettings({ user, onUpdated }) {
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/60 px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Mail size={14} className="text-[#059669] shrink-0" />
+            <Mail size={14} className="text-[#0C4F37] shrink-0" />
             Weekly preset digest
           </div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -71,7 +71,7 @@ export default function NotificationSettings({ user, onUpdated }) {
           disabled={saving || !user?.id}
           onCheckedChange={save}
           aria-label="Weekly preset digest"
-          className="data-[state=checked]:bg-[#10b981]"
+          className="data-[state=checked]:bg-[#106B49]"
         />
       </div>
     </div>

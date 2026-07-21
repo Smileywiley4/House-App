@@ -199,12 +199,12 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
   };
 
   const inputClass = isHero
-    ? "w-full pl-11 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-[#c9a84c] focus:bg-white/15 transition-all text-base"
-    : "w-full pl-11 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:border-[#c9a84c] focus:bg-white/15 transition-all text-sm";
+    ? "w-full pl-11 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-[#E8A33D] focus:bg-white/15 transition-all text-base"
+    : "w-full pl-11 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:border-[#E8A33D] focus:bg-white/15 transition-all text-sm";
 
   const buttonClass = isHero
-    ? "px-6 py-4 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
-    : "px-4 py-2.5 bg-[#047857] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap text-sm";
+    ? "px-6 py-4 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
+    : "px-4 py-2.5 bg-[#0C4F37] hover:bg-[#065f46] text-white font-semibold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap text-sm";
 
   return (
     <div className={className}>
@@ -248,7 +248,7 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
             >
               {suggestionsLoading && suggestions.length === 0 ? (
                 <div className="flex items-center gap-2 px-4 py-3 text-sm text-slate-500">
-                  <Loader2 size={15} className="animate-spin text-[#10b981]" /> Finding matches...
+                  <Loader2 size={15} className="animate-spin text-[#106B49]" /> Finding matches...
                 </div>
               ) : (
                 suggestions.map((suggestion, index) => (
@@ -261,12 +261,12 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => chooseSuggestion(suggestion)}
                     className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 ${
-                      index === activeSuggestion ? "bg-[#10b981]/10" : "hover:bg-slate-50"
+                      index === activeSuggestion ? "bg-[#106B49]/10" : "hover:bg-slate-50"
                     }`}
                   >
-                    <MapPin size={16} className="mt-0.5 shrink-0 text-[#10b981]" />
+                    <MapPin size={16} className="mt-0.5 shrink-0 text-[#106B49]" />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-[#1a2234]">{suggestion.main_text}</span>
+                      <span className="block truncate text-sm font-semibold text-[#14192E]">{suggestion.main_text}</span>
                       <span className="flex items-center gap-2">
                         {suggestion.secondary_text && (
                           <span className="block truncate text-xs text-slate-500">{suggestion.secondary_text}</span>
@@ -300,8 +300,8 @@ export default function PropertyAddressSearchForm({ variant = "header", classNam
         aria-label="Use current location to search nearby homes"
         className={
           isHero
-            ? "mt-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[#10b981] hover:text-[#34d399] disabled:opacity-60 mx-auto sm:mx-0"
-            : "mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-[#10b981] hover:text-[#34d399] disabled:opacity-60"
+            ? "mt-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[#106B49] hover:text-[#34d399] disabled:opacity-60 mx-auto sm:mx-0"
+            : "mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-[#106B49] hover:text-[#34d399] disabled:opacity-60"
         }
       >
         {locating ? (

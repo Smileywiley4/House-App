@@ -10,12 +10,12 @@ export default function LicenseVerifiedEmblem({ profile, status: statusProp, siz
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className={`inline-flex items-center gap-0.5 shrink-0 text-[#10b981] ${className}`} aria-label="License verified">
-              <BadgeCheck size={size} className="text-[#10b981] fill-[#10b981]/15" strokeWidth={2} aria-hidden />
-              {inlineLabel && <span className="text-[10px] font-semibold text-[#059669] uppercase tracking-wide">Verified</span>}
+            <span className={`inline-flex items-center gap-0.5 shrink-0 text-[#106B49] ${className}`} aria-label="License verified">
+              <BadgeCheck size={size} className="text-[#106B49] fill-[#106B49]/15" strokeWidth={2} aria-hidden />
+              {inlineLabel && <span className="text-[10px] font-semibold text-[#0C4F37] uppercase tracking-wide">Verified</span>}
             </span>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-[#1a2234] text-white border-0">{licenseStatusTooltip('verified')}</TooltipContent>
+          <TooltipContent side="top" className="bg-[#14192E] text-white border-0">{licenseStatusTooltip('verified')}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
@@ -29,7 +29,7 @@ export default function LicenseVerifiedEmblem({ profile, status: statusProp, siz
             {status === 'pending' ? 'Pending' : status === 'rejected' ? 'Unverified' : 'Self-reported'}
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="bg-[#1a2234] text-white border-0 max-w-xs">{licenseStatusTooltip(status)}</TooltipContent>
+        <TooltipContent side="top" className="bg-[#14192E] text-white border-0 max-w-xs">{licenseStatusTooltip(status)}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -38,7 +38,7 @@ export default function LicenseVerifiedEmblem({ profile, status: statusProp, siz
 export function LicenseStatusBanner({ profile, className = '' }) {
   const status = licenseVerificationStatus(profile);
   const styles = {
-    verified: 'bg-[#10b981]/10 border-[#10b981]/25 text-[#059669]',
+    verified: 'bg-[#106B49]/10 border-[#106B49]/25 text-[#0C4F37]',
     pending: 'bg-amber-50 border-amber-200 text-amber-800',
     rejected: 'bg-slate-50 border-slate-200 text-slate-600',
     self_reported: 'bg-slate-50 border-slate-200 text-slate-600',
@@ -51,7 +51,7 @@ export function LicenseStatusBanner({ profile, className = '' }) {
       )}
       {status !== 'verified' && (
         <span className="block mt-0.5 opacity-90">
-          A green verified check appears only after Property Pocket confirms your license against the state board
+          A green verified check appears only after Propurty confirms your license against the state board
           (manual review for MVP). Typing a license number alone is never shown as verified.
         </span>
       )}

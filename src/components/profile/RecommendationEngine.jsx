@@ -117,13 +117,13 @@ Include a "What you value most" insight (2-3 sentences).`,
     generateRecs();
   }, []);
 
-  const scoreColor = (pct) => pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
+  const scoreColor = (pct) => pct >= 70 ? "#106B49" : pct >= 40 ? "#f59e0b" : "#ef4444";
 
   if (scores.length < 1 && !api.preferences?.getInsights) {
     return (
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center">
         <Sparkles size={32} className="mx-auto mb-3 text-slate-200" />
-        <p className="font-semibold text-[#1a2234] mb-1">Not enough data yet</p>
+        <p className="font-semibold text-[#14192E] mb-1">Not enough data yet</p>
         <p className="text-sm text-slate-400">Score a property or complete a walk-through from your realtor.</p>
       </div>
     );
@@ -133,7 +133,7 @@ Include a "What you value most" insight (2-3 sentences).`,
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-[#1a2234]">For You</h2>
+          <h2 className="text-lg font-bold text-[#14192E]">For You</h2>
           <p className="text-slate-400 text-sm">Learned preferences + AI picks</p>
         </div>
         <button
@@ -148,7 +148,7 @@ Include a "What you value most" insight (2-3 sentences).`,
 
       {loading && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-          <div className="w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-8 h-8 border-2 border-[#106B49] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-500 text-sm">Analyzing your preferences…</p>
         </div>
       )}
@@ -159,13 +159,13 @@ Include a "What you value most" insight (2-3 sentences).`,
 
       {recs && !loading && (
         <>
-          <div className="bg-gradient-to-br from-[#1a2234] to-[#243050] rounded-2xl p-6">
+          <div className="bg-gradient-to-br from-[#14192E] to-[#2A3150] rounded-2xl p-6">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 flex items-center justify-center shrink-0">
-                <TrendingUp size={16} className="text-[#10b981]" />
+              <div className="w-9 h-9 rounded-xl bg-[#106B49]/20 flex items-center justify-center shrink-0">
+                <TrendingUp size={16} className="text-[#106B49]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-[#10b981] uppercase tracking-widest mb-1">Your Buyer Profile</p>
+                <p className="text-xs font-bold text-[#106B49] uppercase tracking-widest mb-1">Your Buyer Profile</p>
                 <p className="text-slate-300 text-sm leading-relaxed">{recs.insight}</p>
               </div>
             </div>
@@ -178,9 +178,9 @@ Include a "What you value most" insight (2-3 sentences).`,
               </p>
               {recs.hidden_preferences.map((h, i) => (
                 <div key={i} className="text-sm">
-                  <p className="font-semibold text-[#1a2234]">{h.category}</p>
+                  <p className="font-semibold text-[#14192E]">{h.category}</p>
                   <p className="text-slate-500 text-xs mt-0.5">{h.why_surprising}</p>
-                  {h.tip && <p className="text-[#10b981] text-xs mt-1">{h.tip}</p>}
+                  {h.tip && <p className="text-[#106B49] text-xs mt-1">{h.tip}</p>}
                 </div>
               ))}
             </div>
@@ -189,8 +189,8 @@ Include a "What you value most" insight (2-3 sentences).`,
           {recs.suggestions?.length > 0 && (
             <div className="grid gap-2">
               {recs.suggestions.map((s, i) => (
-                <div key={i} className="bg-[#10b981]/5 border border-[#10b981]/15 rounded-xl px-4 py-3 text-sm">
-                  <p className="font-semibold text-[#1a2234]">{s.title}</p>
+                <div key={i} className="bg-[#106B49]/5 border border-[#106B49]/15 rounded-xl px-4 py-3 text-sm">
+                  <p className="font-semibold text-[#14192E]">{s.title}</p>
                   <p className="text-slate-500 text-xs mt-1">{s.reason}</p>
                 </div>
               ))}
@@ -205,15 +205,15 @@ Include a "What you value most" insight (2-3 sentences).`,
                 <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: i === 0 ? "rgba(16,185,129,0.12)" : "rgba(26,34,52,0.07)" }}>
-                    <Star size={16} style={{ color: i === 0 ? "#10b981" : "#94a3b8" }} fill={i === 0 ? "#10b981" : "none"} />
+                    <Star size={16} style={{ color: i === 0 ? "#106B49" : "#94a3b8" }} fill={i === 0 ? "#106B49" : "none"} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
-                        <p className="font-bold text-[#1a2234] text-sm">{rec.address}</p>
+                        <p className="font-bold text-[#14192E] text-sm">{rec.address}</p>
                         {rec.match_label && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block"
-                            style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
+                            style={{ background: "rgba(16,185,129,0.1)", color: "#106B49" }}>
                             {rec.match_label}
                           </span>
                         )}
