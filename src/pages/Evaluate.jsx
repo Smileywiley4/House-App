@@ -97,10 +97,19 @@ export default function Evaluate() {
     longterm_neighborhood_value: saleCount >= 2 ? `${saleCount} recorded sales available as one value signal` : null,
   };
 
+  const withUnratedDefaults = (c) => ({
+    ...c,
+    importance: c.importance ?? 5,
+    score: c.score ?? 5,
+    importanceRated: Boolean(c.importanceRated),
+    scoreRated: Boolean(c.scoreRated),
+    scoreSource: c.scoreSource ?? null,
+  });
+
   const [activeCategories, setActiveCategories] = useState(() => {
-    const mandatory = MANDATORY_CATEGORIES.map(c => ({ ...c, importance: 5, score: 5 }));
-    const neighborhood = NEIGHBORHOOD_CATEGORIES.map(c => ({ ...c, importance: 5, score: 5 }));
-    const propertyFacts = propertyFactCategories.map(c => ({ ...c, importance: 5, score: 5 }));
+    const mandatory = MANDATORY_CATEGORIES.map(c => withUnratedDefaults(c));
+    const neighborhood = NEIGHBORHOOD_CATEGORIES.map(c => withUnratedDefaults(c));
+    const propertyFacts = propertyFactCategories.map(c => withUnratedDefaults(c));
     return [...mandatory, ...neighborhood, ...propertyFacts];
   });
   const [showPicker, setShowPicker] = useState(false);
@@ -113,22 +122,37 @@ export default function Evaluate() {
   const [presetStatus, setPresetStatus] = useState("");
   const [presetRefreshKey, setPresetRefreshKey] = useState(0);
 
+  /** Category counts as rated when property-score side was set (manual or auto). */
+  const SAVE_RATED_THRESHOLD = 0.7;
+  const visibleCount = activeCategories.length;
+  const ratedCount = activeCategories.filter((c) => c.scoreRated).length;
+  const ratedRatio = visibleCount > 0 ? ratedCount / visibleCount : 0;
+  const canSaveScore = visibleCount > 0 && ratedRatio >= SAVE_RATED_THRESHOLD;
+  const minRatedNeeded = Math.ceil(visibleCount * SAVE_RATED_THRESHOLD);
+  const saveGateMessage = !canSaveScore
+    ? `Rate at least ${minRatedNeeded} of ${visibleCount} categories (${Math.round(SAVE_RATED_THRESHOLD * 100)}%) before saving. Currently ${ratedCount} rated.`
+    : "";
+
   useEffect(() => {
     if (!isAuthenticated) return;
     api.auth.me().then(u => {
       const saved = u?.default_weights || {};
       if (Object.keys(saved).length > 0) {
-        setActiveCategories(prev => prev.map(c => ({
-          ...c,
-          importance: saved[c.id] !== undefined ? saved[c.id] : c.importance
-        })));
+        setActiveCategories(prev => prev.map(c => {
+          if (saved[c.id] === undefined) return c;
+          return {
+            ...c,
+            importance: saved[c.id],
+            importanceRated: true,
+          };
+        }));
       }
     }).catch(() => {});
   }, [isAuthenticated]);
 
   const addCategory = (cat) => {
     if (activeCategories.find(c => c.id === cat.id)) return;
-    setActiveCategories(prev => [...prev, { ...cat, importance: 5, score: 5 }]);
+    setActiveCategories(prev => [...prev, withUnratedDefaults(cat)]);
   };
 
   const removeCategory = (id) => {
@@ -136,11 +160,28 @@ export default function Evaluate() {
   };
 
   const updateImportance = (id, val) => {
-    setActiveCategories(prev => prev.map(c => c.id === id ? { ...c, importance: val } : c));
+    setActiveCategories(prev => prev.map(c =>
+      c.id === id ? { ...c, importance: val, importanceRated: true } : c
+    ));
   };
 
   const updateScore = (id, val) => {
-    setActiveCategories(prev => prev.map(c => c.id === id ? { ...c, score: val } : c));
+    setActiveCategories(prev => prev.map(c =>
+      c.id === id ? { ...c, score: val, scoreRated: true, scoreSource: "manual" } : c
+    ));
+  };
+
+  const applyAutoScores = (scores) => {
+    setActiveCategories(prev => prev.map(cat => {
+      const s = scores.find(x => x.id === cat.id);
+      if (!s) return cat;
+      return {
+        ...cat,
+        score: Math.min(10, Math.max(1, Math.round(Number(s.score)))),
+        scoreRated: true,
+        scoreSource: "auto",
+      };
+    }));
   };
 
   const weightedTotal = activeCategories.reduce((sum, c) => sum + c.importance * c.score, 0);
@@ -179,6 +220,10 @@ export default function Evaluate() {
   };
 
   const saveScore = async () => {
+    if (!canSaveScore) {
+      setSaveError(saveGateMessage);
+      return;
+    }
     setSaving(true);
     setSaveError("");
     try {
@@ -286,12 +331,18 @@ export default function Evaluate() {
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="text-center">
-            <div className="text-4xl font-bold text-[#1a2234]">{percentage}<span className="text-xl text-slate-400"> / 100</span></div>
-            <div className="text-xs text-slate-400 mt-1">Property Score</div>
+            <div className={`text-4xl font-bold ${canSaveScore ? "text-[#1a2234]" : "text-slate-400"}`}>
+              {percentage}<span className="text-xl text-slate-400"> / 100</span>
+            </div>
+            <div className="text-xs text-slate-400 mt-1">
+              {canSaveScore ? "Property Score" : "Provisional score"}
+            </div>
             </div>
             <div className="h-12 w-px bg-slate-100" />
             <div className="text-sm text-slate-500">
-            <span className="font-semibold text-[#1a2234]">{activeCategories.length}</span> categories
+            <span className="font-semibold text-[#1a2234]">{ratedCount}</span>
+            {" of "}
+            <span className="font-semibold text-[#1a2234]">{visibleCount}</span> rated
             </div>
             <div className="flex-1 max-w-xs">
               <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -309,7 +360,15 @@ export default function Evaluate() {
             {isAuthenticated && (
               <PresetPicker
                 activeCategories={activeCategories}
-                onLoadPreset={(next) => setActiveCategories(next)}
+                onLoadPreset={(next) => setActiveCategories(
+                  next.map((c) => withUnratedDefaults({
+                    ...c,
+                    // Presets only restore importance weights — keep score rating state from current.
+                    importanceRated: true,
+                    scoreRated: Boolean(c.scoreRated),
+                    scoreSource: c.scoreSource ?? null,
+                  }))
+                )}
                 refreshKey={presetRefreshKey}
               />
             )}
@@ -326,8 +385,9 @@ export default function Evaluate() {
               <button
                 type="button"
                 onClick={returnToRealtor}
-                disabled={returning || activeCategories.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60"
+                disabled={returning || activeCategories.length === 0 || !canSaveScore}
+                title={!canSaveScore ? saveGateMessage : undefined}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1a2234] hover:bg-[#243050] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {returning ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -367,14 +427,28 @@ export default function Evaluate() {
                   <BarChart3 size={15} /> View Comparison
                 </Link>
               ) : (
-                <button
-                  onClick={saveScore}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60"
-                >
-                  {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={15} />}
-                  {saving ? "Saving..." : "Save Score"}
-                </button>
+                <span className="relative group/save inline-flex flex-col items-stretch">
+                  <button
+                    type="button"
+                    onClick={saveScore}
+                    disabled={saving || !canSaveScore}
+                    title={!canSaveScore ? saveGateMessage : undefined}
+                    aria-describedby={!canSaveScore ? "save-score-gate" : undefined}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#10b981]"
+                  >
+                    {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={15} />}
+                    {saving ? "Saving..." : "Save Score"}
+                  </button>
+                  {!canSaveScore && (
+                    <span
+                      id="save-score-gate"
+                      role="tooltip"
+                      className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-lg bg-[#1a2234] px-3 py-2 text-xs font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover/save:opacity-100 group-focus-within/save:opacity-100"
+                    >
+                      {saveGateMessage}
+                    </span>
+                  )}
+                </span>
               )
             ) : (
               <Link
@@ -386,6 +460,9 @@ export default function Evaluate() {
             )}
           </div>
           {saveError && <p className="w-full text-sm text-red-600 font-medium">{saveError}</p>}
+          {!canSaveScore && isAuthenticated && !saved && (
+            <p className="w-full text-sm text-slate-500">{saveGateMessage}</p>
+          )}
         </div>
       </div>
 
@@ -403,12 +480,7 @@ export default function Evaluate() {
           address={`${property.address}, ${property.city}, ${property.state}`}
           property={property}
           categories={activeCategories}
-          onApplyScores={(scores) => {
-            setActiveCategories(prev => prev.map(cat => {
-              const s = scores.find(x => x.id === cat.id);
-              return s ? { ...cat, score: Math.min(10, Math.max(1, s.score)) } : cat;
-            }));
-          }}
+          onApplyScores={applyAutoScores}
         />
       </div>
 
@@ -425,12 +497,7 @@ export default function Evaluate() {
           <AIAutoScore
             property={property}
             categories={activeCategories}
-            onApplyScores={(scores) => {
-              setActiveCategories(prev => prev.map(cat => {
-                const s = scores.find(x => x.id === cat.id);
-                return s ? { ...cat, score: Math.min(10, Math.max(1, Math.round(s.score))) } : cat;
-              }));
-            }}
+            onApplyScores={applyAutoScores}
           />
           </div>
         </PremiumFeatureGroup>
@@ -441,7 +508,21 @@ export default function Evaluate() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-[#1a2234]">Scoring Categories</h2>
-            <p className="mt-0.5 text-sm text-slate-500">Choose the factors that matter for this property.</p>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {visibleCount > 0
+                ? `${ratedCount} of ${visibleCount} categories rated.`
+                : "Choose the factors that matter for this property."}
+            </p>
+            {visibleCount > 0 && (
+              <div className="mt-2 max-w-xs">
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#10b981] transition-all duration-300"
+                    style={{ width: `${Math.min(100, ratedRatio * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {isAuthenticated ? (
