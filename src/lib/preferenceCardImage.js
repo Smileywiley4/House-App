@@ -76,7 +76,7 @@ export function downloadPreferenceCardPng(card) {
   ctx.fillText("Preferences only · no addresses, prices, or photos", 64, height - 48);
 
   const link = document.createElement("a");
-  link.download = "property-pocket-preference-pattern.png";
+  link.download = "propurty-preference-pattern.png";
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
