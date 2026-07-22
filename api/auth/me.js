@@ -93,7 +93,7 @@ async function ensureProfile(url, service, user) {
     email: user.email || null,
     full_name: meta.full_name || meta.name || (user.email || "").split("@")[0] || null,
     phone: meta.phone || null,
-    marketing_opt_in: Boolean(meta.marketing_opt_in),
+    marketing_opt_in: meta.marketing_opt_in !== false,
     plan: "free",
   };
   if (payload.marketing_opt_in) {

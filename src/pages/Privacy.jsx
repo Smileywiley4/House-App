@@ -78,7 +78,10 @@ export default function Privacy() {
         <li>Provide, maintain, and secure the Service (search, scoring, compare, projects, shares, accounts)</li>
         <li>Process subscriptions, billing, renewals, and restore purchases</li>
         <li>Send service notices (account, security, billing)</li>
-        <li>Send product updates or promotions only if you opt in; you may opt out anytime</li>
+        <li>
+          Send product updates, feature announcements, and promotional marketing emails as described at signup and in
+          our Terms (you may opt out anytime — see Your choices below)
+        </li>
         <li>Improve product quality, performance, and support</li>
         <li>Detect abuse, prevent fraud, and enforce our Terms</li>
         <li>Comply with legal obligations</li>
@@ -164,7 +167,13 @@ export default function Privacy() {
         </li>
         <li>
           <strong>Delete account</strong> — Profile → Security → Delete account. This cancels web billing so you are
-          not charged at the next billing period, removes personal data as described in our Terms, and signs you out.
+          not charged at the next billing period, removes personal data as described in our Terms, ends marketing
+          emails for that account, and signs you out.
+        </li>
+        <li>
+          <strong>Marketing emails</strong> — At signup you agree we may email product and marketing updates. Opt out
+          anytime via Profile → Settings (Email preferences), an unsubscribe link in marketing emails when provided,
+          or by contacting us. Account deletion also ends marketing.
         </li>
       </ul>
       <p>

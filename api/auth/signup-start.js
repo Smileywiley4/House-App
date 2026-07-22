@@ -44,7 +44,7 @@ export async function POST(request) {
     : "free";
   const fullName = String(body.full_name || "").trim();
   const phone = String(body.phone || "").trim();
-  const marketingOptIn = Boolean(body.marketing_opt_in);
+  const marketingOptIn = body.marketing_opt_in !== false;
 
   // Optional: honor prior challenge for resend cooldown
   const prior = body.challenge_token ? readSignupChallenge(String(body.challenge_token)) : null;

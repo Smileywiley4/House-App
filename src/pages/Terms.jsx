@@ -345,6 +345,31 @@ export default function Terms() {
         Service. Our failure to enforce a provision is not a waiver. You may not assign these Terms without our
         consent; we may assign them in connection with a merger, acquisition, or sale of assets.
       </p>
+
+      <h2>22. Marketing emails</h2>
+      <p>
+        When you create an account, you agree that we may send you marketing emails about {APP_NAME} — including
+        product updates, new features, tips, and promotions — to the email address on your account. This marketing
+        consent is separate from transactional emails we send to operate the Service (for example account security,
+        billing receipts, and password resets).
+      </p>
+      <ul>
+        <li>
+          <strong>Consent at signup</strong> — By checking the signup agreement (or completing signup after that
+          notice), you consent to receive these marketing emails. Consent continues until you opt out or delete your
+          account.
+        </li>
+        <li>
+          <strong>How to opt out</strong> — Turn off marketing emails anytime in Profile → Settings (Email
+          preferences), use an unsubscribe link in a marketing email when provided, or email{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. Opting out does not cancel a paid subscription
+          and does not stop required service or billing messages.
+        </li>
+        <li>
+          <strong>Account deletion</strong> — Deleting your account ends marketing emails to that account. See
+          Account deletion above.
+        </li>
+      </ul>
       <p className="text-sm text-slate-500">
         Policies may be updated. This is not a substitute for advice from your own counsel. Nothing herein claims
         immunity from all legal claims or liability that cannot be limited under law.

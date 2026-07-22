@@ -1,24 +1,55 @@
 import { useEffect, useState } from "react";
-import { Bell, Mail } from "lucide-react";
+import { Bell, Mail, Megaphone } from "lucide-react";
 import { api } from "@/api";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
 
 /**
- * Opt-in weekly digest when new listings match saved presets / browse alerts.
- * Default OFF — stored on profiles.preset_digest_opt_in.
+ * Email preferences:
+ * - marketing_opt_in: product/promotional emails (default ON at signup; US-style Terms consent)
+ * - preset_digest_opt_in: weekly listing digest (default OFF)
  */
 export default function NotificationSettings({ user, onUpdated }) {
-  const [optIn, setOptIn] = useState(Boolean(user?.preset_digest_opt_in));
-  const [saving, setSaving] = useState(false);
+  const [marketingOn, setMarketingOn] = useState(Boolean(user?.marketing_opt_in));
+  const [digestOn, setDigestOn] = useState(Boolean(user?.preset_digest_opt_in));
+  const [savingMarketing, setSavingMarketing] = useState(false);
+  const [savingDigest, setSavingDigest] = useState(false);
 
   useEffect(() => {
-    setOptIn(Boolean(user?.preset_digest_opt_in));
+    setMarketingOn(Boolean(user?.marketing_opt_in));
+  }, [user?.marketing_opt_in, user?.id]);
+
+  useEffect(() => {
+    setDigestOn(Boolean(user?.preset_digest_opt_in));
   }, [user?.preset_digest_opt_in, user?.id]);
 
-  const save = async (next) => {
-    setOptIn(next);
-    setSaving(true);
+  const saveMarketing = async (next) => {
+    setMarketingOn(next);
+    setSavingMarketing(true);
+    try {
+      const updated = await api.auth.updateMe({ marketing_opt_in: next });
+      onUpdated?.(updated);
+      toast({
+        title: next ? "Marketing emails on" : "Marketing emails off",
+        description: next
+          ? "You may receive product updates and promotions."
+          : "You won't receive marketing emails. Service and billing messages may still arrive.",
+      });
+    } catch (err) {
+      setMarketingOn(!next);
+      toast({
+        title: "Couldn't update",
+        description: err?.message || "Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingMarketing(false);
+    }
+  };
+
+  const saveDigest = async (next) => {
+    setDigestOn(next);
+    setSavingDigest(true);
     try {
       const updated = await api.auth.updateMe({ preset_digest_opt_in: next });
       onUpdated?.(updated);
@@ -29,14 +60,14 @@ export default function NotificationSettings({ user, onUpdated }) {
           : "You won't receive weekly preset digests.",
       });
     } catch (err) {
-      setOptIn(!next);
+      setDigestOn(!next);
       toast({
         title: "Couldn't update",
         description: err?.message || "Try again.",
         variant: "destructive",
       });
     } finally {
-      setSaving(false);
+      setSavingDigest(false);
     }
   };
 
@@ -47,12 +78,31 @@ export default function NotificationSettings({ user, onUpdated }) {
           <Bell size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-foreground">Notifications</h3>
+          <h3 className="font-semibold text-foreground">Email preferences</h3>
           <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-            Weekly summary when new listings match your saved presets or browse alerts. Off by
-            default — turn on only if you want it.
+            Control marketing and digest emails. Account, security, and billing messages are not controlled here.
           </p>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/60 px-4 py-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Megaphone size={14} className="text-[#0C4F37] shrink-0" />
+            Marketing emails
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+            Product updates, new features, and promotions. On by default when you create an account; turn off anytime
+            (or delete your account).
+          </p>
+        </div>
+        <Switch
+          checked={marketingOn}
+          disabled={savingMarketing || !user?.id}
+          onCheckedChange={saveMarketing}
+          aria-label="Marketing emails"
+          className="data-[state=checked]:bg-[#106B49]"
+        />
       </div>
 
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/60 px-4 py-3">
@@ -63,13 +113,13 @@ export default function NotificationSettings({ user, onUpdated }) {
           </div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
             One email and in-app notice per week (not real-time). Example: &ldquo;3 new listings
-            match your &lsquo;Move-in ready, 2+ beds&rsquo; preset this week.&rdquo;
+            match your &lsquo;Move-in ready, 2+ beds&rsquo; preset this week.&rdquo; Off by default.
           </p>
         </div>
         <Switch
-          checked={optIn}
-          disabled={saving || !user?.id}
-          onCheckedChange={save}
+          checked={digestOn}
+          disabled={savingDigest || !user?.id}
+          onCheckedChange={saveDigest}
           aria-label="Weekly preset digest"
           className="data-[state=checked]:bg-[#106B49]"
         />

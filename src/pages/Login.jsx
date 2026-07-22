@@ -168,7 +168,7 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  /** Marketing is consented via Terms checkbox at signup (default on); Profile → Settings to opt out. */
   const [acceptTerms, setAcceptTerms] = useState(false);
   /** Required on signup: free | premium (Pro) | realtor */
   const [selectedPlan, setSelectedPlan] = useState("");
@@ -449,7 +449,7 @@ export default function Login() {
         api.auth.updateMe({
           full_name: fullName.trim() || undefined,
           phone: phone.trim() || undefined,
-          marketing_opt_in: marketingOptIn,
+          marketing_opt_in: true,
         }).catch(() => {}),
         2500,
       );
@@ -473,7 +473,7 @@ export default function Login() {
       password,
       full_name: fullName.trim() || undefined,
       phone: phone.trim() || undefined,
-      marketing_opt_in: marketingOptIn,
+      marketing_opt_in: true,
       terms_accepted: true,
       intended_plan: selectedPlan,
       challenge_token: challengeToken || undefined,
@@ -584,7 +584,7 @@ export default function Login() {
     try {
       const oauthRedirect = "/";
       saveOAuthPending({
-        marketing_opt_in: mode === "signup" && marketingOptIn,
+        marketing_opt_in: mode === "signup" ? true : false,
         inviteToken: inviteToken || null,
         intended_plan: mode === "signup" ? selectedPlan : "free",
       });
@@ -601,7 +601,7 @@ export default function Login() {
         const meta = {};
         if (fullName.trim()) meta.full_name = fullName.trim();
         if (phone.trim()) meta.phone = phone.trim();
-        if (marketingOptIn) meta.marketing_opt_in = true;
+        meta.marketing_opt_in = true;
         meta.terms_accepted = true;
         meta.intended_plan = selectedPlan;
         if (Object.keys(meta).length > 0) {
@@ -990,29 +990,14 @@ export default function Login() {
                       By creating an account, I agree to the{" "}
                       <Link to={createPageUrl("Terms")} className="text-[#106B49] hover:underline" target="_blank" rel="noopener noreferrer">
                         Terms of Service
-                      </Link>{" "}
-                      and{" "}
+                      </Link>
+                      ,{" "}
                       <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline" target="_blank" rel="noopener noreferrer">
                         Privacy Policy
                       </Link>
-                      . <span className="text-slate-400">(Required)</span>
-                    </span>
-                  </label>
-                )}
-                {mode === "signup" && (
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={marketingOptIn}
-                      onChange={(e) => setMarketingOptIn(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#106B49] focus:ring-[#106B49]"
-                    />
-                    <span className="text-xs text-slate-600 leading-relaxed">
-                      Send me product updates, new features, and promotions. See our{" "}
-                      <Link to={createPageUrl("Privacy")} className="text-[#106B49] hover:underline">
-                        Privacy Policy
-                      </Link>
-                      .
+                      , and that we may send marketing emails about product updates and promotions. I can opt out
+                      anytime in Profile → Settings or via unsubscribe links.{" "}
+                      <span className="text-slate-400">(Required)</span>
                     </span>
                   </label>
                 )}

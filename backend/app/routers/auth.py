@@ -64,7 +64,7 @@ class PasswordSignUpBody(BaseModel):
     password: str = Field(min_length=8, max_length=200)
     full_name: str | None = Field(default=None, max_length=200)
     phone: str | None = Field(default=None, max_length=50)
-    marketing_opt_in: bool = False
+    marketing_opt_in: bool = True
     terms_accepted: bool = False
     intended_plan: Literal["free", "premium", "realtor"] = "free"
     challenge_token: str | None = None
@@ -451,7 +451,7 @@ def _display_name_from_metadata(meta: dict) -> str | None:
 
 def _profile_insert_from_auth(supabase, user_id: str) -> dict:
     meta = _auth_user_metadata(supabase, user_id)
-    opt_in = bool(meta.get("marketing_opt_in"))
+    opt_in = bool(meta["marketing_opt_in"]) if "marketing_opt_in" in meta else True
     payload = {
         "id": user_id,
         "email": _auth_user_email(supabase, user_id),
