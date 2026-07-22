@@ -43,7 +43,7 @@ function scoreColor(pct) {
 
 export default function ProjectDetail() {
   return (
-    <RequireAuth message="Sign in to view and manage your scoring projects">
+    <RequireAuth message="Sign in to view and manage your plans">
       <ProjectDetailInner />
     </RequireAuth>
   );
@@ -79,7 +79,7 @@ function ProjectDetailInner() {
       setInvites(Array.isArray(pending) ? pending : []);
       setProject(null);
     } catch (e) {
-      setError(e?.message || "Could not load projects");
+      setError(e?.message || "Could not load plans");
     } finally {
       setLoading(false);
     }
@@ -136,7 +136,7 @@ function ProjectDetailInner() {
   };
 
   const deleteProject = async () => {
-    if (!window.confirm("Delete this project and all saved listings in it?")) return;
+    if (!window.confirm("Delete this plan and all saved listings in it?")) return;
     try {
       await api.projects.delete(projectId);
       navigate(createPageUrl("ProjectDetail"));
@@ -179,9 +179,9 @@ function ProjectDetailInner() {
           <div className="relative overflow-hidden bg-[#14192E] px-6 py-8">
             <div className="relative max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-white">Projects</h1>
+                <h1 className="text-2xl font-bold text-white">Your plans</h1>
                 <p className="text-slate-400 text-sm mt-1">
-                  Folder-like collections with project-only scoring preferences
+                  Group homes you’re considering and score them with plan-specific priorities
                 </p>
               </div>
               <button
@@ -189,7 +189,7 @@ function ProjectDetailInner() {
                 onClick={() => setStartOpen(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#106B49] text-white text-sm font-bold"
               >
-                <FolderKanban size={16} /> Start project
+                <FolderKanban size={16} /> Start a plan
               </button>
             </div>
           </div>
@@ -200,9 +200,9 @@ function ProjectDetailInner() {
             {projectList.length === 0 ? (
               <EmptyState
                 icon={FolderKanban}
-                title="No projects yet"
-                description="Start a project from here or from Search Properties."
-                actionLabel="Search properties"
+                title="No plans yet"
+                description="Start a plan from here or save homes from Search."
+                actionLabel="Search homes"
                 actionTo={createPageUrl("BrowseProperties")}
               />
             ) : (
@@ -220,7 +220,7 @@ function ProjectDetailInner() {
                       >
                         <div className="font-bold text-[#14192E] truncate">{p.title}</div>
                         <div className="text-xs text-slate-500 mt-1">
-                          {p.property_count ?? 0} propert{(p.property_count ?? 0) === 1 ? "y" : "ies"}
+                          {p.property_count ?? 0} home{(p.property_count ?? 0) === 1 ? "" : "s"}
                           {p.membership === "collaborator" ? " · shared with you" : ""}
                         </div>
                       </Link>
@@ -230,7 +230,7 @@ function ProjectDetailInner() {
                           onClick={() => setRenamingProject(p)}
                           className="shrink-0 self-center mr-3 w-9 h-9 rounded-xl text-slate-400 hover:text-[#106B49] hover:bg-slate-50 flex items-center justify-center"
                           title="Rename"
-                          aria-label={`Rename ${p.title || "project"}`}
+                          aria-label={`Rename ${p.title || "plan"}`}
                         >
                           <Pencil size={15} />
                         </button>
@@ -243,7 +243,7 @@ function ProjectDetailInner() {
 
             {invites.length > 0 && (
               <div className="mt-10 space-y-3">
-                <h2 className="text-sm font-bold text-[#14192E]">Pending project invites</h2>
+                <h2 className="text-sm font-bold text-[#14192E]">Pending plan invites</h2>
                 {invites.map((inv) => (
                   <div
                     key={inv.id}
@@ -251,7 +251,7 @@ function ProjectDetailInner() {
                   >
                     <div>
                       <p className="font-semibold text-[#14192E] text-sm">
-                        {inv.project?.title || "Project"}
+                        {inv.project?.title || "Plan"}
                       </p>
                       <p className="text-xs text-slate-500">
                         From {inv.invited_by?.full_name || inv.invited_by?.email || "someone"}
@@ -297,8 +297,8 @@ function ProjectDetailInner() {
         <RenameDialog
           open={!!renamingProject}
           onOpenChange={(open) => !open && setRenamingProject(null)}
-          title="Rename project"
-          label="Project title"
+          title="Rename plan"
+          label="Plan title"
           initialValue={renamingProject?.title || ""}
           onSave={renameProject}
         />
@@ -310,12 +310,12 @@ function ProjectDetailInner() {
     return (
       <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center px-6">
         <FetchErrorState
-          title="Project not found"
-          message={error || "This project may have been deleted or you no longer have access."}
+          title="Plan not found"
+          message={error || "This plan may have been deleted or you no longer have access."}
           onRetry={loadList}
         />
         <Link to={createPageUrl("ProjectDetail")} className="text-[#106B49] font-semibold text-sm -mt-2">
-          Back to projects
+          Back to plans
         </Link>
       </div>
     );
@@ -334,12 +334,12 @@ function ProjectDetailInner() {
             to={createPageUrl("ProjectDetail")}
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4"
           >
-            <ChevronLeft size={16} /> All projects
+            <ChevronLeft size={16} /> All plans
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-[#106B49] text-xs font-bold uppercase tracking-wide mb-1">
-                <FolderKanban size={14} /> Project
+                <FolderKanban size={14} /> Plan
                 {!isOwner && <span className="text-slate-400 font-semibold normal-case">· collaborator</span>}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -350,15 +350,15 @@ function ProjectDetailInner() {
                     onClick={() => setRenamingProject(project)}
                     className="w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center"
                     title="Rename"
-                    aria-label="Rename project"
+                    aria-label="Rename plan"
                   >
                     <Pencil size={15} />
                   </button>
                 ) : null}
               </div>
               <p className="text-slate-400 text-sm mt-1">
-                {properties.length} propert{properties.length === 1 ? "y" : "ies"} · scores use this
-                project&apos;s preferences
+                {properties.length} home{properties.length === 1 ? "" : "s"} · scores use this
+                plan&apos;s preferences
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -469,8 +469,8 @@ function ProjectDetailInner() {
         {properties.length === 0 ? (
           <EmptyState
             icon={HomeIcon}
-            title="No properties yet"
-            description="Select homes on Search Properties and use Save to project, or Start project with a selection."
+            title="No homes in this plan yet"
+            description="Select homes on Search and use Save to plan, or Start a plan with a selection."
             actionLabel="Browse homes"
             actionTo={createPageUrl("BrowseProperties")}
           />
@@ -509,7 +509,7 @@ function ProjectDetailInner() {
                     type="button"
                     onClick={() => removeProp(p.id)}
                     className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
-                    aria-label="Remove from project"
+                    aria-label="Remove from plan"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -530,7 +530,7 @@ function ProjectDetailInner() {
           />
           <div className="relative w-full max-w-md h-full bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <h2 className="font-bold text-[#14192E]">Project scoring prefs</h2>
+              <h2 className="font-bold text-[#14192E]">Plan scoring prefs</h2>
               <button
                 type="button"
                 onClick={() => setPrefsOpen(false)}
@@ -541,8 +541,8 @@ function ProjectDetailInner() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <p className="text-xs text-slate-500">
-                These weights apply only to this project. Saving recalculates scores for every
-                property here.
+                These weights apply only to this plan. Saving recalculates scores for every
+                home here.
               </p>
               <div>
                 <label className="text-xs font-bold text-slate-600">Title</label>
@@ -586,8 +586,8 @@ function ProjectDetailInner() {
       <RenameDialog
         open={!!renamingProject}
         onOpenChange={(open) => !open && setRenamingProject(null)}
-        title="Rename project"
-        label="Project title"
+        title="Rename plan"
+        label="Plan title"
         initialValue={renamingProject?.title || ""}
         onSave={renameProject}
       />

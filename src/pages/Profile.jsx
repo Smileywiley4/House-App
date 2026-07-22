@@ -59,7 +59,7 @@ const TABS = [
   { id: "presets", label: "Presets", icon: Bookmark },
   { id: "foryou", label: "For You", icon: Sparkles },
   { id: "invite", label: "Invite contacts", icon: UserPlus },
-  { id: "history", label: "Saved Properties", icon: BarChart3 },
+  { id: "history", label: "Favorites", icon: BarChart3 },
 ];
 
 const VALID_PROFILE_TAB_IDS = new Set(TABS.map((t) => t.id));
@@ -1185,14 +1185,18 @@ function ProfileInner() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-bold text-foreground mb-1">Saved Properties</h2>
-                <p className="text-slate-400 text-sm">{scores.length} propert{scores.length !== 1 ? "ies" : "y"} scored</p>
+                <h2 className="text-lg font-bold text-foreground mb-1">Favorites</h2>
+                <p className="text-slate-400 text-sm">
+                  {scores.length === 0
+                    ? "Homes you’ve scored"
+                    : `${scores.length} home${scores.length !== 1 ? "s" : ""} in your favorites`}
+                </p>
               </div>
               <Link
                 to={createPageUrl("SavedProperties")}
                 className="flex items-center gap-2 px-4 py-2 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl text-sm transition"
               >
-                Full Comparison <ChevronRight size={15} />
+                View Favorites <ChevronRight size={15} />
               </Link>
             </div>
 
@@ -1203,10 +1207,10 @@ function ProfileInner() {
             ) : scores.length === 0 ? (
               <div className="text-center py-16 text-slate-400">
                 <BarChart3 size={40} className="mx-auto mb-3 text-slate-200" />
-                <p className="font-semibold text-foreground mb-1">No saved properties yet</p>
-                <p className="text-sm">Score a property to see it here.</p>
+                <p className="font-semibold text-foreground mb-1">No favorites yet</p>
+                <p className="text-sm">Score a home to see it here.</p>
                 <Link to={createPageUrl("Home")} className="inline-flex mt-5 px-5 py-2.5 bg-[#14192E] text-white font-bold rounded-xl text-sm">
-                  Search Properties
+                  Search homes
                 </Link>
               </div>
             ) : (

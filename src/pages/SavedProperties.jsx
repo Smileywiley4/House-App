@@ -11,7 +11,7 @@ import EmptyState from "@/components/EmptyState";
 
 export default function SavedProperties() {
   return (
-    <RequireAuth message="Sign in to view and manage your saved properties">
+    <RequireAuth message="Sign in to view and manage your favorites">
       <SavedPropertiesInner />
     </RequireAuth>
   );
@@ -33,7 +33,7 @@ function SavedPropertiesInner() {
       const data = await api.entities.PropertyScore.list("-created_date");
       setScores(data);
     } catch (e) {
-      setError(e?.message || "Could not load saved properties");
+      setError(e?.message || "Could not load favorites");
       setScores([]);
     } finally {
       setLoading(false);
@@ -54,14 +54,14 @@ function SavedPropertiesInner() {
         isLoading
         onRetry={loadScores}
         fullPage
-        label="Loading saved properties…"
+        label="Loading favorites…"
         skeleton="cards"
         skeletonRows={4}
       />
     ) : (
       <FetchErrorState
         fullPage
-        title="Couldn’t load properties"
+        title="Couldn’t load favorites"
         message={error}
         onRetry={loadScores}
       />
@@ -78,8 +78,12 @@ function SavedPropertiesInner() {
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">Property Comparison</h1>
-              <p className="text-slate-400 text-sm mt-1">{scores.length} propert{scores.length === 1 ? "y" : "ies"} saved</p>
+              <h1 className="text-2xl font-bold text-white">Favorites</h1>
+              <p className="text-slate-400 text-sm mt-1">
+                {scores.length === 0
+                  ? "Homes you’ve scored and saved"
+                  : `${scores.length} home${scores.length === 1 ? "" : "s"} in your favorites`}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <ShareComparison scores={sorted} />
@@ -87,7 +91,7 @@ function SavedPropertiesInner() {
                 to={createPageUrl("Home")}
                 className="flex items-center gap-2 px-4 py-2 bg-[#106B49] hover:bg-[#0C4F37] text-white font-semibold rounded-xl transition-colors text-sm"
               >
-                <Plus size={15} /> Add Property
+                <Plus size={15} /> Add to favorites
               </Link>
             </div>
           </div>
@@ -98,9 +102,9 @@ function SavedPropertiesInner() {
         {scores.length === 0 ? (
           <EmptyState
             icon={HomeIcon}
-            title="No properties scored yet"
-            description="Search for a property and score it to start comparing."
-            actionLabel="Search properties"
+            title="No favorites yet"
+            description="Score a home to add it to your favorites and compare matches."
+            actionLabel="Search homes"
             actionTo={createPageUrl("Home")}
           />
         ) : (

@@ -1357,7 +1357,7 @@ export default function BrowseProperties() {
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#106B49]/45 bg-white text-xs font-bold text-[#14192E] hover:bg-[#F8F7F4]"
                 >
                   <FolderKanban size={14} />
-                  Start project
+                  Start a plan
                 </button>
                 {compareIds.size > 0 && (
                   <button
@@ -1596,8 +1596,8 @@ export default function BrowseProperties() {
         properties={selectedProperties}
         onSaved={(projectId) => {
           toast({
-            title: "Saved to project",
-            description: "Open Project detail from the toast link or Projects nav.",
+            title: "Saved to plan",
+            description: "Open Plan from the toast link or Plan nav.",
           });
           navigate(`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(projectId)}`);
           setCompareIds(new Set());

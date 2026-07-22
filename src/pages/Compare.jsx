@@ -202,7 +202,7 @@ function CompareInner() {
             to={createPageUrl("SavedProperties")}
             className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-4 transition"
           >
-            <ChevronLeft size={16} /> Back to Properties
+            <ChevronLeft size={16} /> Back to Favorites
           </Link>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h1 className="text-xl font-bold text-white">Compare</h1>
@@ -222,7 +222,7 @@ function CompareInner() {
                   onClick={() => setSaveOpen(true)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15"
                 >
-                  <FolderPlus size={14} /> Save to project
+                  <FolderPlus size={14} /> Save to plan
                 </button>
               )}
               {isRealtor && saveSnapshots.length > 0 && (
@@ -394,7 +394,7 @@ function CompareInner() {
         onClose={() => setSaveOpen(false)}
         properties={saveSnapshots}
         onSaved={() => {
-          toast({ title: "Saved to project", description: "Properties added to your project folder." });
+          toast({ title: "Saved to plan", description: "Homes added to your plan." });
         }}
       />
 

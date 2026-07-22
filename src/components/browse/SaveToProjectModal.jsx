@@ -31,7 +31,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
         setProjects(list || []);
         if (list?.[0]) setSelectedId(list[0].id);
       })
-      .catch((e) => setError(e?.message || "Could not load projects"))
+      .catch((e) => setError(e?.message || "Could not load plans"))
       .finally(() => setLoading(false));
   }, [open]);
 
@@ -46,15 +46,15 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
       let projectId = selectedId;
       if (mode === "create") {
         if (!title.trim()) {
-          setError("Enter a project name.");
+          setError("Enter a plan name.");
           setSaving(false);
           return;
         }
         if (atLimit) {
           setError(
             isPremium
-              ? `You can have up to ${maxProjects} projects.`
-              : `Free plan allows ${maxProjects} projects. Upgrade for more.`
+              ? `You can have up to ${maxProjects} plans.`
+              : `Free plan allows ${maxProjects} plans. Upgrade for more.`
           );
           setSaving(false);
           return;
@@ -63,7 +63,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
         projectId = created.id;
       }
       if (!projectId) {
-        setError("Choose a project or create one.");
+        setError("Choose a plan or create one.");
         setSaving(false);
         return;
       }
@@ -75,7 +75,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
       onSaved?.(projectId);
       onClose?.();
     } catch (e) {
-      setError(e?.message || "Could not save to project");
+      setError(e?.message || "Could not save to plan");
     } finally {
       setSaving(false);
     }
@@ -87,9 +87,9 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
-            <h2 className="font-bold text-[#14192E] text-lg">Save to project</h2>
+            <h2 className="font-bold text-[#14192E] text-lg">Save to plan</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {properties.length} propert{properties.length === 1 ? "y" : "ies"} selected
+              {properties.length} home{properties.length === 1 ? "" : "s"} selected
             </p>
           </div>
           <button
@@ -104,7 +104,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
         <div className="p-5 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-slate-400 text-sm">
-              <Loader2 className="animate-spin" size={18} /> Loading projects…
+              <Loader2 className="animate-spin" size={18} /> Loading plans…
             </div>
           ) : (
             <>
@@ -125,14 +125,14 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                     mode === "create" ? "bg-white shadow text-[#14192E]" : "text-slate-500"
                   }`}
                 >
-                  New project
+                  New plan
                 </button>
               </div>
 
               {mode === "pick" ? (
                 projects.length === 0 ? (
                   <p className="text-sm text-slate-500">
-                    No projects yet. Create one to save these homes.
+                    No plans yet. Create one to save these homes.
                   </p>
                 ) : (
                   <ul className="space-y-2 max-h-48 overflow-y-auto">
@@ -165,7 +165,7 @@ export default function SaveToProjectModal({ open, onClose, properties = [], onS
                 )
               ) : (
                 <div>
-                  <label className="text-xs font-bold text-slate-600">Project name</label>
+                  <label className="text-xs font-bold text-slate-600">Plan name</label>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}

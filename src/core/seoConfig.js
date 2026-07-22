@@ -38,17 +38,17 @@ export const SEO_BY_PAGE = {
     noindex: true,
   },
   SavedProperties: {
-    title: 'Your scored properties',
-    description: `View and manage properties you have scored in ${APP_NAME}.`,
+    title: 'Favorites',
+    description: `View and manage homes you’ve scored and saved in ${APP_NAME}.`,
   },
   Updates: {
     title: 'Updates',
-    description: 'Notifications, shared project activity, and completed scores from your network.',
+    description: 'Notifications, shared plan activity, and completed scores from your network.',
     noindex: true,
   },
   ProjectDetail: {
-    title: 'Scoring projects',
-    description: 'Organize homes into projects with custom scoring preferences and overall match scores.',
+    title: 'Your plans',
+    description: 'Organize homes into plans with custom scoring preferences and overall match scores.',
     noindex: true,
   },
   Evaluate: {

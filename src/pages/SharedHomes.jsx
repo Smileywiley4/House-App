@@ -107,7 +107,7 @@ function SharedHomesInner() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#14192E] flex items-center gap-2">
-            <Inbox size={22} className="text-[#106B49]" /> Shared homes
+            <Inbox size={22} className="text-[#106B49]" /> Inbox
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Homes sent for scoring — private between you and your contact.

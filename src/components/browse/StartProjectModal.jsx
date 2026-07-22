@@ -48,14 +48,14 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
 
   const create = async () => {
     if (!title.trim()) {
-      setError("Enter a project name.");
+      setError("Enter a plan name.");
       return;
     }
     if (atLimit) {
       setError(
         isPremium
-          ? `You can have up to ${maxProjects} projects.`
-          : `Free plan allows ${maxProjects} projects. Upgrade for more.`
+          ? `You can have up to ${maxProjects} plans.`
+          : `Free plan allows ${maxProjects} plans. Upgrade for more.`
       );
       return;
     }
@@ -83,7 +83,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
       }
       navigate(`${createPageUrl("ProjectDetail")}?id=${encodeURIComponent(project.id)}`);
     } catch (e) {
-      setError(e?.message || "Could not create project");
+      setError(e?.message || "Could not create plan");
     } finally {
       setSaving(false);
     }
@@ -96,7 +96,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2">
             <FolderKanban size={20} className="text-[#106B49]" />
-            <h2 className="font-bold text-[#14192E] text-lg">Start project</h2>
+            <h2 className="font-bold text-[#14192E] text-lg">Start a plan</h2>
           </div>
           <button
             type="button"
@@ -109,12 +109,12 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           <p className="text-sm text-slate-500">
-            Name this folder and set scoring preferences. Homes you add are scored with these weights —
+            Name this plan and set scoring preferences. Homes you add are scored with these weights —
             change them later to recalculate every listing.
           </p>
 
           <div>
-            <label className="text-xs font-bold text-slate-600">Project title</label>
+            <label className="text-xs font-bold text-slate-600">Plan title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -161,7 +161,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
 
           {atLimit && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-              Project limit reached ({maxProjects}).{" "}
+              Plan limit reached ({maxProjects}).{" "}
               {!isPremium && (
                 <Link to={createPageUrl("Pricing")} className="underline font-semibold">
                   Upgrade to Premium
@@ -192,7 +192,7 @@ export default function StartProjectModal({ open, onClose, seedProperties = [] }
             className="flex-1 py-2.5 rounded-xl bg-[#106B49] text-white text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : null}
-            Create project
+            Create plan
           </button>
         </div>
       </div>
