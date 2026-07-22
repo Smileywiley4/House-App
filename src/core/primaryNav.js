@@ -63,7 +63,7 @@ export function filterNavForAuth(items, isAuthenticated) {
   return items.filter((i) => i.public && !i.authOnly && !i.action);
 }
 
-/** Open the global priority quiz (logged-in only). Safe no-op for guests. */
+/** Open the global priority quiz. Guests get the signup-style flow (local weights). */
 export function runMoreNavAction(action) {
   if (action === "priority-quiz") {
     import("@/lib/importanceQuiz").then(({ requestPriorityQuiz }) => {

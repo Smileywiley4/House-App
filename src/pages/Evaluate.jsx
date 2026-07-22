@@ -25,6 +25,7 @@ import LoadingWithTimeout from "@/components/async/LoadingWithTimeout";
 import FetchErrorState from "@/components/async/FetchErrorState";
 import { AdSlot } from "@/components/AdSlot";
 import { brand } from "@/design-tokens";
+import { loadGuestImportanceWeights } from "@/lib/quizPromptStorage";
 
 export default function Evaluate() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -139,20 +140,34 @@ export default function Evaluate() {
     : "";
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    api.auth.me().then(u => {
-      const saved = u?.default_weights || {};
-      if (Object.keys(saved).length > 0) {
-        setActiveCategories(prev => prev.map(c => {
-          if (saved[c.id] === undefined) return c;
-          return {
-            ...c,
-            importance: saved[c.id],
-            importanceRated: true,
-          };
-        }));
-      }
-    }).catch(() => {});
+    if (isAuthenticated) {
+      api.auth.me().then(u => {
+        const saved = u?.default_weights || {};
+        if (Object.keys(saved).length > 0) {
+          setActiveCategories(prev => prev.map(c => {
+            if (saved[c.id] === undefined) return c;
+            return {
+              ...c,
+              importance: saved[c.id],
+              importanceRated: true,
+            };
+          }));
+        }
+      }).catch(() => {});
+      return;
+    }
+    const saved = loadGuestImportanceWeights();
+    if (!saved || !Object.keys(saved).length) return;
+    setActiveCategories((prev) =>
+      prev.map((c) => {
+        if (saved[c.id] === undefined) return c;
+        return {
+          ...c,
+          importance: saved[c.id],
+          importanceRated: true,
+        };
+      })
+    );
   }, [isAuthenticated]);
 
   // Recipient opened Evaluate via share link → mark Viewed

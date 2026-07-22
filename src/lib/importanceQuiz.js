@@ -883,7 +883,8 @@ export function mergeWeights(quizWeights, categoryIds = ONBOARDING_CATEGORY_IDS,
 export const PRIORITY_QUIZ_EVENT = "pp:show-priority-quiz";
 
 /**
- * Ask the global host to open the full priority quiz (logged-in only).
+ * Ask the global host to open the full priority quiz.
+ * Guests may take the signup-style quiz (weights → localStorage); account presets still require auth.
  * @param {{ trigger?: 'signup' | 'project' | 'client' | 'retake', projectId?: string, projectName?: string, force?: boolean }} detail
  */
 export function requestPriorityQuiz(detail = {}) {

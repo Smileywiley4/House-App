@@ -20,11 +20,12 @@ import {
   normalizeDeepAiQuestions,
   weightsFromFullAnswers,
 } from "@/lib/importanceQuiz";
+import { storeGuestImportanceWeights } from "@/lib/quizPromptStorage";
 
 /**
  * Soft full-screen sheet: simple priority questions first → optional deeper
  * auto-scorable questions (AI when Premium, bank fallback otherwise) →
- * user_presets + default_weights.
+ * user_presets + default_weights (or localStorage for guests).
  * First-time signup also asks for a search area (city/ZIP/place) — location is NOT
  * stored on the preset; it only hands off to BrowseProperties map + filters.
  * Score side is never set.
@@ -35,6 +36,7 @@ export default function ImportanceQuizModal({
   trigger = "signup",
   projectId = null,
   projectName = null,
+  guestMode = false,
   onComplete,
 }) {
   const navigate = useNavigate();
@@ -102,6 +104,13 @@ export default function ImportanceQuizModal({
       return {
         title: "Retake priority quiz",
         subtitle: "Update what matters most. We’ll save a scoring preset you can load on Evaluate.",
+      };
+    }
+    if (guestMode) {
+      return {
+        title: "What matters most?",
+        subtitle:
+          "Answer a few plain-language questions, then pick where to look. We’ll apply your priorities on Browse — sign in later to save them to your account.",
       };
     }
     return {
@@ -236,21 +245,27 @@ Rules: 4–8 questions max; one category each; 2–4 options; importance 1–10;
       ];
       const weights = mergeWeights(quizWeights, weightCategoryIds);
 
-      const preset = await api.entities.Preset.create({
-        name: presetName,
-        weights,
-        filters: {},
-      });
+      let preset = null;
 
-      // Evaluate Importance initializes from default_weights — keep in sync.
-      const me = await api.auth.me().catch(() => null);
-      const mergedDefaults = { ...(me?.default_weights || {}), ...weights };
-      await api.auth.updateMe({ default_weights: mergedDefaults });
+      if (guestMode) {
+        storeGuestImportanceWeights(weights);
+      } else {
+        preset = await api.entities.Preset.create({
+          name: presetName,
+          weights,
+          filters: {},
+        });
 
-      if (projectId && api.projects?.update) {
-        await api.projects
-          .update(projectId, { scoring_presets: { weights } })
-          .catch(() => {});
+        // Evaluate Importance initializes from default_weights — keep in sync.
+        const me = await api.auth.me().catch(() => null);
+        const mergedDefaults = { ...(me?.default_weights || {}), ...weights };
+        await api.auth.updateMe({ default_weights: mergedDefaults });
+
+        if (projectId && api.projects?.update) {
+          await api.projects
+            .update(projectId, { scoring_presets: { weights } })
+            .catch(() => {});
+        }
       }
 
       const locationLabel = locationQuery.trim();
@@ -295,16 +310,17 @@ Rules: 4–8 questions max; one category each; 2–4 options; importance 1–10;
           trigger,
           location: label,
           navigatedToBrowse: true,
+          guestMode,
         });
         onClose?.({ dismissed: false, completed: true });
         navigate(browseAreaUrl({ label }));
         return;
       }
 
-      onComplete?.({ weights, preset, trigger, navigatedToBrowse });
+      onComplete?.({ weights, preset, trigger, navigatedToBrowse, guestMode });
       onClose?.({ dismissed: false, completed: true });
     } catch (e) {
-      setError(e?.message || "Could not save preset");
+      setError(e?.message || (guestMode ? "Could not apply priorities" : "Could not save preset"));
     } finally {
       setSaving(false);
     }
@@ -451,8 +467,12 @@ Rules: 4–8 questions max; one category each; 2–4 options; importance 1–10;
             {saving ? <Loader2 className="animate-spin" size={16} /> : null}
             {isLast
               ? includeLocation
-                ? "Save & find homes"
-                : "Save preset"
+                ? guestMode
+                  ? "Apply & find homes"
+                  : "Save & find homes"
+                : guestMode
+                  ? "Apply priorities"
+                  : "Save preset"
               : "Next"}
           </button>
           {onLastSimple && selected ? (
