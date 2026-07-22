@@ -16,8 +16,9 @@ import { usePlan } from "@/core/hooks/usePlan";
  *
  * **Local demo:** With no `VITE_GOOGLE_ADS_*` set, `npm run dev` uses Google’s sample `ca-pub` + slot (test ads).
  * Opt out: `VITE_GOOGLE_ADS_DEMO=false`.
- * **Production:** Until real IDs are set (domain TBD / AdSense approved), free/guest see labeled **“Ad · Propurty”**
- * placeholders. Aliases: `VITE_ADSENSE_CLIENT`, `VITE_ADSENSE_SLOT_*`. Paid plans remain ad-free.
+ * **Production:** If client/slot IDs are missing, render nothing (no config/instructional text to users).
+ * In **dev** only, a labeled “Ad · Propurty” placeholder may show for placement preview.
+ * Aliases: `VITE_ADSENSE_CLIENT`, `VITE_ADSENSE_SLOT_*`. Paid plans remain ad-free.
  * @see docs/ADSENSE_SETUP.md
  */
 /** Google sample publisher + slot — testing only. @see https://developers.google.com/admob/unity/test-ads */
@@ -25,6 +26,8 @@ const GOOGLE_SAMPLE_ADSENSE_CLIENT = "ca-pub-3940256099942544";
 const GOOGLE_SAMPLE_ADSENSE_SLOT = "6300978111";
 
 const AD_LABEL = "Ad · Propurty";
+const IS_PROD = import.meta.env.PROD;
+const IS_DEV = import.meta.env.DEV;
 
 /** Normalize publisher id for the script URL and data-ad-client */
 function normalizeClientId(id) {
@@ -71,7 +74,7 @@ const ENV_HAS_ANY_SLOT = Boolean(SLOT_LEADERBOARD_ENV || SLOT_INFEED_ENV || SLOT
 /** Dev default: use sample IDs when you have not set your own (opt out with VITE_GOOGLE_ADS_DEMO=false). */
 const DEMO_ADS_ACTIVE =
   (import.meta.env.VITE_GOOGLE_ADS_DEMO === "true" ||
-    (import.meta.env.DEV && import.meta.env.VITE_GOOGLE_ADS_DEMO !== "false")) &&
+    (IS_DEV && import.meta.env.VITE_GOOGLE_ADS_DEMO !== "false")) &&
   !ENV_CLIENT &&
   !ENV_HAS_ANY_SLOT;
 
@@ -136,10 +139,10 @@ function minHeightForFormat(format) {
 }
 
 /**
- * Labeled outline so placement is visible before the custom domain / AdSense units are approved.
- * Clearly marked “Advertisement” — not mistaken for app UI.
+ * Dev-only labeled outline so placement is visible before real AdSense units are wired.
+ * Never shown in production (production collapses to null when units are missing).
  */
-function AdPlaceholder({ format = "leaderboard", className = "", hint = null }) {
+function AdPlaceholder({ format = "leaderboard", className = "" }) {
   return (
     <div
       role="complementary"
@@ -151,21 +154,8 @@ function AdPlaceholder({ format = "leaderboard", className = "", hint = null }) 
         Advertisement
       </p>
       <span className="text-sm font-semibold tracking-wide text-slate-500">{AD_LABEL}</span>
-      {hint ? (
-        <p className="mt-2 max-w-md px-4 text-center text-[10px] leading-relaxed text-slate-400">{hint}</p>
-      ) : null}
     </div>
   );
-}
-
-function configHint() {
-  if (ENV_CLIENT && !ENV_HAS_ANY_SLOT) {
-    return "Set VITE_GOOGLE_ADS_SLOT_LEADERBOARD (or VITE_ADSENSE_SLOT_*) when AdSense units are ready.";
-  }
-  if (!ENV_CLIENT && ENV_HAS_ANY_SLOT) {
-    return "Set VITE_GOOGLE_ADS_CLIENT_ID or VITE_ADSENSE_CLIENT=ca-pub-… when your domain is approved.";
-  }
-  return "Reserved placement — live ads after client ID + slot IDs are set on the host (custom domain TBD).";
 }
 
 export function AdSlot({ format = "leaderboard", className = "" }) {
@@ -192,7 +182,7 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
         }
       })
       .catch(() => {
-        // Script blocked / offline — placeholder stays
+        // Script blocked / offline — leave empty rather than leak config text
       });
 
     return () => {
@@ -202,19 +192,17 @@ export function AdSlot({ format = "leaderboard", className = "" }) {
 
   if (!showAds) return null;
 
+  // Missing client or slots: never show instructional/config text to real users.
+  // Production: collapse space. Dev: optional labeled placement preview only.
   if (!CLIENT_ID || !HAS_ANY_SLOT) {
-    return <AdPlaceholder format={format} className={className} hint={configHint()} />;
+    if (IS_PROD) return null;
+    return <AdPlaceholder format={format} className={className} />;
   }
 
   const slotId = slotForFormat(format);
   if (!slotId) {
-    return (
-      <AdPlaceholder
-        format={format}
-        className={className}
-        hint={`Ad slot (missing unit for format "${format}")`}
-      />
-    );
+    if (IS_PROD) return null;
+    return <AdPlaceholder format={format} className={className} />;
   }
 
   const isRectangle = format === "rectangle";
